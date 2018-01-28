@@ -45,7 +45,7 @@ import org.apache.syncope.client.console.wicket.markup.html.form.FieldPanel;
 import org.apache.syncope.client.console.wicket.markup.html.form.MultiFieldPanel;
 import org.apache.syncope.client.lib.SyncopeClient;
 import org.apache.syncope.common.lib.SyncopeConstants;
-import org.apache.syncope.common.lib.Schema;
+import org.apache.syncope.common.lib.report.Schema;
 import org.apache.syncope.common.lib.report.SearchCondition;
 import org.apache.syncope.common.lib.search.AbstractFiqlSearchConditionBuilder;
 import org.apache.syncope.common.lib.to.AbstractSchemaTO;
@@ -65,9 +65,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.PropertyAccessorFactory;
 import org.springframework.util.ClassUtils;
-import org.springframework.util.ReflectionUtils;
-import org.springframework.util.ReflectionUtils.FieldCallback;
-import org.springframework.util.ReflectionUtils.FieldFilter;
 
 public class BeanPanel<T extends Serializable> extends Panel {
 
@@ -103,23 +100,16 @@ public class BeanPanel<T extends Serializable> extends Panel {
 
             @Override
             protected List<String> load() {
-                final List<String> result = new ArrayList<>();
+                List<String> result = new ArrayList<>();
 
                 if (BeanPanel.this.getDefaultModelObject() != null) {
-                    ReflectionUtils.doWithFields(BeanPanel.this.getDefaultModelObject().getClass(),
-                            new FieldCallback() {
-
-                        public void doWith(final Field field) throws IllegalArgumentException, IllegalAccessException {
+                    for (Field field : BeanPanel.this.getDefaultModelObject().getClass().getDeclaredFields()) {
+                        if (!BeanPanel.this.excluded.contains(field.getName())) {
                             result.add(field.getName());
                         }
-
-                    }, new FieldFilter() {
-
-                        public boolean matches(final Field field) {
-                            return !BeanPanel.this.excluded.contains(field.getName());
-                        }
-                    });
+                    }
                 }
+
                 return result;
             }
         };
@@ -135,7 +125,12 @@ public class BeanPanel<T extends Serializable> extends Panel {
 
                 item.add(new Label("fieldName", new ResourceModel(fieldName, fieldName)));
 
-                Field field = ReflectionUtils.findField(bean.getObject().getClass(), fieldName);
+                Field field = null;
+                try {
+                    field = bean.getObject().getClass().getDeclaredField(fieldName);
+                } catch (NoSuchFieldException | SecurityException e) {
+                    LOG.error("Could not find field {} in class {}", fieldName, bean.getObject().getClass(), e);
+                }
 
                 if (field == null) {
                     return;

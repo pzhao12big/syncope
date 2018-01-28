@@ -61,7 +61,7 @@ import org.apache.wicket.model.ResourceModel;
 import org.apache.wicket.model.util.ListModel;
 import org.springframework.util.ReflectionUtils;
 
-public abstract class AnyDirectoryPanel<A extends AnyTO, E extends AbstractAnyRestClient<A>>
+public abstract class AnyDirectoryPanel<A extends AnyTO, E extends AbstractAnyRestClient<A, ?>>
         extends DirectoryPanel<A, AnyWrapper<A>, AnyDataProvider<A>, E> {
 
     private static final long serialVersionUID = -1100228004207271270L;
@@ -125,7 +125,7 @@ public abstract class AnyDirectoryPanel<A extends AnyTO, E extends AbstractAnyRe
 
         initResultTable();
 
-        // change close callback in order to update header after model update
+        // cahnge close callback in order to update header after model update
         modal.setWindowClosedCallback(new ModalWindow.WindowClosedCallback() {
 
             private static final long serialVersionUID = 8804221891699487139L;
@@ -211,7 +211,8 @@ public abstract class AnyDirectoryPanel<A extends AnyTO, E extends AbstractAnyRe
 
     @Override
     protected AnyDataProvider<A> dataProvider() {
-        return new AnyDataProvider<>(restClient, rows, filtered, realm, type, pageRef).setFIQL(this.fiql);
+        final AnyDataProvider<A> dp = new AnyDataProvider<>(restClient, rows, filtered, realm, type);
+        return dp.setFIQL(this.fiql);
     }
 
     public void search(final String fiql, final AjaxRequestTarget target) {
@@ -234,7 +235,7 @@ public abstract class AnyDirectoryPanel<A extends AnyTO, E extends AbstractAnyRe
         List<AnyTypeClassTO> getAnyTypeClassTOs();
     }
 
-    public abstract static class Builder<A extends AnyTO, E extends AbstractAnyRestClient<A>>
+    public abstract static class Builder<A extends AnyTO, E extends AbstractAnyRestClient<A, ?>>
             extends DirectoryPanel.Builder<A, AnyWrapper<A>, E>
             implements AnyDirectoryPanelBuilder {
 

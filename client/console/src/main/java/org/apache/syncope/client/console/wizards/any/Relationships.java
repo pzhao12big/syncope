@@ -63,7 +63,7 @@ import org.apache.wicket.event.Broadcast;
 import org.apache.wicket.event.IEvent;
 import org.apache.wicket.extensions.markup.html.tabs.AbstractTab;
 import org.apache.wicket.extensions.wizard.IWizard;
-import org.apache.wicket.extensions.wizard.WizardModel.ICondition;
+import org.apache.wicket.extensions.wizard.WizardModel;
 import org.apache.wicket.extensions.wizard.WizardStep;
 import org.apache.wicket.markup.head.IHeaderResponse;
 import org.apache.wicket.markup.head.OnDomReadyHeaderItem;
@@ -77,7 +77,7 @@ import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.model.ResourceModel;
 import org.apache.wicket.model.util.ListModel;
 
-public class Relationships extends WizardStep implements ICondition {
+public class Relationships extends WizardStep implements WizardModel.ICondition {
 
     private static final long serialVersionUID = 855618618337931784L;
 
@@ -136,7 +136,7 @@ public class Relationships extends WizardStep implements ICondition {
                 public Panel getPanel(final String panelId) {
                     return new ListViewPanel.Builder<>(RelationshipTO.class, pageRef).
                             setItems(relationships.get(relationship)).
-                            includes("otherEndType", "otherEndKey").
+                            includes("rightType", "rightKey").
                             addAction(new ActionLink<RelationshipTO>() {
 
                                 private static final long serialVersionUID = -6847033126124401556L;
@@ -255,15 +255,15 @@ public class Relationships extends WizardStep implements ICondition {
                     filter(anyType -> anyType.getKind() != AnyTypeKind.GROUP
                     && anyType.getKind() != AnyTypeKind.USER).collect(Collectors.toList());
 
-            final AjaxDropDownChoicePanel<AnyTypeTO> otherType = new AjaxDropDownChoicePanel<>(
-                    "otherType", "otherType", new PropertyModel<AnyTypeTO>(rel, "otherType") {
+            final AjaxDropDownChoicePanel<AnyTypeTO> rightType = new AjaxDropDownChoicePanel<>(
+                    "rightType", "rightType", new PropertyModel<AnyTypeTO>(rel, "rightType") {
 
                 private static final long serialVersionUID = -5861057041758169508L;
 
                 @Override
                 public AnyTypeTO getObject() {
                     for (AnyTypeTO obj : availableTypes) {
-                        if (obj.getKey().equals(rel.getOtherEndType())) {
+                        if (obj.getKey().equals(rel.getRightType())) {
                             return obj;
                         }
                     }
@@ -272,11 +272,11 @@ public class Relationships extends WizardStep implements ICondition {
 
                 @Override
                 public void setObject(final AnyTypeTO object) {
-                    rel.setOtherEndType(object == null ? null : object.getKey());
+                    rel.setRightType(object == null ? null : object.getKey());
                 }
             }, false);
-            otherType.setChoices(availableTypes);
-            otherType.setChoiceRenderer(new IChoiceRenderer<AnyTypeTO>() {
+            rightType.setChoices(availableTypes);
+            rightType.setChoiceRenderer(new IChoiceRenderer<AnyTypeTO>() {
 
                 private static final long serialVersionUID = -734743540442190178L;
 
@@ -296,9 +296,9 @@ public class Relationships extends WizardStep implements ICondition {
                             filter(anyTypeTO -> id.equals(anyTypeTO.getKey())).findAny().orElse(null);
                 }
             });
-            // enable "otherType" dropdown only if "type" option is selected - SYNCOPE-1140
-            otherType.setEnabled(false);
-            add(otherType);
+            // enable "rightType" dropdown only if "type" option is selected - SYNCOPE-1140
+            rightType.setEnabled(false);
+            add(rightType);
 
             final WebMarkupContainer container = new WebMarkupContainer("searchPanelContainer");
             container.setOutputMarkupId(true);
@@ -315,21 +315,21 @@ public class Relationships extends WizardStep implements ICondition {
                 protected void onUpdate(final AjaxRequestTarget target) {
                     Fragment emptyFragment = new Fragment("searchPanel", "emptyFragment", Specification.this);
                     container.addOrReplace(emptyFragment.setRenderBodyOnly(true));
-                    otherType.setModelObject(null);
-                    // enable "otherType" dropdown only if "type" option is selected - SYNCOPE-1140
-                    otherType.setEnabled(type.getModelObject() != null && !type.getModelObject().isEmpty());
-                    target.add(otherType);
+                    rightType.setModelObject(null);
+                    // enable "rightType" dropdown only if "type" option is selected - SYNCOPE-1140
+                    rightType.setEnabled(type.getModelObject() != null && !type.getModelObject().isEmpty());
+                    target.add(rightType);
                     target.add(container);
                 }
             });
 
-            otherType.getField().add(new IndicatorAjaxFormComponentUpdatingBehavior(Constants.ON_CHANGE) {
+            rightType.getField().add(new IndicatorAjaxFormComponentUpdatingBehavior(Constants.ON_CHANGE) {
 
                 private static final long serialVersionUID = -1107858522700306810L;
 
                 @Override
                 protected void onUpdate(final AjaxRequestTarget target) {
-                    final AnyTypeTO anyType = otherType.getModelObject();
+                    final AnyTypeTO anyType = rightType.getModelObject();
                     if (anyType == null) {
                         Fragment emptyFragment = new Fragment("searchPanel", "emptyFragment", Specification.this);
                         container.addOrReplace(emptyFragment.setRenderBodyOnly(true));
@@ -371,7 +371,7 @@ public class Relationships extends WizardStep implements ICondition {
                         getPayload()).getTarget();
 
                 AnyTO right = AnySelectionDirectoryPanel.ItemSelection.class.cast(event.getPayload()).getSelection();
-                rel.setOtherEndKey(right.getKey());
+                rel.setRightKey(right.getKey());
 
                 Relationships.this.addNewRelationships(rel);
 

@@ -38,10 +38,10 @@ public class JPAPushTaskAnyFilter extends AbstractGeneratedKeyEntity implements 
 
     public static final String TABLE = "PushTaskAnyFilter";
 
-    @ManyToOne(optional = false)
+    @ManyToOne
     private JPAPushTask pushTask;
 
-    @ManyToOne(optional = false)
+    @ManyToOne
     private JPAAnyType anyType;
 
     @NotNull

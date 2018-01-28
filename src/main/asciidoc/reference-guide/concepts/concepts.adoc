@@ -46,6 +46,4 @@ include::audit.adoc[]
 
 include::domains.adoc[]
 
-include::implementations.adoc[]
-
 include::extensions.adoc[]

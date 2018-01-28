@@ -31,6 +31,7 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.apache.syncope.common.lib.to.ItemTO;
 import org.apache.syncope.common.lib.to.SAML2IdPTO;
 import org.apache.syncope.common.lib.to.UserTO;
@@ -40,7 +41,9 @@ import org.opensaml.saml.saml2.metadata.Endpoint;
 import org.opensaml.saml.saml2.metadata.EntityDescriptor;
 import org.opensaml.saml.saml2.metadata.IDPSSODescriptor;
 import org.opensaml.saml.saml2.metadata.KeyDescriptor;
+import org.opensaml.saml.saml2.metadata.NameIDFormat;
 import org.opensaml.saml.saml2.metadata.SingleLogoutService;
+import org.opensaml.saml.saml2.metadata.SingleSignOnService;
 import org.opensaml.xmlsec.signature.X509Data;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -72,21 +75,21 @@ public class SAML2IdPEntity {
 
         IDPSSODescriptor idpdescriptor = entityDescriptor.getIDPSSODescriptor(SAMLConstants.SAML20P_NS);
 
-        idpdescriptor.getSingleSignOnServices().forEach(sso -> {
+        for (SingleSignOnService sso : idpdescriptor.getSingleSignOnServices()) {
             LOG.debug("[{}] Add SSO binding {}({})", id, sso.getBinding(), sso.getLocation());
             this.ssoBindings.put(sso.getBinding(), sso);
-        });
+        }
 
-        idpdescriptor.getSingleLogoutServices().forEach(slo -> {
+        for (SingleLogoutService slo : idpdescriptor.getSingleLogoutServices()) {
             LOG.debug("[{}] Add SLO binding '{}'\n\tLocation: '{}'\n\tResponse Location: '{}'",
                     id, slo.getBinding(), slo.getLocation(), slo.getResponseLocation());
             this.sloBindings.put(slo.getBinding(), slo);
-        });
+        }
 
-        idpdescriptor.getNameIDFormats().forEach(nameIDFormat -> {
+        for (NameIDFormat nameIDFormat : idpdescriptor.getNameIDFormats()) {
             LOG.debug("[{}] Add NameIDFormat '{}'", id, nameIDFormat.getFormat());
             nameIDFormats.add(nameIDFormat.getFormat());
-        });
+        }
 
         CertificateFactory cf = CertificateFactory.getInstance("X.509");
 
@@ -122,10 +125,6 @@ public class SAML2IdPEntity {
         return id;
     }
 
-    public String getKey() {
-        return idpTO.getKey();
-    }
-
     public boolean isCreateUnmatching() {
         return idpTO.isCreateUnmatching();
     }
@@ -150,12 +149,16 @@ public class SAML2IdPEntity {
         return idpTO.getConnObjectKeyItem();
     }
 
+    public List<ItemTO> getItems() {
+        return idpTO.getItems();
+    }
+
     public UserTO getUserTemplate() {
         return idpTO.getUserTemplate();
     }
 
-    public List<String> getActions() {
-        return idpTO.getActions();
+    public Set<String> getActionsClassNames() {
+        return idpTO.getActionsClassNames();
     }
 
     public Endpoint getSSOLocation(final SAML2BindingType bindingType) {

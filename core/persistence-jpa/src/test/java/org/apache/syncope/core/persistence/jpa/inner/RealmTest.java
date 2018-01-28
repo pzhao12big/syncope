@@ -18,13 +18,12 @@
  */
 package org.apache.syncope.core.persistence.jpa.inner;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.util.List;
 import org.apache.syncope.common.lib.SyncopeConstants;
@@ -37,7 +36,7 @@ import org.apache.syncope.core.persistence.api.entity.policy.AccountPolicy;
 import org.apache.syncope.core.persistence.api.entity.policy.PasswordPolicy;
 import org.apache.syncope.core.persistence.api.entity.Realm;
 import org.apache.syncope.core.persistence.jpa.AbstractTest;
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -76,11 +75,9 @@ public class RealmTest extends AbstractTest {
         assertEquals("/even/two", realm.getFullPath());
     }
 
-    @Test
+    @Test(expected = MalformedPathException.class)
     public void findInvalidPath() {
-        assertThrows(MalformedPathException.class, () -> {
-            realmDAO.findByFullPath("even/two");
-        });
+        realmDAO.findByFullPath("even/two");
     }
 
     @Test
@@ -99,9 +96,9 @@ public class RealmTest extends AbstractTest {
         List<Realm> list = realmDAO.findAll();
         assertNotNull(list);
         assertFalse(list.isEmpty());
-        list.forEach(realm -> {
+        for (Realm realm : list) {
             assertNotNull(realm);
-        });
+        }
     }
 
     @Test
@@ -138,7 +135,7 @@ public class RealmTest extends AbstractTest {
 
         try {
             realmDAO.save(realm);
-            fail("This should not happen");
+            fail();
         } catch (InvalidEntityException e) {
             assertTrue(e.hasViolation(EntityViolationType.InvalidRealm));
         }
@@ -152,7 +149,7 @@ public class RealmTest extends AbstractTest {
 
         try {
             realmDAO.save(realm);
-            fail("This should not happen");
+            fail();
         } catch (InvalidEntityException e) {
             assertTrue(e.hasViolation(EntityViolationType.InvalidRealm));
         }

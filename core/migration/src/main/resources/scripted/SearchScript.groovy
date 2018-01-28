@@ -122,13 +122,10 @@ case "__ACCOUNT__":
       
       result.add(item)
     });
-
+  
   if (result.size() == pageSize) {
-    if (pagedResultsCookie == "") {
-      pagedResultsCookie = pagedResultsCookie + result.size();
-    } else {
-      pagedResultsCookie = Integer.toString(pagedResultsCookie.toInteger() + result.size());
-    }
+    pagedResultsCookie = pagedResultsCookie + result.size();
+    result.add([(OperationOptions.OP_PAGED_RESULTS_COOKIE): pagedResultsCookie]);
   }
   break
 
@@ -179,13 +176,5 @@ default:
 }
 
 log.ok(action + " script done");
-
-// ----------------
-// Add paged result cookie
-// ----------------
-def pagedResultCookieLine = [:]
-pagedResultCookieLine.put(OperationOptions.OP_PAGED_RESULTS_COOKIE, pagedResultsCookie);
-result.add(pagedResultCookieLine);
-// ----------------
 
 return result;

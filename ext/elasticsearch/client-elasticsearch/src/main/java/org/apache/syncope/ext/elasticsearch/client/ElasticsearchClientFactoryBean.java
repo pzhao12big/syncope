@@ -22,7 +22,7 @@ import java.net.InetAddress;
 import java.util.Map;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.transport.TransportAddress;
+import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.transport.client.PreBuiltTransportClient;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.FactoryBean;
@@ -32,13 +32,13 @@ import org.springframework.beans.factory.FactoryBean;
  */
 public class ElasticsearchClientFactoryBean implements FactoryBean<Client>, DisposableBean {
 
-    private Map<String, String> settings;
+    private Map<String, Object> settings;
 
     private Map<String, Integer> addresses;
 
     private Client client;
 
-    public void setSettings(final Map<String, String> settings) {
+    public void setSettings(final Map<String, Object> settings) {
         this.settings = settings;
     }
 
@@ -50,16 +50,11 @@ public class ElasticsearchClientFactoryBean implements FactoryBean<Client>, Disp
     public Client getObject() throws Exception {
         synchronized (this) {
             if (client == null) {
-                Settings.Builder builder = Settings.builder();
-                settings.entrySet().forEach(entry -> {
-                    builder.put(entry.getKey(), entry.getValue());
-                });
-
-                PreBuiltTransportClient tClient = new PreBuiltTransportClient(builder.build());
+                PreBuiltTransportClient tClient = new PreBuiltTransportClient(Settings.builder().put(settings).build());
 
                 for (Map.Entry<String, Integer> entry : addresses.entrySet()) {
                     tClient.addTransportAddress(
-                            new TransportAddress(InetAddress.getByName(entry.getKey()), entry.getValue()));
+                            new InetSocketTransportAddress(InetAddress.getByName(entry.getKey()), entry.getValue()));
                 }
 
                 client = tClient;

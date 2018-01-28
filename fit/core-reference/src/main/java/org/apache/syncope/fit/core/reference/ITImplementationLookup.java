@@ -18,19 +18,15 @@
  */
 package org.apache.syncope.fit.core.reference;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 import javax.sql.DataSource;
 import org.apache.syncope.common.lib.policy.AccountRuleConf;
 import org.apache.syncope.common.lib.policy.DefaultAccountRuleConf;
 import org.apache.syncope.common.lib.policy.DefaultPasswordRuleConf;
-import org.apache.syncope.common.lib.policy.DefaultPullCorrelationRuleConf;
 import org.apache.syncope.common.lib.policy.PasswordRuleConf;
-import org.apache.syncope.common.lib.policy.PullCorrelationRuleConf;
 import org.apache.syncope.common.lib.report.AuditReportletConf;
 import org.apache.syncope.common.lib.report.GroupReportletConf;
 import org.apache.syncope.common.lib.report.ReconciliationReportletConf;
@@ -38,31 +34,24 @@ import org.apache.syncope.common.lib.report.ReportletConf;
 import org.apache.syncope.common.lib.report.StaticReportletConf;
 import org.apache.syncope.common.lib.report.UserReportletConf;
 import org.apache.syncope.common.lib.to.SchedTaskTO;
-import org.apache.syncope.common.lib.types.ImplementationEngine;
-import org.apache.syncope.common.lib.types.ImplementationType;
 import org.apache.syncope.core.logic.TaskLogic;
-import org.apache.syncope.core.migration.MigrationPullActions;
 import org.apache.syncope.core.provisioning.java.job.report.AuditReportlet;
 import org.apache.syncope.core.provisioning.java.job.report.GroupReportlet;
 import org.apache.syncope.core.provisioning.java.job.report.ReconciliationReportlet;
 import org.apache.syncope.core.provisioning.java.job.report.StaticReportlet;
 import org.apache.syncope.core.provisioning.java.job.report.UserReportlet;
+import org.apache.syncope.core.migration.MigrationPullActions;
 import org.apache.syncope.core.persistence.api.DomainsHolder;
 import org.apache.syncope.core.persistence.api.ImplementationLookup;
 import org.apache.syncope.core.persistence.api.dao.AccountRule;
 import org.apache.syncope.core.persistence.api.dao.AnySearchDAO;
-import org.apache.syncope.core.persistence.api.dao.ImplementationDAO;
 import org.apache.syncope.core.persistence.api.dao.PasswordRule;
-import org.apache.syncope.core.persistence.api.dao.PullCorrelationRule;
 import org.apache.syncope.core.persistence.api.dao.Reportlet;
-import org.apache.syncope.core.persistence.api.entity.EntityFactory;
-import org.apache.syncope.core.persistence.api.entity.Implementation;
 import org.apache.syncope.core.persistence.jpa.attrvalue.validation.AlwaysTrueValidator;
 import org.apache.syncope.core.persistence.jpa.attrvalue.validation.BasicValidator;
 import org.apache.syncope.core.persistence.jpa.attrvalue.validation.EmailAddressValidator;
 import org.apache.syncope.core.persistence.jpa.dao.DefaultAccountRule;
 import org.apache.syncope.core.persistence.jpa.dao.DefaultPasswordRule;
-import org.apache.syncope.core.persistence.jpa.dao.DefaultPullCorrelationRule;
 import org.apache.syncope.core.provisioning.java.propagation.DBPasswordPropagationActions;
 import org.apache.syncope.core.provisioning.java.propagation.LDAPMembershipPropagationActions;
 import org.apache.syncope.core.provisioning.java.propagation.LDAPPasswordPropagationActions;
@@ -79,10 +68,87 @@ import org.springframework.beans.factory.annotation.Autowired;
  */
 public class ITImplementationLookup implements ImplementationLookup {
 
-    private static final String ES_REINDEX = "org.apache.syncope.core.provisioning.java.job.ElasticsearchReindex";
+    private static final Map<Type, Set<String>> CLASS_NAMES = new HashMap<Type, Set<String>>() {
 
-    private static final Set<Class<?>> JWTSSOPROVIDER_CLASSES = new HashSet<>(
-            Arrays.asList(SyncopeJWTSSOProvider.class, CustomJWTSSOProvider.class));
+        private static final long serialVersionUID = 3109256773218160485L;
+
+        {
+            Set<String> classNames = new HashSet<>();
+            classNames.add(SyncopeJWTSSOProvider.class.getName());
+            classNames.add(CustomJWTSSOProvider.class.getName());
+            put(Type.JWT_SSO_PROVIDER, classNames);
+
+            classNames = new HashSet<>();
+            classNames.add(ReconciliationReportletConf.class.getName());
+            classNames.add(UserReportletConf.class.getName());
+            classNames.add(GroupReportletConf.class.getName());
+            classNames.add(AuditReportletConf.class.getName());
+            classNames.add(StaticReportletConf.class.getName());
+            put(Type.REPORTLET_CONF, classNames);
+
+            classNames = new HashSet<>();
+            classNames.add(TestAccountRuleConf.class.getName());
+            classNames.add(DefaultAccountRuleConf.class.getName());
+            put(Type.ACCOUNT_RULE_CONF, classNames);
+
+            classNames = new HashSet<>();
+            classNames.add(TestPasswordRuleConf.class.getName());
+            classNames.add(DefaultPasswordRuleConf.class.getName());
+            put(Type.PASSWORD_RULE_CONF, classNames);
+
+            classNames = new HashSet<>();
+            classNames.add(PrefixItemTransformer.class.getName());
+            put(Type.ITEM_TRANSFORMER, classNames);
+
+            classNames = new HashSet<>();
+            classNames.add(TestSampleJobDelegate.class.getName());
+            put(Type.TASKJOBDELEGATE, classNames);
+
+            classNames = new HashSet<>();
+            classNames.add(TestReconciliationFilterBuilder.class.getName());
+            put(Type.RECONCILIATION_FILTER_BUILDER, classNames);
+
+            classNames = new HashSet<>();
+            classNames.add(DoubleValueLogicActions.class.getName());
+            put(Type.LOGIC_ACTIONS, classNames);
+
+            classNames = new HashSet<>();
+            classNames.add(LDAPMembershipPropagationActions.class.getName());
+            classNames.add(LDAPPasswordPropagationActions.class.getName());
+            classNames.add(DBPasswordPropagationActions.class.getName());
+            put(Type.PROPAGATION_ACTIONS, classNames);
+
+            classNames = new HashSet<>();
+            classNames.add(LDAPPasswordPullActions.class.getName());
+            classNames.add(TestPullActions.class.getName());
+            classNames.add(MigrationPullActions.class.getName());
+            classNames.add(LDAPMembershipPullActions.class.getName());
+            classNames.add(DBPasswordPullActions.class.getName());
+            put(Type.PULL_ACTIONS, classNames);
+
+            classNames = new HashSet<>();
+            put(Type.PUSH_ACTIONS, classNames);
+
+            classNames = new HashSet<>();
+            classNames.add(TestPullRule.class.getName());
+            put(Type.PULL_CORRELATION_RULE, classNames);
+
+            classNames = new HashSet<>();
+            classNames.add(BasicValidator.class.getName());
+            classNames.add(EmailAddressValidator.class.getName());
+            classNames.add(AlwaysTrueValidator.class.getName());
+            put(Type.VALIDATOR, classNames);
+
+            classNames = new HashSet<>();
+            classNames.add(TestNotificationRecipientsProvider.class.getName());
+            put(Type.NOTIFICATION_RECIPIENTS_PROVIDER, classNames);
+
+            classNames = new HashSet<>();
+            classNames.add(TestFileRewriteAuditAppender.class.getName());
+            classNames.add(TestFileAuditAppender.class.getName());
+            put(Type.AUDIT_APPENDER, classNames);
+        }
+    };
 
     private static final Map<Class<? extends ReportletConf>, Class<? extends Reportlet>> REPORTLET_CLASSES =
             new HashMap<Class<? extends ReportletConf>, Class<? extends Reportlet>>() {
@@ -120,105 +186,8 @@ public class ITImplementationLookup implements ImplementationLookup {
         }
     };
 
-    private static final Map<
-            Class<? extends PullCorrelationRuleConf>, Class<? extends PullCorrelationRule>> CORRELATION_RULE_CLASSES =
-            new HashMap<Class<? extends PullCorrelationRuleConf>, Class<? extends PullCorrelationRule>>() {
-
-        private static final long serialVersionUID = 3109256773218160485L;
-
-        {
-            put(DummyPullCorrelationRuleConf.class, DummyPullCorrelationRule.class);
-            put(DefaultPullCorrelationRuleConf.class, DefaultPullCorrelationRule.class);
-        }
-    };
-
-    private static final Set<Class<?>> AUDITAPPENDER_CLASSES = new HashSet<>(
-            Arrays.asList(TestFileAuditAppender.class, TestFileRewriteAuditAppender.class));
-
-    private static final Map<ImplementationType, Set<String>> CLASS_NAMES =
-            new HashMap<ImplementationType, Set<String>>() {
-
-        private static final long serialVersionUID = 3109256773218160485L;
-
-        {
-            Set<String> classNames = ITImplementationLookup.JWTSSOPROVIDER_CLASSES.stream().
-                    map(Class::getName).collect(Collectors.toSet());
-            put(ImplementationType.JWT_SSO_PROVIDER, classNames);
-
-            classNames = new HashSet<>();
-            classNames.add(ReconciliationReportletConf.class.getName());
-            classNames.add(UserReportletConf.class.getName());
-            classNames.add(GroupReportletConf.class.getName());
-            classNames.add(AuditReportletConf.class.getName());
-            classNames.add(StaticReportletConf.class.getName());
-            put(ImplementationType.REPORTLET, classNames);
-
-            classNames = ITImplementationLookup.ACCOUNT_RULE_CLASSES.values().stream().
-                    map(Class::getName).collect(Collectors.toSet());
-            put(ImplementationType.ACCOUNT_RULE, classNames);
-
-            classNames = ITImplementationLookup.PASSWORD_RULE_CLASSES.values().stream().
-                    map(Class::getName).collect(Collectors.toSet());
-            put(ImplementationType.PASSWORD_RULE, classNames);
-
-            classNames = new HashSet<>();
-            put(ImplementationType.ITEM_TRANSFORMER, classNames);
-
-            classNames = new HashSet<>();
-            classNames.add(TestSampleJobDelegate.class.getName());
-            put(ImplementationType.TASKJOB_DELEGATE, classNames);
-
-            classNames = new HashSet<>();
-            put(ImplementationType.RECON_FILTER_BUILDER, classNames);
-
-            classNames = new HashSet<>();
-            put(ImplementationType.LOGIC_ACTIONS, classNames);
-
-            classNames = new HashSet<>();
-            classNames.add(LDAPMembershipPropagationActions.class.getName());
-            classNames.add(LDAPPasswordPropagationActions.class.getName());
-            classNames.add(DBPasswordPropagationActions.class.getName());
-            put(ImplementationType.PROPAGATION_ACTIONS, classNames);
-
-            classNames = new HashSet<>();
-            classNames.add(LDAPPasswordPullActions.class.getName());
-            classNames.add(TestPullActions.class.getName());
-            classNames.add(MigrationPullActions.class.getName());
-            classNames.add(LDAPMembershipPullActions.class.getName());
-            classNames.add(DBPasswordPullActions.class.getName());
-            put(ImplementationType.PULL_ACTIONS, classNames);
-
-            classNames = new HashSet<>();
-            put(ImplementationType.PUSH_ACTIONS, classNames);
-
-            classNames = new HashSet<>();
-            classNames.add(DummyPullCorrelationRule.class.getName());
-            put(ImplementationType.PULL_CORRELATION_RULE, classNames);
-
-            classNames = new HashSet<>();
-            classNames.add(BasicValidator.class.getName());
-            classNames.add(EmailAddressValidator.class.getName());
-            classNames.add(AlwaysTrueValidator.class.getName());
-            put(ImplementationType.VALIDATOR, classNames);
-
-            classNames = new HashSet<>();
-            classNames.add(TestNotificationRecipientsProvider.class.getName());
-            put(ImplementationType.RECIPIENTS_PROVIDER, classNames);
-
-            classNames = ITImplementationLookup.AUDITAPPENDER_CLASSES.stream().
-                    map(Class::getName).collect(Collectors.toSet());
-            put(ImplementationType.AUDIT_APPENDER, classNames);
-        }
-    };
-
     @Autowired
     private AnySearchDAO anySearchDAO;
-
-    @Autowired
-    private ImplementationDAO implementationDAO;
-
-    @Autowired
-    private EntityFactory entityFactory;
 
     @Autowired
     private DomainsHolder domainsHolder;
@@ -237,21 +206,9 @@ public class ITImplementationLookup implements ImplementationLookup {
         if (AopUtils.getTargetClass(anySearchDAO).getName().contains("Elasticsearch")) {
             for (Map.Entry<String, DataSource> entry : domainsHolder.getDomains().entrySet()) {
                 AuthContextUtils.execWithAuthContext(entry.getKey(), () -> {
-                    Implementation reindex = implementationDAO.find(ImplementationType.TASKJOB_DELEGATE).
-                            stream().
-                            filter(impl -> impl.getEngine() == ImplementationEngine.JAVA
-                            && ES_REINDEX.equals(impl.getBody())).
-                            findAny().orElse(null);
-                    if (reindex == null) {
-                        reindex = entityFactory.newEntity(Implementation.class);
-                        reindex.setEngine(ImplementationEngine.JAVA);
-                        reindex.setType(ImplementationType.TASKJOB_DELEGATE);
-                        reindex.setBody(ES_REINDEX);
-                        reindex = implementationDAO.save(reindex);
-                    }
-
                     SchedTaskTO task = new SchedTaskTO();
-                    task.setJobDelegate(reindex.getKey());
+                    task.setJobDelegateClassName(
+                            "org.apache.syncope.core.provisioning.java.job.ElasticsearchReindex");
                     task.setName("Elasticsearch Reindex");
                     task = taskLogic.createSchedTask(task);
 
@@ -264,13 +221,16 @@ public class ITImplementationLookup implements ImplementationLookup {
     }
 
     @Override
-    public Set<String> getClassNames(final ImplementationType type) {
+    public Set<String> getClassNames(final Type type) {
         return CLASS_NAMES.get(type);
     }
 
     @Override
     public Set<Class<?>> getJWTSSOProviderClasses() {
-        return JWTSSOPROVIDER_CLASSES;
+        Set<Class<?>> classNames = new HashSet<>();
+        classNames.add(SyncopeJWTSSOProvider.class);
+        classNames.add(CustomJWTSSOProvider.class);
+        return classNames;
     }
 
     @Override
@@ -295,14 +255,10 @@ public class ITImplementationLookup implements ImplementationLookup {
     }
 
     @Override
-    public Class<? extends PullCorrelationRule> getPullCorrelationRuleClass(
-            final Class<? extends PullCorrelationRuleConf> pullCorrelationRuleConfClass) {
-
-        return CORRELATION_RULE_CLASSES.get(pullCorrelationRuleConfClass);
-    }
-
-    @Override
     public Set<Class<?>> getAuditAppenderClasses() {
-        return AUDITAPPENDER_CLASSES;
+        Set<Class<?>> classes = new HashSet<>();
+        classes.add(TestFileRewriteAuditAppender.class);
+        classes.add(TestFileAuditAppender.class);
+        return classes;
     }
 }

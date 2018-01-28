@@ -18,36 +18,39 @@
  */
 package org.apache.syncope.fit.core;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
+import org.apache.commons.io.IOUtils;
 import org.apache.syncope.common.lib.SyncopeClientCompositeException;
-import org.apache.syncope.common.lib.SyncopeClientException;
 import org.apache.syncope.common.lib.SyncopeConstants;
 import org.apache.syncope.common.lib.to.AnyTypeClassTO;
 import org.apache.syncope.common.lib.to.GroupTO;
 import org.apache.syncope.common.lib.to.PlainSchemaTO;
 import org.apache.syncope.common.lib.to.UserTO;
 import org.apache.syncope.common.lib.types.AttrSchemaType;
-import org.apache.syncope.common.lib.types.ClientExceptionType;
 import org.apache.syncope.common.lib.types.SchemaType;
 import org.apache.syncope.fit.AbstractITCase;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 public class ExceptionMapperITCase extends AbstractITCase {
 
     private static final Properties ERROR_MESSAGES = new Properties();
 
-    @BeforeAll
+    @BeforeClass
     public static void setUpErrorMessages() throws IOException {
-        try (InputStream propStream = ExceptionMapperITCase.class.getResourceAsStream("/errorMessages.properties")) {
+        InputStream propStream = null;
+        try {
+            propStream = ExceptionMapperITCase.class.getResourceAsStream("/errorMessages.properties");
             ERROR_MESSAGES.load(propStream);
         } catch (Exception e) {
             LOG.error("Could not load /errorMessages.properties", e);
+        } finally {
+            IOUtils.closeQuietly(propStream);
         }
     }
 
@@ -96,7 +99,7 @@ public class ExceptionMapperITCase extends AbstractITCase {
 
         try {
             createUser(userTO2);
-            fail("This should not happen");
+            fail();
         } catch (Exception e) {
             String message = ERROR_MESSAGES.getProperty("errMessage.UniqueConstraintViolation");
             assertEquals("EntityExists [" + message + "]", e.getMessage());
@@ -119,11 +122,10 @@ public class ExceptionMapperITCase extends AbstractITCase {
         groupTO2.setRealm(SyncopeConstants.ROOT_REALM);
         try {
             createGroup(groupTO2);
-            fail("This should not happen");
-        } catch (SyncopeClientException e) {
-            assertEquals(ClientExceptionType.EntityExists, e.getType());
+            fail();
+        } catch (Exception e) {
             String message = ERROR_MESSAGES.getProperty("errMessage.UniqueConstraintViolation");
-            assertEquals("EntityExists [" + message + "]", e.getMessage());
+            assertEquals("DataIntegrityViolation [" + message + "]", e.getMessage());
         }
     }
 
@@ -141,7 +143,7 @@ public class ExceptionMapperITCase extends AbstractITCase {
 
         try {
             createUser(userTO);
-            fail("This should not happen");
+            fail();
         } catch (SyncopeClientCompositeException e) {
             assertEquals(2, e.getExceptions().size());
         }

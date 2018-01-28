@@ -41,9 +41,7 @@ import org.apache.syncope.client.console.wicket.markup.html.form.ActionLink.Acti
 import org.apache.syncope.client.console.wicket.markup.html.form.ActionsPanel;
 import org.apache.syncope.common.lib.to.BulkAction;
 import org.apache.syncope.common.lib.to.BulkActionResult;
-import org.apache.syncope.common.lib.to.ExecTO;
 import org.apache.syncope.common.lib.types.StandardEntitlement;
-import org.apache.syncope.common.lib.to.BulkActionResult.Status;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.extensions.ajax.markup.html.repeater.data.table.AjaxFallbackDefaultDataTable;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.IColumn;
@@ -139,42 +137,22 @@ public class BulkContent<T extends Serializable, S> extends MultilevelPanel.Seco
 
                         BulkActionResult res = null;
                         try {
-                            T singleItem = items.iterator().next();
-                            if (singleItem instanceof StatusBean) {
+                            if (items.iterator().next() instanceof StatusBean) {
                                 throw new IllegalArgumentException("Invalid items");
                             }
 
-                            if (singleItem instanceof ExecTO) {
-                                res = new BulkActionResult();
-                                final Map<String, Status> results = res.getResults();
-                                items.forEach(item -> {
-                                    ExecTO exec = ExecTO.class.cast(item);
-                                    String key = exec.getKey();
-
-                                    try {
-                                        bulkActionExecutor.getClass().getMethod("deleteExecution",
-                                                String.class).invoke(bulkActionExecutor, exec.getKey());
-                                        results.put(String.valueOf(key), BulkActionResult.Status.SUCCESS);
-                                    } catch (Exception e) {
-                                        LOG.error("Error deleting execution {} of task {}", exec.getKey(), key, e);
-                                        results.put(String.valueOf(key), BulkActionResult.Status.FAILURE);
-                                    }
-                                });
-                            } else {
-                                final BulkAction bulkAction = new BulkAction();
-                                bulkAction.setType(BulkAction.Type.valueOf(actionToBeAddresed.name()));
-                                items.forEach(item -> {
-                                    try {
-                                        bulkAction.getTargets().add(getTargetId(item, keyFieldName).toString());
-                                    } catch (IllegalAccessException | InvocationTargetException e) {
-                                        LOG.error("Error retrieving item id {}", keyFieldName, e);
-                                    }
-                                });
-                                res = BulkActionResult.class.cast(
-                                        bulkActionExecutor.getClass().getMethod("bulkAction",
-                                                BulkAction.class).invoke(bulkActionExecutor, bulkAction));
-                            }
-
+                            final BulkAction bulkAction = new BulkAction();
+                            bulkAction.setType(BulkAction.Type.valueOf(actionToBeAddresed.name()));
+                            items.forEach(item -> {
+                                try {
+                                    bulkAction.getTargets().add(getTargetId(item, keyFieldName).toString());
+                                } catch (IllegalAccessException | InvocationTargetException e) {
+                                    LOG.error("Error retrieving item id {}", keyFieldName, e);
+                                }
+                            });
+                            res = BulkActionResult.class.cast(
+                                    bulkActionExecutor.getClass().getMethod("bulkAction", BulkAction.class).invoke(
+                                            bulkActionExecutor, bulkAction));
                         } catch (IllegalArgumentException biae) {
                             if (!(items.iterator().next() instanceof StatusBean)) {
                                 throw new IllegalArgumentException("Invalid items");
@@ -184,8 +162,8 @@ public class BulkContent<T extends Serializable, S> extends MultilevelPanel.Seco
                                 throw new IllegalArgumentException("Invalid bulk action executor");
                             }
 
-                            final AbstractAnyRestClient<?> anyRestClient = AbstractAnyRestClient.class.
-                                    cast(bulkActionExecutor);
+                            final AbstractAnyRestClient<?, ?> anyRestClient = AbstractAnyRestClient.class.cast(
+                                    bulkActionExecutor);
 
                             // Group bean information by anyKey
                             final Map<String, List<StatusBean>> beans = new HashMap<>();

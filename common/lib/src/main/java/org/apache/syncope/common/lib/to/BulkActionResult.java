@@ -57,6 +57,7 @@ public class BulkActionResult extends AbstractBaseBean {
     }
 
     @XmlJavaTypeAdapter(XmlGenericMapAdapter.class)
+    @JsonIgnore
     private final Map<String, Status> results = new HashMap<>();
 
     @JsonProperty

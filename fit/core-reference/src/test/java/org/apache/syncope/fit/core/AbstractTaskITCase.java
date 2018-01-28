@@ -18,9 +18,9 @@
  */
 package org.apache.syncope.fit.core;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -104,8 +104,11 @@ public abstract class AbstractTaskITCase extends AbstractITCase {
                 build());
         if (matchingGroups.getSize() > 0) {
             for (GroupTO group : matchingGroups.getResult()) {
-                groupService.deassociate(new DeassociationPatch.Builder().key(group.getKey()).
-                        action(ResourceDeassociationAction.UNLINK).resource(RESOURCE_NAME_LDAP).build());
+                DeassociationPatch deassociationPatch = new DeassociationPatch();
+                deassociationPatch.setKey(group.getKey());
+                deassociationPatch.setAction(ResourceDeassociationAction.UNLINK);
+                deassociationPatch.getResources().add(RESOURCE_NAME_LDAP);
+                groupService.deassociate(deassociationPatch);
                 groupService.delete(group.getKey());
             }
         }
@@ -116,8 +119,11 @@ public abstract class AbstractTaskITCase extends AbstractITCase {
                         build());
         if (matchingUsers.getSize() > 0) {
             for (UserTO user : matchingUsers.getResult()) {
-                userService.deassociate(new DeassociationPatch.Builder().key(user.getKey()).
-                        action(ResourceDeassociationAction.UNLINK).resource(RESOURCE_NAME_LDAP).build());
+                DeassociationPatch deassociationPatch = new DeassociationPatch();
+                deassociationPatch.setKey(user.getKey());
+                deassociationPatch.setAction(ResourceDeassociationAction.UNLINK);
+                deassociationPatch.getResources().add(RESOURCE_NAME_LDAP);
+                userService.deassociate(deassociationPatch);
                 userService.delete(user.getKey());
             }
         }

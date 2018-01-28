@@ -55,46 +55,48 @@ public final class SearchUtils implements Serializable {
     }
 
     public static Map<String, List<SearchClause>> getSearchClauses(final Map<String, String> fiql) {
-        Map<String, List<SearchClause>> clauses = new HashMap<>();
-        for (Map.Entry<String, String> entry : fiql.entrySet()) {
-            clauses.put(entry.getKey(), getSearchClauses(
-                    entry.getValue().replaceAll(getTypeConditionPattern(entry.getKey()).pattern(), "")));
+        final Map<String, List<SearchClause>> res = new HashMap<>();
+        if (fiql != null && !fiql.isEmpty()) {
+            for (Map.Entry<String, String> entry : fiql.entrySet()) {
+                res.put(entry.getKey(), getSearchClauses(
+                        entry.getValue().replaceAll(getTypeConditionPattern(entry.getKey()).pattern(), "")));
+            }
         }
-        return clauses;
+        return res;
     }
 
     public static List<SearchClause> getSearchClauses(final String fiql) {
-        List<SearchClause> clauses = new ArrayList<>();
+        final List<SearchClause> res = new ArrayList<>();
         if (StringUtils.isNotBlank(fiql)) {
             try {
                 SyncopeFiqlParser<SearchBean> fiqlParser = new SyncopeFiqlParser<>(
                         SearchBean.class, AbstractFiqlSearchConditionBuilder.CONTEXTUAL_PROPERTIES);
-                clauses.addAll(getSearchClauses(fiqlParser.parse(fiql)));
+                res.addAll(getSearchClauses(fiqlParser.parse(fiql)));
             } catch (Exception e) {
                 LOG.error("Unparseable FIQL expression '{}'", fiql, e);
             }
         }
-        return clauses;
+        return res;
     }
 
     private static List<SearchClause> getSearchClauses(final SearchCondition<SearchBean> sc) {
-        List<SearchClause> clauses = new ArrayList<>();
+        List<SearchClause> res = new ArrayList<>();
 
         if (sc.getStatement() == null) {
-            clauses.addAll(getCompoundSearchClauses(sc));
+            res.addAll(getCompoundSearchClause(sc));
         } else {
-            clauses.add(getPrimitiveSearchClause(sc));
+            res.add(getPrimitiveSearchClause(sc));
         }
 
-        return clauses;
+        return res;
     }
 
-    private static List<SearchClause> getCompoundSearchClauses(final SearchCondition<SearchBean> sc) {
-        List<SearchClause> clauses = new ArrayList<>();
+    private static List<SearchClause> getCompoundSearchClause(final SearchCondition<SearchBean> sc) {
+        List<SearchClause> res = new ArrayList<>();
 
         for (SearchCondition<SearchBean> searchCondition : sc.getSearchConditions()) {
             if (searchCondition.getStatement() == null) {
-                clauses.addAll(getCompoundSearchClauses(searchCondition));
+                res.addAll(getCompoundSearchClause(searchCondition));
             } else {
                 SearchClause clause = getPrimitiveSearchClause(searchCondition);
                 if (sc.getConditionType() == ConditionType.AND) {
@@ -103,43 +105,43 @@ public final class SearchUtils implements Serializable {
                 if (sc.getConditionType() == ConditionType.OR) {
                     clause.setOperator(SearchClause.Operator.OR);
                 }
-                clauses.add(clause);
+                res.add(clause);
             }
         }
 
-        return clauses;
+        return res;
     }
 
     private static SearchClause getPrimitiveSearchClause(final SearchCondition<SearchBean> sc) {
-        SearchClause clause = new SearchClause();
+        SearchClause res = new SearchClause();
 
         String property = sc.getCondition().getKeySet().iterator().next();
-        clause.setProperty(property);
-        String value = sc.getCondition().get(property).replace("%252C", ",").replace("%253B", ";");
-        clause.setValue(value);
+        res.setProperty(property);
+        String value = sc.getCondition().get(property);
+        res.setValue(value);
 
         LOG.debug("Condition: " + sc.getCondition());
 
         if (SpecialAttr.ROLES.toString().equals(property)) {
-            clause.setType(SearchClause.Type.ROLE_MEMBERSHIP);
-            clause.setProperty(value);
+            res.setType(SearchClause.Type.ROLE_MEMBERSHIP);
+            res.setProperty(value);
         } else if (SpecialAttr.RELATIONSHIPS.toString().equals(property)) {
-            clause.setType(SearchClause.Type.RELATIONSHIP);
-            clause.setProperty(value);
+            res.setType(SearchClause.Type.RELATIONSHIP);
+            res.setProperty(value);
         } else if (SpecialAttr.RELATIONSHIP_TYPES.toString().equals(property)) {
-            clause.setType(SearchClause.Type.RELATIONSHIP);
-            clause.setProperty(value);
+            res.setType(SearchClause.Type.RELATIONSHIP);
+            res.setProperty(value);
         } else if (SpecialAttr.GROUPS.toString().equals(property)) {
-            clause.setType(SearchClause.Type.GROUP_MEMBERSHIP);
-            clause.setProperty(value);
+            res.setType(SearchClause.Type.GROUP_MEMBERSHIP);
+            res.setProperty(value);
         } else if (SpecialAttr.RESOURCES.toString().equals(property)) {
-            clause.setType(SearchClause.Type.RESOURCE);
-            clause.setProperty(value);
+            res.setType(SearchClause.Type.RESOURCE);
+            res.setProperty(value);
         } else if (SpecialAttr.MEMBER.toString().equals(property)) {
-            clause.setType(SearchClause.Type.GROUP_MEMBER);
-            clause.setProperty(value);
+            res.setType(SearchClause.Type.GROUP_MEMBER);
+            res.setProperty(value);
         } else {
-            clause.setType(SearchClause.Type.ATTRIBUTE);
+            res.setType(SearchClause.Type.ATTRIBUTE);
         }
 
         ConditionType ct = sc.getConditionType();
@@ -154,45 +156,45 @@ public final class SearchUtils implements Serializable {
         switch (ct) {
             case EQUALS:
                 if (SpecialAttr.RELATIONSHIP_TYPES.toString().equals(property)) {
-                    clause.setComparator(SpecialAttr.NULL.toString().equals(value)
+                    res.setComparator(SpecialAttr.NULL.toString().equals(value)
                             ? SearchClause.Comparator.EQUALS : SearchClause.Comparator.IS_NULL);
                 } else {
-                    clause.setComparator(SpecialAttr.NULL.toString().equals(value)
+                    res.setComparator(SpecialAttr.NULL.toString().equals(value)
                             ? SearchClause.Comparator.IS_NULL : SearchClause.Comparator.EQUALS);
                 }
                 break;
 
             case NOT_EQUALS:
                 if (SpecialAttr.RELATIONSHIP_TYPES.toString().equals(property)) {
-                    clause.setComparator(SpecialAttr.NULL.toString().equals(value)
+                    res.setComparator(SpecialAttr.NULL.toString().equals(value)
                             ? SearchClause.Comparator.NOT_EQUALS : SearchClause.Comparator.IS_NOT_NULL);
                 } else {
-                    clause.setComparator(SpecialAttr.NULL.toString().equals(value)
+                    res.setComparator(SpecialAttr.NULL.toString().equals(value)
                             ? SearchClause.Comparator.IS_NOT_NULL : SearchClause.Comparator.NOT_EQUALS);
                 }
                 break;
 
             case GREATER_OR_EQUALS:
-                clause.setComparator(SearchClause.Comparator.GREATER_OR_EQUALS);
+                res.setComparator(SearchClause.Comparator.GREATER_OR_EQUALS);
                 break;
 
             case GREATER_THAN:
-                clause.setComparator(SearchClause.Comparator.GREATER_THAN);
+                res.setComparator(SearchClause.Comparator.GREATER_THAN);
                 break;
 
             case LESS_OR_EQUALS:
-                clause.setComparator(SearchClause.Comparator.LESS_OR_EQUALS);
+                res.setComparator(SearchClause.Comparator.LESS_OR_EQUALS);
                 break;
 
             case LESS_THAN:
-                clause.setComparator(SearchClause.Comparator.LESS_THAN);
+                res.setComparator(SearchClause.Comparator.LESS_THAN);
                 break;
 
             default:
                 break;
         }
 
-        return clause;
+        return res;
     }
 
     public static String buildFIQL(final List<SearchClause> clauses, final AbstractFiqlSearchConditionBuilder builder) {
@@ -214,19 +216,17 @@ public final class SearchUtils implements Serializable {
             prevCondition = condition;
 
             if (clause.getType() != null) {
-                String value = clause.getValue() == null
-                        ? null
-                        : clause.getValue().replace(",", "%252C").replace(";", "%253B");
-
                 switch (clause.getType()) {
                     case GROUP_MEMBER:
                         switch (clause.getComparator()) {
                             case EQUALS:
-                                condition = ((GroupFiqlSearchConditionBuilder) builder).withMembers(value);
+                                condition = ((GroupFiqlSearchConditionBuilder) builder).
+                                        withMembers(clause.getValue());
                                 break;
 
                             case NOT_EQUALS:
-                                condition = ((GroupFiqlSearchConditionBuilder) builder).withoutMembers(value);
+                                condition = ((GroupFiqlSearchConditionBuilder) builder).
+                                        withoutMembers(clause.getValue());
                                 break;
 
                             default:
@@ -235,7 +235,7 @@ public final class SearchUtils implements Serializable {
 
                     case GROUP_MEMBERSHIP:
                         if (StringUtils.isNotBlank(clause.getProperty())) {
-                            String groupKey = clause.getProperty();
+                            String groupKey = clause.getProperty().split(" ")[0];
 
                             if (builder instanceof UserFiqlSearchConditionBuilder) {
                                 condition = clause.getComparator() == SearchClause.Comparator.EQUALS
@@ -259,14 +259,9 @@ public final class SearchUtils implements Serializable {
 
                     case ATTRIBUTE:
                         if (StringUtils.isNotBlank(clause.getProperty())) {
-                            boolean isLong = false;
-                            boolean isDouble = false;
-                            if (availableSchemaTypes.get(clause.getProperty()) != null) {
-                                isLong = availableSchemaTypes.get(clause.getProperty()).getType()
-                                        == AttrSchemaType.Long;
-                                isDouble = availableSchemaTypes.get(clause.getProperty()).getType()
-                                        == AttrSchemaType.Double;
-                            }
+                            boolean isLong = availableSchemaTypes.get(clause.getProperty()) != null
+                                    && availableSchemaTypes.get(clause.getProperty()).getType()
+                                    == AttrSchemaType.Long;
 
                             SyncopeProperty property = builder.is(clause.getProperty());
                             switch (clause.getComparator()) {
@@ -280,49 +275,35 @@ public final class SearchUtils implements Serializable {
 
                                 case LESS_THAN:
                                     condition = isLong
-                                            ? property.lessThan(NumberUtils.toLong(value))
-                                            : isDouble
-                                                    ? property.lessThan(NumberUtils.toDouble(value))
-                                                    : property.lexicalBefore(value);
+                                            ? property.lessThan(NumberUtils.toLong(clause.getValue()))
+                                            : property.lexicalBefore(clause.getValue());
                                     break;
 
                                 case LESS_OR_EQUALS:
                                     condition = isLong
-                                            ? property.lessOrEqualTo(NumberUtils.toLong(value))
-                                            : isDouble
-                                                    ? property.lessOrEqualTo(NumberUtils.toDouble(value))
-                                                    : property.lexicalNotAfter(value);
+                                            ? property.lessOrEqualTo(NumberUtils.toLong(clause.getValue()))
+                                            : property.lexicalNotAfter(clause.getValue());
                                     break;
 
                                 case GREATER_THAN:
                                     condition = isLong
-                                            ? property.greaterThan(NumberUtils.toLong(value))
-                                            : isDouble
-                                                    ? property.greaterThan(NumberUtils.toDouble(value))
-                                                    : property.lexicalAfter(value);
+                                            ? property.greaterThan(NumberUtils.toLong(clause.getValue()))
+                                            : property.lexicalAfter(clause.getValue());
                                     break;
 
                                 case GREATER_OR_EQUALS:
                                     condition = isLong
-                                            ? property.greaterOrEqualTo(NumberUtils.toLong(value))
-                                            : isDouble
-                                                    ? property.greaterOrEqualTo(NumberUtils.toDouble(value))
-                                                    : property.lexicalNotBefore(value);
+                                            ? property.greaterOrEqualTo(NumberUtils.toLong(clause.getValue()))
+                                            : property.lexicalNotBefore(clause.getValue());
                                     break;
 
                                 case NOT_EQUALS:
-                                    condition = property.notEqualTolIgnoreCase(value);
+                                    condition = property.notEqualTolIgnoreCase(clause.getValue());
                                     break;
 
                                 case EQUALS:
-                                    condition = isLong
-                                            ? property.equalTo(NumberUtils.toLong(value))
-                                            : isDouble
-                                                    ? property.equalTo(NumberUtils.toDouble(value))
-                                                    : property.equalToIgnoreCase(value);
-                                    break;
                                 default:
-                                    condition = property.equalToIgnoreCase(value);
+                                    condition = property.equalToIgnoreCase(clause.getValue());
                                     break;
                             }
                         }
@@ -359,11 +340,11 @@ public final class SearchUtils implements Serializable {
                                         break;
                                     case EQUALS:
                                         condition = ((UserFiqlSearchConditionBuilder) builder).
-                                                inRelationships(value);
+                                                inRelationships(clause.getValue());
                                         break;
                                     case NOT_EQUALS:
                                         condition = ((UserFiqlSearchConditionBuilder) builder).
-                                                notInRelationships(value);
+                                                notInRelationships(clause.getValue());
                                         break;
                                     default:
                                         break;
@@ -380,11 +361,11 @@ public final class SearchUtils implements Serializable {
                                         break;
                                     case EQUALS:
                                         condition = ((AnyObjectFiqlSearchConditionBuilder) builder).
-                                                inRelationships(value);
+                                                inRelationships(clause.getValue());
                                         break;
                                     case NOT_EQUALS:
                                         condition = ((AnyObjectFiqlSearchConditionBuilder) builder).
-                                                notInRelationships(value);
+                                                notInRelationships(clause.getValue());
                                         break;
                                     default:
                                         break;

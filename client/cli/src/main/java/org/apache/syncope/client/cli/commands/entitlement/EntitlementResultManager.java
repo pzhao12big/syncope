@@ -26,17 +26,17 @@ public class EntitlementResultManager extends CommonsResultManager {
 
     public void toView(final Collection<String> entitlements) {
         System.out.println("");
-        entitlements.forEach(entitlement -> {
+        for (final String entitlement : entitlements) {
             System.out.println("- " + entitlement);
-        });
+        }
         System.out.println("");
     }
 
     public void rolesToView(final Collection<RoleTO> roles) {
         System.out.println("");
-        roles.forEach(role -> {
+        for (final RoleTO role : roles) {
             printRole(role);
-        });
+        }
     }
 
     private void printRole(final RoleTO roleTO) {
@@ -47,8 +47,8 @@ public class EntitlementResultManager extends CommonsResultManager {
     }
 
     private void printRealms(final Collection<String> realms) {
-        realms.forEach(realm -> {
+        for (final String realm : realms) {
             System.out.println("       - " + realm);
-        });
+        }
     }
 }

@@ -26,6 +26,7 @@ import org.apache.syncope.client.cli.commands.CommonsResultManager;
 import org.apache.syncope.common.lib.to.ConnBundleTO;
 import org.apache.syncope.common.lib.to.ConnInstanceTO;
 import org.apache.syncope.common.lib.to.ConnPoolConfTO;
+import org.apache.syncope.common.lib.types.ConnConfPropSchema;
 import org.apache.syncope.common.lib.types.ConnConfProperty;
 import org.apache.syncope.common.lib.types.ConnectorCapability;
 
@@ -33,9 +34,9 @@ public class ConnectorResultManager extends CommonsResultManager {
 
     public void printConnectors(final List<ConnInstanceTO> connInstanceTOs) {
         System.out.println("");
-        connInstanceTOs.forEach(connInstanceTO -> {
+        for (final ConnInstanceTO connInstanceTO : connInstanceTOs) {
             printConnector(connInstanceTO);
-        });
+        }
     }
 
     public void printConnector(final ConnInstanceTO connInstanceTO) {
@@ -56,9 +57,9 @@ public class ConnectorResultManager extends CommonsResultManager {
     }
 
     private void printCapabilities(final Set<ConnectorCapability> capabilities) {
-        capabilities.forEach(capability -> {
+        for (final ConnectorCapability capability : capabilities) {
             System.out.println("       - " + capability.name());
-        });
+        }
     }
 
     private void printConfPool(final ConnPoolConfTO connPoolConfTO) {
@@ -70,13 +71,25 @@ public class ConnectorResultManager extends CommonsResultManager {
     }
 
     public void printBundles(final List<ConnBundleTO> connBundleTOs) {
-        connBundleTOs.forEach(connBundleTO -> {
+        for (final ConnBundleTO connBundleTO : connBundleTOs) {
             System.out.println(" > BUNDLE NAME: " + connBundleTO.getBundleName());
             System.out.println("    connector name: " + connBundleTO.getConnectorName());
             System.out.println("    display name: " + connBundleTO.getDisplayName());
             System.out.println("    location: " + connBundleTO.getLocation());
             System.out.println("    version: " + connBundleTO.getVersion());
-        });
+        }
+    }
+
+    private void printConfPropSchema(final List<ConnConfPropSchema> connConfPropSchemas) {
+        for (final ConnConfPropSchema connConfPropSchema : connConfPropSchemas) {
+            System.out.println("       name: " + connConfPropSchema.getName());
+            System.out.println("       display name: " + connConfPropSchema.getDisplayName());
+            System.out.println("       help message: " + connConfPropSchema.getHelpMessage());
+            System.out.println("       type: " + connConfPropSchema.getType());
+            System.out.println("       order: " + connConfPropSchema.getOrder());
+            System.out.println("       default value: " + connConfPropSchema.getDefaultValues().toString());
+            System.out.println("");
+        }
     }
 
     public void printConfigurationProperties(final Collection<ConnConfProperty> connConfPropertys) {

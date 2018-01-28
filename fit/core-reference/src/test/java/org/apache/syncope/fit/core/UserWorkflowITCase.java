@@ -20,13 +20,12 @@ package org.apache.syncope.fit.core;
 
 import org.apache.syncope.fit.FlowableDetector;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.util.Collections;
 import java.util.List;
@@ -49,13 +48,17 @@ import org.apache.syncope.common.lib.types.PatchOperation;
 import org.apache.syncope.common.rest.api.service.UserSelfService;
 import org.apache.syncope.common.rest.api.service.UserWorkflowService;
 import org.apache.syncope.fit.AbstractITCase;
-import org.junit.jupiter.api.Test;
+import org.junit.Assume;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-@SpringJUnitConfig(locations = { "classpath:testJDBCEnv.xml" })
+@RunWith(SpringJUnit4ClassRunner.class)
+@ContextConfiguration(locations = { "classpath:testJDBCEnv.xml" })
 public class UserWorkflowITCase extends AbstractITCase {
 
     @Autowired
@@ -63,7 +66,7 @@ public class UserWorkflowITCase extends AbstractITCase {
 
     @Test
     public void createWithReject() {
-        assumeTrue(FlowableDetector.isFlowableEnabledForUsers(syncopeService));
+        Assume.assumeTrue(FlowableDetector.isFlowableEnabledForUsers(syncopeService));
 
         UserTO userTO = UserITCase.getUniqueSampleTO("createWithReject@syncope.apache.org");
         userTO.getResources().add(RESOURCE_NAME_TESTDB);
@@ -76,7 +79,7 @@ public class UserWorkflowITCase extends AbstractITCase {
         userTO = createUser(userTO).getEntity();
         assertNotNull(userTO);
         assertEquals(1, userTO.getMemberships().size());
-        assertEquals("0cbcabd2-4410-4b6b-8f05-a052b451d18f", userTO.getMemberships().get(0).getGroupKey());
+        assertEquals("0cbcabd2-4410-4b6b-8f05-a052b451d18f", userTO.getMemberships().get(0).getRightKey());
         assertEquals("createApproval", userTO.getStatus());
 
         // 2. request if there is any pending task for user just created
@@ -103,7 +106,7 @@ public class UserWorkflowITCase extends AbstractITCase {
                 getService(UserWorkflowService.class);
         try {
             userService2.claimForm(form.getTaskId());
-            fail("This should not happen");
+            fail();
         } catch (SyncopeClientException e) {
             assertEquals(ClientExceptionType.Workflow, e.getType());
         }
@@ -137,7 +140,7 @@ public class UserWorkflowITCase extends AbstractITCase {
 
     @Test
     public void createWithApproval() {
-        assumeTrue(FlowableDetector.isFlowableEnabledForUsers(syncopeService));
+        Assume.assumeTrue(FlowableDetector.isFlowableEnabledForUsers(syncopeService));
 
         // read forms *before* any operation
         List<WorkflowFormTO> forms = userWorkflowService.getForms();
@@ -156,7 +159,7 @@ public class UserWorkflowITCase extends AbstractITCase {
         assertNotNull(result);
         userTO = result.getEntity();
         assertEquals(1, userTO.getMemberships().size());
-        assertEquals("0cbcabd2-4410-4b6b-8f05-a052b451d18f", userTO.getMemberships().get(0).getGroupKey());
+        assertEquals("0cbcabd2-4410-4b6b-8f05-a052b451d18f", userTO.getMemberships().get(0).getRightKey());
         assertEquals("createApproval", userTO.getStatus());
         assertEquals(Collections.singleton(RESOURCE_NAME_TESTDB), userTO.getResources());
 
@@ -223,7 +226,7 @@ public class UserWorkflowITCase extends AbstractITCase {
 
     @Test
     public void updateApproval() {
-        assumeTrue(FlowableDetector.isFlowableEnabledForUsers(syncopeService));
+        Assume.assumeTrue(FlowableDetector.isFlowableEnabledForUsers(syncopeService));
 
         // read forms *before* any operation
         List<WorkflowFormTO> forms = userWorkflowService.getForms();
@@ -281,7 +284,7 @@ public class UserWorkflowITCase extends AbstractITCase {
 
     @Test
     public void issueSYNCOPE15() {
-        assumeTrue(FlowableDetector.isFlowableEnabledForUsers(syncopeService));
+        Assume.assumeTrue(FlowableDetector.isFlowableEnabledForUsers(syncopeService));
 
         // read forms *before* any operation
         List<WorkflowFormTO> forms = userWorkflowService.getForms();

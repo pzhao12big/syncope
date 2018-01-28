@@ -22,6 +22,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,7 +38,6 @@ import org.apache.syncope.common.lib.to.EntityTO;
 import org.apache.syncope.common.lib.to.GroupTO;
 import org.apache.syncope.common.lib.to.MembershipTO;
 import org.apache.syncope.common.lib.types.SchemaType;
-import org.apache.wicket.PageReference;
 import org.apache.wicket.WicketRuntimeException;
 import org.apache.wicket.core.util.lang.PropertyResolver;
 import org.apache.wicket.extensions.wizard.WizardModel.ICondition;
@@ -160,8 +160,24 @@ public abstract class AbstractAttrs<S extends AbstractSchemaTO> extends WizardSt
             // 1. remove attributes not selected for display
             allSchemas.removeAll(allSchemas.stream().
                     filter(schemaTO -> !whichAttrs.contains(schemaTO.getKey())).collect(Collectors.toSet()));
-        }
 
+            // 2. sort remainig attributes according to configuration, e.g. attrLayout
+            final Map<String, Integer> attrLayoutMap = new HashMap<>(whichAttrs.size());
+            for (int i = 0; i < whichAttrs.size(); i++) {
+                attrLayoutMap.put(whichAttrs.get(i), i);
+            }
+            Collections.sort(allSchemas, (schema1, schema2) -> {
+                int value = 0;
+
+                if (attrLayoutMap.get(schema1.getKey()) > attrLayoutMap.get(schema2.getKey())) {
+                    value = 1;
+                } else if (attrLayoutMap.get(schema1.getKey()) < attrLayoutMap.get(schema2.getKey())) {
+                    value = -1;
+                }
+
+                return value;
+            });
+        }
         allSchemas.forEach(schemaTO -> {
             scs.put(schemaTO.getKey(), schemaTO);
         });
@@ -188,7 +204,7 @@ public abstract class AbstractAttrs<S extends AbstractSchemaTO> extends WizardSt
 
     protected List<String> getMembershipAuxClasses(final MembershipTO membershipTO, final String anyType) {
         try {
-            final GroupTO groupTO = groupRestClient.read(membershipTO.getGroupKey());
+            final GroupTO groupTO = groupRestClient.read(membershipTO.getRightKey());
             return groupTO.getTypeExtension(anyType).get().getAuxClasses();
         } catch (Exception e) {
             return Collections.emptyList();
@@ -202,13 +218,7 @@ public abstract class AbstractAttrs<S extends AbstractSchemaTO> extends WizardSt
         return !attrTOs.getObject().isEmpty() || !membershipTOs.getObject().isEmpty();
     }
 
-    public PageReference getPageReference() {
-        // SYNCOPE-1213
-        // default implementation does not requier to pass page reference, override this method of want otherwise
-        return null;
-    }
-
-    protected class AttrComparator implements Comparator<AttrTO>, Serializable {
+    protected static class AttrComparator implements Comparator<AttrTO>, Serializable {
 
         private static final long serialVersionUID = -5105030477767941060L;
 
@@ -219,17 +229,6 @@ public abstract class AbstractAttrs<S extends AbstractSchemaTO> extends WizardSt
             }
             if (right == null || StringUtils.isEmpty(right.getSchema())) {
                 return 1;
-            } else if (AbstractAttrs.this.reoderSchemas()) {
-                int leftIndex = AbstractAttrs.this.whichAttrs.indexOf(left.getSchema());
-                int rightIndex = AbstractAttrs.this.whichAttrs.indexOf(right.getSchema());
-
-                if (leftIndex > rightIndex) {
-                    return 1;
-                } else if (leftIndex < rightIndex) {
-                    return -1;
-                } else {
-                    return 0;
-                }
             } else {
                 return left.getSchema().compareTo(right.getSchema());
             }

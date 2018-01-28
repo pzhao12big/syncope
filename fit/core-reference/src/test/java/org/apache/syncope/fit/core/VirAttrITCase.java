@@ -18,10 +18,10 @@
  */
 package org.apache.syncope.fit.core;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import java.util.List;
 import java.util.Locale;
@@ -61,12 +61,15 @@ import org.apache.syncope.common.rest.api.service.AnyTypeClassService;
 import org.apache.syncope.common.rest.api.service.ResourceService;
 import org.apache.syncope.fit.AbstractITCase;
 import org.identityconnectors.framework.common.objects.ObjectClass;
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-@SpringJUnitConfig(locations = { "classpath:testJDBCEnv.xml" })
+@RunWith(SpringJUnit4ClassRunner.class)
+@ContextConfiguration(locations = { "classpath:testJDBCEnv.xml" })
 public class VirAttrITCase extends AbstractITCase {
 
     @Autowired
@@ -166,8 +169,9 @@ public class VirAttrITCase extends AbstractITCase {
         // ----------------------------------
         // suspend/reactivate user and check virtual attribute value (unchanged)
         // ----------------------------------
-        StatusPatch statusPatch = new StatusPatch.Builder().key(userTO.getKey()).
-                type(StatusPatchType.SUSPEND).build();
+        StatusPatch statusPatch = new StatusPatch();
+        statusPatch.setKey(userTO.getKey());
+        statusPatch.setType(StatusPatchType.SUSPEND);
         userTO = userService.status(statusPatch).readEntity(new GenericType<ProvisioningResult<UserTO>>() {
         }).getEntity();
         assertEquals("suspended", userTO.getStatus());
@@ -175,8 +179,9 @@ public class VirAttrITCase extends AbstractITCase {
         connObjectTO = resourceService.readConnObject(RESOURCE_NAME_WS2, AnyTypeKind.USER.name(), userTO.getKey());
         assertEquals("virtualvalue2", connObjectTO.getAttr("COMPANYNAME").get().getValues().get(0));
 
-        statusPatch = new StatusPatch.Builder().key(userTO.getKey()).
-                type(StatusPatchType.REACTIVATE).build();
+        statusPatch = new StatusPatch();
+        statusPatch.setKey(userTO.getKey());
+        statusPatch.setType(StatusPatchType.REACTIVATE);
         userTO = userService.status(statusPatch).readEntity(new GenericType<ProvisioningResult<UserTO>>() {
         }).getEntity();
         assertEquals("active", userTO.getStatus());
@@ -674,7 +679,7 @@ public class VirAttrITCase extends AbstractITCase {
             assertNotNull(userTO);
             assertTrue(ldap.getKey().equals(userTO.getResources().iterator().next()));
 
-            assertEquals(2, userTO.getVirAttrs().iterator().next().getValues().size());
+            assertEquals(2, userTO.getVirAttrs().iterator().next().getValues().size(), 0);
             assertTrue(userTO.getVirAttrs().iterator().next().getValues().contains("test@issue691.dom1.org"));
             assertTrue(userTO.getVirAttrs().iterator().next().getValues().contains("test@issue691.dom2.org"));
 
@@ -690,7 +695,7 @@ public class VirAttrITCase extends AbstractITCase {
 
             UserTO updated = updateUser(userPatch).getEntity();
             assertNotNull(updated);
-            assertEquals(2, updated.getVirAttrs().iterator().next().getValues().size());
+            assertEquals(2, updated.getVirAttrs().iterator().next().getValues().size(), 0);
             assertTrue(updated.getVirAttrs().iterator().next().getValues().contains("test@issue691.dom3.org"));
             assertTrue(updated.getVirAttrs().iterator().next().getValues().contains("test@issue691.dom4.org"));
         } finally {

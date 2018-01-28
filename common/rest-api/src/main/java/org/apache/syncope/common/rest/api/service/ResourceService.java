@@ -18,8 +18,6 @@
  */
 package org.apache.syncope.common.rest.api.service;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.Authorization;
 import java.util.List;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.BeanParam;
@@ -43,9 +41,6 @@ import org.apache.syncope.common.rest.api.beans.ConnObjectTOListQuery;
 /**
  * REST operations for external resources.
  */
-@Api(tags = "Resources", authorizations = {
-    @Authorization(value = "BasicAuthentication")
-    , @Authorization(value = "Bearer") })
 @Path("resources")
 public interface ResourceService extends JAXRSService {
 
@@ -116,12 +111,11 @@ public interface ResourceService extends JAXRSService {
      * Updates the resource matching the given name.
      *
      * @param resourceTO resource to be stored
-     * @return an empty response if operation was successful
      */
     @PUT
     @Path("{key}")
     @Consumes({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML })
-    Response update(@NotNull ResourceTO resourceTO);
+    void update(@NotNull ResourceTO resourceTO);
 
     /**
      * Queries the connector underlying the given resource for the latest sync token value associated to the given any
@@ -129,49 +123,41 @@ public interface ResourceService extends JAXRSService {
      *
      * @param key resource
      * @param anyTypeKey any type
-     * @return an empty response if operation was successful
      */
     @POST
     @Path("{key}/{anyTypeKey}")
-    Response setLatestSyncToken(
-            @NotNull @PathParam("key") String key,
-            @NotNull @PathParam("anyTypeKey") String anyTypeKey);
+    void setLatestSyncToken(@NotNull @PathParam("key") String key, @NotNull @PathParam("anyTypeKey") String anyTypeKey);
 
     /**
      * Removes the sync token value associated to the given any type from the given resource.
      *
      * @param key resource
      * @param anyTypeKey any type
-     * @return an empty response if operation was successful
      */
     @DELETE
     @Path("{key}/{anyTypeKey}")
-    Response removeSyncToken(
-            @NotNull @PathParam("key") String key,
-            @NotNull @PathParam("anyTypeKey") String anyTypeKey);
+    void removeSyncToken(@NotNull @PathParam("key") String key, @NotNull @PathParam("anyTypeKey") String anyTypeKey);
 
     /**
      * Deletes the resource matching the given name.
      *
      * @param key name of resource to be deleted
-     * @return an empty response if operation was successful
      */
     @DELETE
     @Path("{key}")
     @Consumes({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML })
-    Response delete(@NotNull @PathParam("key") String key);
+    void delete(@NotNull @PathParam("key") String key);
 
     /**
      * Checks whether the connection to resource could be established.
      *
      * @param resourceTO resource to be checked
-     * @return an empty response if operation was successful
      */
     @POST
     @Path("check")
     @Produces({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML })
     @Consumes({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML })
-    Response check(@NotNull ResourceTO resourceTO);
+    void check(@NotNull ResourceTO resourceTO);
 
     /**
      * De-associate any objects from the given resource.

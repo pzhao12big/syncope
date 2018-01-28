@@ -24,9 +24,7 @@ import java.util.HashSet;
 import java.util.Set;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
-import org.apache.syncope.common.lib.types.ImplementationType;
 import org.apache.syncope.core.persistence.api.entity.Entity;
-import org.apache.syncope.core.persistence.api.entity.Implementation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
@@ -40,12 +38,6 @@ public abstract class AbstractEntity implements Entity {
     protected void checkType(final Object object, final Class<?> clazz) {
         if (object != null && !clazz.isInstance(object)) {
             throw new ClassCastException("Expected " + clazz.getName() + ", got " + object.getClass().getName());
-        }
-    }
-
-    protected void checkImplementationType(final Implementation object, final ImplementationType expected) {
-        if (object != null && object.getType() != expected) {
-            throw new ClassCastException("Expected " + expected + ", got " + object.getType());
         }
     }
 

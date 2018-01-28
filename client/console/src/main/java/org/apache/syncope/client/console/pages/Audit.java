@@ -18,10 +18,10 @@
  */
 package org.apache.syncope.client.console.pages;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.syncope.client.console.BookmarkablePageLinkBuilder;
@@ -49,14 +49,15 @@ public class Audit extends BasePage {
 
         final LoggerRestClient loggerRestClient = new LoggerRestClient();
 
-        List<String> events = loggerRestClient.listAudits().stream().
-                map(audit -> AuditLoggerName.buildEvent(
-                audit.getType(),
-                audit.getCategory(),
-                audit.getSubcategory(),
-                audit.getEvent(),
-                audit.getResult())).
-                collect(Collectors.toList());
+        List<String> events = new ArrayList<>();
+        for (AuditLoggerName audit : loggerRestClient.listAudits()) {
+            events.add(AuditLoggerName.buildEvent(
+                    audit.getType(),
+                    audit.getCategory(),
+                    audit.getSubcategory(),
+                    audit.getEvent(),
+                    audit.getResult()));
+        }
 
         WebMarkupContainer content = new WebMarkupContainer("content");
         content.setOutputMarkupId(true);
@@ -88,7 +89,7 @@ public class Audit extends BasePage {
                     final SelectedEventsPanel.EventSelectionChanged eventSelectionChanged =
                             (SelectedEventsPanel.EventSelectionChanged) event.getPayload();
 
-                    eventSelectionChanged.getToBeRemoved().forEach(toBeRemoved -> {
+                    for (String toBeRemoved : eventSelectionChanged.getToBeRemoved()) {
                         Pair<EventCategoryTO, AuditElements.Result> eventCategory =
                                 AuditLoggerName.parseEventCategory(toBeRemoved);
 
@@ -101,9 +102,9 @@ public class Audit extends BasePage {
                                 eventCategory.getValue());
 
                         loggerRestClient.disableAudit(auditLoggerName);
-                    });
+                    }
 
-                    eventSelectionChanged.getToBeAdded().forEach(toBeAdded -> {
+                    for (String toBeAdded : eventSelectionChanged.getToBeAdded()) {
                         Pair<EventCategoryTO, AuditElements.Result> eventCategory =
                                 AuditLoggerName.parseEventCategory(toBeAdded);
 
@@ -116,7 +117,7 @@ public class Audit extends BasePage {
                                 eventCategory.getValue());
 
                         loggerRestClient.enableAudit(auditLoggerName);
-                    });
+                    }
                 }
             }
         });

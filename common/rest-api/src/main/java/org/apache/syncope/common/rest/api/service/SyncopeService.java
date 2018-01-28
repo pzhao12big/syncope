@@ -18,8 +18,6 @@
  */
 package org.apache.syncope.common.rest.api.service;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.Authorization;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.DefaultValue;
@@ -40,9 +38,6 @@ import org.apache.syncope.common.lib.to.TypeExtensionTO;
 /**
  * General info about this Apache Syncope deployment.
  */
-@Api(tags = "Syncope", authorizations = {
-    @Authorization(value = "BasicAuthentication")
-    , @Authorization(value = "Bearer") })
 @Path("")
 public interface SyncopeService extends JAXRSService {
 
@@ -82,7 +77,6 @@ public interface SyncopeService extends JAXRSService {
      * Returns the list of Groups, according to provided paging instructions, assignable to Users and Any Objects of
      * the provided Realm.
      *
-     * @param term groups search term
      * @param realm of the User and Any Objects assignable to the returned Groups
      * @param page search page
      * @param size search page size
@@ -94,7 +88,6 @@ public interface SyncopeService extends JAXRSService {
     @Produces({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML })
     PagedResult<GroupTO> searchAssignableGroups(
             @NotNull @PathParam("realm") String realm,
-            @QueryParam("term") String term,
             @Min(1) @QueryParam(PARAM_PAGE) @DefaultValue("1") int page,
             @Min(1) @QueryParam(PARAM_SIZE) @DefaultValue("25") int size);
 

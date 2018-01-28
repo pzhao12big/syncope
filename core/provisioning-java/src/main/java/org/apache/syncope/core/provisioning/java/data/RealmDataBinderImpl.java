@@ -27,14 +27,13 @@ import org.apache.syncope.common.lib.types.ResourceOperation;
 import org.apache.syncope.core.provisioning.java.utils.TemplateUtils;
 import org.apache.syncope.core.persistence.api.dao.AnyTypeDAO;
 import org.apache.syncope.core.persistence.api.dao.ExternalResourceDAO;
-import org.apache.syncope.core.persistence.api.dao.ImplementationDAO;
 import org.apache.syncope.core.persistence.api.dao.PolicyDAO;
 import org.apache.syncope.core.persistence.api.dao.RealmDAO;
+import org.apache.syncope.core.persistence.api.entity.AnyTemplate;
 import org.apache.syncope.core.persistence.api.entity.AnyTemplateRealm;
 import org.apache.syncope.core.persistence.api.entity.AnyType;
 import org.apache.syncope.core.persistence.api.entity.policy.AccountPolicy;
 import org.apache.syncope.core.persistence.api.entity.EntityFactory;
-import org.apache.syncope.core.persistence.api.entity.Implementation;
 import org.apache.syncope.core.persistence.api.entity.Policy;
 import org.apache.syncope.core.persistence.api.entity.policy.PasswordPolicy;
 import org.apache.syncope.core.persistence.api.entity.Realm;
@@ -52,9 +51,6 @@ public class RealmDataBinderImpl implements RealmDataBinder {
 
     @Autowired
     private AnyTypeDAO anyTypeDAO;
-
-    @Autowired
-    private ImplementationDAO implementationDAO;
 
     @Autowired
     private RealmDAO realmDAO;
@@ -98,11 +94,11 @@ public class RealmDataBinderImpl implements RealmDataBinder {
     }
 
     @Override
-    public Realm create(final Realm parent, final RealmTO realmTO) {
+    public Realm create(final String parentPath, final RealmTO realmTO) {
         Realm realm = entityFactory.newEntity(Realm.class);
 
         realm.setName(realmTO.getName());
-        realm.setParent(parent);
+        realm.setParent(realmDAO.findByFullPath(parentPath));
 
         if (realmTO.getPasswordPolicy() != null) {
             Policy policy = policyDAO.find(realmTO.getPasswordPolicy());
@@ -127,21 +123,14 @@ public class RealmDataBinderImpl implements RealmDataBinder {
             }
         }
 
-        realmTO.getActions().forEach(logicActionsKey -> {
-            Implementation logicAction = implementationDAO.find(logicActionsKey);
-            if (logicAction == null) {
-                LOG.debug("Invalid " + Implementation.class.getSimpleName() + " {}, ignoring...", logicActionsKey);
-            } else {
-                realm.add(logicAction);
-            }
-        });
+        realm.getActionsClassNames().addAll(realmTO.getActionsClassNames());
 
         setTemplates(realmTO, realm);
 
         realmTO.getResources().forEach(resourceKey -> {
             ExternalResource resource = resourceDAO.find(resourceKey);
             if (resource == null) {
-                LOG.debug("Invalid " + ExternalResource.class.getSimpleName() + " {}, ignoring...", resourceKey);
+                LOG.debug("Invalid " + ExternalResource.class.getSimpleName() + "{}, ignoring...", resourceKey);
             } else {
                 realm.add(resource);
             }
@@ -183,26 +172,16 @@ public class RealmDataBinderImpl implements RealmDataBinder {
             }
         }
 
-        realmTO.getActions().forEach(logicActionsKey -> {
-            Implementation logicActions = implementationDAO.find(logicActionsKey);
-            if (logicActions == null) {
-                LOG.debug("Invalid " + Implementation.class.getSimpleName() + " {}, ignoring...", logicActionsKey);
-            } else {
-                realm.add(logicActions);
-            }
-        });
-        // remove all implementations not contained in the TO
-        realm.getActions().removeAll(realm.getActions().stream().
-                filter(implementation -> !realmTO.getActions().contains(implementation.getKey())).
-                collect(Collectors.toList()));
+        realm.getActionsClassNames().clear();
+        realm.getActionsClassNames().addAll(realmTO.getActionsClassNames());
 
         setTemplates(realmTO, realm);
 
-        PropagationByResource propByRes = new PropagationByResource();
+        final PropagationByResource propByRes = new PropagationByResource();
         realmTO.getResources().forEach(resourceKey -> {
             ExternalResource resource = resourceDAO.find(resourceKey);
             if (resource == null) {
-                LOG.debug("Invalid " + ExternalResource.class.getSimpleName() + " {}, ignoring...", resourceKey);
+                LOG.debug("Invalid " + ExternalResource.class.getSimpleName() + "{}, ignoring...", resourceKey);
             } else {
                 realm.add(resource);
                 propByRes.add(ResourceOperation.CREATE, resource.getKey());
@@ -233,18 +212,15 @@ public class RealmDataBinderImpl implements RealmDataBinder {
         if (admin) {
             realmTO.setAccountPolicy(realm.getAccountPolicy() == null ? null : realm.getAccountPolicy().getKey());
             realmTO.setPasswordPolicy(realm.getPasswordPolicy() == null ? null : realm.getPasswordPolicy().getKey());
+            realmTO.getActionsClassNames().addAll(realm.getActionsClassNames());
 
-            realm.getActions().forEach(action -> {
-                realmTO.getActions().add(action.getKey());
-            });
-
-            realm.getTemplates().forEach(template -> {
+            for (AnyTemplate template : realm.getTemplates()) {
                 realmTO.getTemplates().put(template.getAnyType().getKey(), template.get());
-            });
+            }
 
-            realm.getResources().forEach(resource -> {
+            for (ExternalResource resource : realm.getResources()) {
                 realmTO.getResources().add(resource.getKey());
-            });
+            }
         }
 
         return realmTO;

@@ -29,7 +29,9 @@ import org.apache.syncope.core.persistence.api.entity.resource.Item;
 import org.apache.syncope.core.persistence.api.entity.resource.Mapping;
 import org.apache.syncope.core.persistence.api.entity.resource.MappingItem;
 import org.apache.syncope.core.persistence.api.entity.resource.OrgUnit;
+import org.apache.syncope.core.provisioning.api.propagation.PropagationActions;
 import org.identityconnectors.framework.common.objects.ObjectClass;
+import org.apache.syncope.core.provisioning.api.data.ItemTransformer;
 
 public class ExternalResourceValidator extends AbstractValidator<ExternalResourceCheck, ExternalResource> {
 
@@ -42,7 +44,30 @@ public class ExternalResourceValidator extends AbstractValidator<ExternalResourc
             return false;
         }
 
-        return true;
+        boolean isValid = true;
+
+        for (Item item : items) {
+            for (String className : item.getTransformerClassNames()) {
+                Class<?> actionsClass = null;
+                boolean isAssignable = false;
+                try {
+                    actionsClass = Class.forName(className);
+                    isAssignable = ItemTransformer.class.isAssignableFrom(actionsClass);
+                } catch (Exception e) {
+                    LOG.error("Invalid ItemTransformer specified: {}", className, e);
+                }
+
+                if (actionsClass == null || !isAssignable) {
+                    context.buildConstraintViolationWithTemplate(
+                            getTemplate(EntityViolationType.InvalidMapping,
+                                    "Invalid item trasformer class name")).
+                            addPropertyNode("itemTransformerClassName").addConstraintViolation();
+                    isValid = false;
+                }
+            }
+        }
+
+        return isValid;
     }
 
     private boolean isValid(final OrgUnit orgUnit, final ConstraintValidatorContext context) {
@@ -80,6 +105,26 @@ public class ExternalResourceValidator extends AbstractValidator<ExternalResourc
                     getTemplate(EntityViolationType.InvalidKey, "Invalid resource key")).
                     addPropertyNode("key").addConstraintViolation();
             return false;
+        }
+
+        if (!resource.getPropagationActionsClassNames().isEmpty()) {
+            for (String className : resource.getPropagationActionsClassNames()) {
+                Class<?> actionsClass = null;
+                boolean isAssignable = false;
+                try {
+                    actionsClass = Class.forName(className);
+                    isAssignable = PropagationActions.class.isAssignableFrom(actionsClass);
+                } catch (Exception e) {
+                    LOG.error("Invalid PropagationActions specified: {}", className, e);
+                }
+
+                if (actionsClass == null || !isAssignable) {
+                    context.buildConstraintViolationWithTemplate(
+                            getTemplate(EntityViolationType.InvalidResource, "Invalid actions class name")).
+                            addPropertyNode("actionsClassName").addConstraintViolation();
+                    return false;
+                }
+            }
         }
 
         final Set<AnyType> anyTypes = new HashSet<>();

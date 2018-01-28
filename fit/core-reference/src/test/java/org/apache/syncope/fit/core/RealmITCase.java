@@ -18,16 +18,15 @@
  */
 package org.apache.syncope.fit.core;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.Response;
 import org.apache.syncope.common.lib.SyncopeClientException;
@@ -35,17 +34,12 @@ import org.apache.syncope.common.lib.SyncopeConstants;
 import org.apache.syncope.common.lib.policy.AccountPolicyTO;
 import org.apache.syncope.common.lib.to.RealmTO;
 import org.apache.syncope.common.lib.policy.DefaultAccountRuleConf;
-import org.apache.syncope.common.lib.to.ImplementationTO;
 import org.apache.syncope.common.lib.to.ProvisioningResult;
 import org.apache.syncope.common.lib.types.ClientExceptionType;
-import org.apache.syncope.common.lib.types.ImplementationEngine;
-import org.apache.syncope.common.lib.types.ImplementationType;
 import org.apache.syncope.common.lib.types.PropagationTaskExecStatus;
-import org.apache.syncope.common.rest.api.RESTHeaders;
 import org.apache.syncope.common.rest.api.service.RealmService;
-import org.apache.syncope.core.provisioning.api.serialization.POJOHelper;
 import org.apache.syncope.fit.AbstractITCase;
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 
 public class RealmITCase extends AbstractITCase {
 
@@ -64,7 +58,7 @@ public class RealmITCase extends AbstractITCase {
 
         try {
             realmService.list("a name");
-            fail("This should not happen");
+            fail();
         } catch (SyncopeClientException e) {
             assertEquals(ClientExceptionType.InvalidPath, e.getType());
         }
@@ -111,7 +105,7 @@ public class RealmITCase extends AbstractITCase {
         // 4. create under invalid path
         try {
             realmService.create("a name", realm);
-            fail("This should not happen");
+            fail();
         } catch (SyncopeClientException e) {
             assertEquals(ClientExceptionType.InvalidPath, e.getType());
         }
@@ -119,7 +113,7 @@ public class RealmITCase extends AbstractITCase {
         // 5. attempt to create duplicate
         try {
             realmService.create("/odd", realm);
-            fail("This should not happen");
+            fail();
         } catch (SyncopeClientException e) {
             assertEquals(ClientExceptionType.EntityExists, e.getType());
         }
@@ -128,21 +122,13 @@ public class RealmITCase extends AbstractITCase {
     @Test
     public void deletingAccountPolicy() {
         // 1. create account policy
+        AccountPolicyTO policy = new AccountPolicyTO();
+        policy.setDescription("deletingAccountPolicy");
+
         DefaultAccountRuleConf ruleConf = new DefaultAccountRuleConf();
         ruleConf.setMinLength(3);
         ruleConf.setMaxLength(8);
-
-        ImplementationTO rule = new ImplementationTO();
-        rule.setKey("DefaultAccountRuleConf" + UUID.randomUUID().toString());
-        rule.setEngine(ImplementationEngine.JAVA);
-        rule.setType(ImplementationType.ACCOUNT_RULE);
-        rule.setBody(POJOHelper.serialize(ruleConf));
-        Response response = implementationService.create(rule);
-        rule.setKey(response.getHeaderString(RESTHeaders.RESOURCE_KEY));
-
-        AccountPolicyTO policy = new AccountPolicyTO();
-        policy.setDescription("deletingAccountPolicy");
-        policy.getRules().add(rule.getKey());
+        policy.getRuleConfs().add(ruleConf);
 
         policy = createPolicy(policy);
         assertNotNull(policy);
@@ -150,19 +136,10 @@ public class RealmITCase extends AbstractITCase {
         // 2. create realm with policy assigned
         RealmTO realm = new RealmTO();
         realm.setName("withppolicy");
-
-        response = realmService.create(SyncopeConstants.ROOT_REALM, realm);
-        RealmTO[] actuals = getObject(response.getLocation(), RealmService.class, RealmTO[].class);
-        assertNotNull(actuals);
-        assertTrue(actuals.length > 0);
-        realm = actuals[0];
-
-        String existingAccountPolicy = realm.getAccountPolicy();
-
         realm.setAccountPolicy(policy.getKey());
-        realmService.update(realm);
 
-        actuals = getObject(response.getLocation(), RealmService.class, RealmTO[].class);
+        Response response = realmService.create(SyncopeConstants.ROOT_REALM, realm);
+        RealmTO[] actuals = getObject(response.getLocation(), RealmService.class, RealmTO[].class);
         assertNotNull(actuals);
         assertTrue(actuals.length > 0);
         RealmTO actual = actuals[0];
@@ -173,7 +150,7 @@ public class RealmITCase extends AbstractITCase {
 
         // 4. verify
         actual = getRealm(actual.getFullPath()).get();
-        assertEquals(existingAccountPolicy, actual.getAccountPolicy());
+        assertNull(actual.getAccountPolicy());
     }
 
     @Test
@@ -191,7 +168,7 @@ public class RealmITCase extends AbstractITCase {
 
         try {
             realmService.list(actual.getFullPath());
-            fail("This should not happen");
+            fail();
         } catch (SyncopeClientException e) {
             assertEquals(ClientExceptionType.NotFound, e.getType());
         }
@@ -201,7 +178,7 @@ public class RealmITCase extends AbstractITCase {
     public void deleteNonEmpty() {
         try {
             realmService.delete("/even/two");
-            fail("This should not happen");
+            fail();
         } catch (SyncopeClientException e) {
             assertEquals(ClientExceptionType.AssociatedAnys, e.getType());
             assertEquals(3, e.getElements().size());

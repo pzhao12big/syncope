@@ -18,8 +18,8 @@
  */
 package org.apache.syncope.fit.console;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 import org.apache.syncope.client.console.commons.Constants;
 import org.apache.syncope.client.console.commons.status.Status;
@@ -28,8 +28,8 @@ import org.apache.wicket.Component;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.util.tester.FormTester;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.Before;
+import org.junit.Test;
 
 public class BulkActionITCase extends AbstractConsoleITCase {
 
@@ -37,7 +37,7 @@ public class BulkActionITCase extends AbstractConsoleITCase {
 
     private static final String CONTAINER = TAB_PANEL + "container:content:";
 
-    @BeforeEach
+    @Before
     public void login() {
         doLogin(ADMIN_UNAME, ADMIN_PWD);
     }

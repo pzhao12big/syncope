@@ -53,7 +53,6 @@ public class ConnIdStartStopListener implements ServletContextListener {
             "testconnectorserver.dbtable.bundle",
             "testconnectorserver.scriptedsql.bundle",
             "testconnectorserver.csvdir.bundle",
-            "testconnectorserver.ad.bundle",
             "testconnectorserver.ldap.bundle" }) {
 
             URL url = null;

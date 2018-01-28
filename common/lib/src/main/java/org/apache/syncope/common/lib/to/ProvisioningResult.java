@@ -18,6 +18,7 @@
  */
 package org.apache.syncope.common.lib.to;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.util.ArrayList;
@@ -38,6 +39,7 @@ public class ProvisioningResult<E extends EntityTO> extends AbstractBaseBean {
     private static final long serialVersionUID = 351317476398082746L;
 
     @XmlJavaTypeAdapter(XmlEntityTOAdapter.class)
+    @JsonIgnore
     private E entity;
 
     private final List<PropagationStatus> propagationStatuses = new ArrayList<>();

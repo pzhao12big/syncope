@@ -18,6 +18,7 @@
  */
 package org.apache.syncope.core.persistence.jpa.dao;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -275,8 +276,8 @@ public class JPAAnySearchDAO extends AbstractAnySearchDAO {
         return orderBy;
     }
 
-    private OrderBySupport parseOrderBy(
-            final AnyTypeKind kind, final SearchSupport svs, final List<OrderByClause> orderByClauses) {
+    private OrderBySupport parseOrderBy(final AnyTypeKind kind, final SearchSupport svs,
+            final List<OrderByClause> orderByClauses) {
 
         AnyUtils attrUtils = anyUtilsFactory.getInstance(kind);
 
@@ -288,7 +289,8 @@ public class JPAAnySearchDAO extends AbstractAnySearchDAO {
             // Manage difference among external key attribute and internal JPA @Id
             String fieldName = "key".equals(clause.getField()) ? "id" : clause.getField();
 
-            if (ReflectionUtils.findField(attrUtils.anyClass(), fieldName) == null) {
+            Field anyField = ReflectionUtils.findField(attrUtils.anyClass(), fieldName);
+            if (anyField == null) {
                 PlainSchema schema = schemaDAO.find(fieldName);
                 if (schema != null) {
                     // keep track of involvement of non-mandatory schemas in the order by clauses
@@ -317,9 +319,6 @@ public class JPAAnySearchDAO extends AbstractAnySearchDAO {
                     }
                 }
             } else {
-                // Adjust field name to column name
-                fieldName = "realm".equals(fieldName) ? "realm_id" : fieldName;
-
                 obs.views.add(svs.field());
 
                 item.select = svs.field().alias + "." + fieldName;
@@ -609,15 +608,15 @@ public class JPAAnySearchDAO extends AbstractAnySearchDAO {
         StringBuilder query = new StringBuilder("SELECT DISTINCT any_id FROM ").
                 append(svs.field().name).append(" WHERE (");
         if (cond.isFromGroup()) {
-            for (Realm current : realmDAO.findDescendants(realm)) {
-                query.append("realm_id=?").append(setParameter(parameters, current.getKey())).append(" OR ");
-            }
-            query.setLength(query.length() - 4);
-        } else {
             for (Realm current = realm; current.getParent() != null; current = current.getParent()) {
                 query.append("realm_id=?").append(setParameter(parameters, current.getKey())).append(" OR ");
             }
             query.append("realm_id=?").append(setParameter(parameters, realmDAO.getRoot().getKey()));
+        } else {
+            for (Realm current : realmDAO.findDescendants(realm)) {
+                query.append("realm_id=?").append(setParameter(parameters, current.getKey())).append(" OR ");
+            }
+            query.setLength(query.length() - 4);
         }
         query.append(')');
 

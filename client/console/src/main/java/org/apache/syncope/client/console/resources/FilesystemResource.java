@@ -62,10 +62,14 @@ public class FilesystemResource extends AbstractResource {
 
                 @Override
                 public void writeData(final Attributes attributes) throws IOException {
-                    try (InputStream resourceIS = Files.newInputStream(new File(baseDir, subPath).toPath())) {
+                    InputStream resourceIS = null;
+                    try {
+                        resourceIS = Files.newInputStream(new File(baseDir, subPath).toPath());
                         IOUtils.copy(resourceIS, attributes.getResponse().getOutputStream());
                     } catch (IOException e) {
                         LOG.error("Could not read from {}", baseDir.getAbsolutePath() + subPath, e);
+                    } finally {
+                        IOUtils.closeQuietly(resourceIS);
                     }
                 }
             });

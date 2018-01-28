@@ -35,7 +35,9 @@ public class ParametersEditModalPanel extends AbstractModalPanel<AttrTO> {
 
     private final AttrTO attrTO;
 
-    private final ConfRestClient restClient = new ConfRestClient();
+    private final BaseModal<AttrTO> parametersModal;
+
+    private final ConfRestClient confRestClient = new ConfRestClient();
 
     public ParametersEditModalPanel(
             final BaseModal<AttrTO> modal,
@@ -44,6 +46,7 @@ public class ParametersEditModalPanel extends AbstractModalPanel<AttrTO> {
 
         super(modal, pageRef);
         this.attrTO = attrTO;
+        this.parametersModal = modal;
         add(new ParametersDetailsPanel("parametersDetailsPanel", getItem()));
     }
 
@@ -55,8 +58,8 @@ public class ParametersEditModalPanel extends AbstractModalPanel<AttrTO> {
     @Override
     public void onSubmit(final AjaxRequestTarget target, final Form<?> form) {
         try {
-            restClient.set(attrTO);
-            modal.close(target);
+            confRestClient.set(attrTO);
+            parametersModal.close(target);
             SyncopeConsoleSession.get().info(getString(Constants.OPERATION_SUCCEEDED));
         } catch (Exception e) {
             LOG.error("While creating or updating AttrTO", e);

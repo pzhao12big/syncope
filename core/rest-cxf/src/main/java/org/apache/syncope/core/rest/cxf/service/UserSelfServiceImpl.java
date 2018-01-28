@@ -22,7 +22,6 @@ import javax.ws.rs.core.Response;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.syncope.common.lib.AnyOperations;
 import org.apache.syncope.common.lib.SyncopeClientException;
-import org.apache.syncope.common.lib.patch.StatusPatch;
 import org.apache.syncope.common.lib.patch.UserPatch;
 import org.apache.syncope.common.lib.to.ProvisioningResult;
 import org.apache.syncope.common.lib.to.UserTO;
@@ -78,12 +77,6 @@ public class UserSelfServiceImpl extends AbstractServiceImpl implements UserSelf
     }
 
     @Override
-    public Response status(final StatusPatch statusPatch) {
-        ProvisioningResult<UserTO> updated = logic.selfStatus(statusPatch, isNullPriorityAsync());
-        return modificationResponse(updated);
-    }
-
-    @Override
     public Response delete() {
         ProvisioningResult<UserTO> deleted = logic.selfDelete(isNullPriorityAsync());
         return modificationResponse(deleted);
@@ -96,7 +89,7 @@ public class UserSelfServiceImpl extends AbstractServiceImpl implements UserSelf
     }
 
     @Override
-    public Response requestPasswordReset(final String username, final String securityAnswer) {
+    public void requestPasswordReset(final String username, final String securityAnswer) {
         if (!syncopeLogic.isPwdResetAllowed()) {
             SyncopeClientException sce = SyncopeClientException.build(ClientExceptionType.DelegatedAdministration);
             sce.getElements().add("Password reset forbidden by configuration");
@@ -104,11 +97,10 @@ public class UserSelfServiceImpl extends AbstractServiceImpl implements UserSelf
         }
 
         logic.requestPasswordReset(username, securityAnswer);
-        return Response.noContent().build();
     }
 
     @Override
-    public Response confirmPasswordReset(final String token, final String password) {
+    public void confirmPasswordReset(final String token, final String password) {
         if (!syncopeLogic.isPwdResetAllowed()) {
             SyncopeClientException sce = SyncopeClientException.build(ClientExceptionType.DelegatedAdministration);
             sce.getElements().add("Password reset forbidden by configuration");
@@ -116,7 +108,6 @@ public class UserSelfServiceImpl extends AbstractServiceImpl implements UserSelf
         }
 
         logic.confirmPasswordReset(token, password);
-        return Response.noContent().build();
     }
 
 }

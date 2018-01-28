@@ -30,18 +30,11 @@ import org.xml.sax.SAXException;
 public interface Reportlet {
 
     /**
-     * Optional configuration.
-     *
-     * @param conf configuration
-     */
-    default void setConf(ReportletConf conf) {
-    }
-
-    /**
      * Actual data extraction for reporting.
      *
+     * @param conf configuration
      * @param handler SAX content handler for streaming result
      * @throws SAXException if there is any problem in SAX handling
      */
-    void extract(ContentHandler handler) throws SAXException;
+    void extract(ReportletConf conf, ContentHandler handler) throws SAXException;
 }

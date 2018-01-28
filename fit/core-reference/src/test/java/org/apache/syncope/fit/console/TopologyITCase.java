@@ -18,8 +18,8 @@
  */
 package org.apache.syncope.fit.console;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 import de.agilecoders.wicket.core.markup.html.bootstrap.dialog.Modal;
 import org.apache.wicket.ajax.markup.html.form.AjaxSubmitLink;
@@ -35,12 +35,12 @@ import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.form.TextField;
 import org.apache.wicket.util.tester.FormTester;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.Before;
+import org.junit.Test;
 
 public class TopologyITCase extends AbstractConsoleITCase {
 
-    @BeforeEach
+    @Before
     public void login() {
         doLogin(ADMIN_UNAME, ADMIN_PWD);
         TESTER.clickLink("body:topologyLI:topology");
@@ -114,7 +114,7 @@ public class TopologyITCase extends AbstractConsoleITCase {
 
         TESTER.executeAjaxEvent("body:toggle:outerObjectsRepeater:3:outer:form:content:provision:container:"
                 + "content:group:beans:0:fields:0", Constants.ON_CLICK);
-
+        
         TESTER.clickLink("body:toggle:outerObjectsRepeater:3:outer:form:content:toggle:container:content:"
                 + "togglePanelContainer:container:actions:actions:actionRepeater:0:action:action");
 
@@ -237,10 +237,10 @@ public class TopologyITCase extends AbstractConsoleITCase {
 
         TESTER.executeAjaxEvent("body:toggle:outerObjectsRepeater:3:outer:form:content:provision:container:"
                 + "content:group:beans:0:fields:0", Constants.ON_CLICK);
-
+        
         TESTER.clickLink("body:toggle:outerObjectsRepeater:3:outer:form:content:toggle:container:content:"
                 + "togglePanelContainer:container:actions:actions:actionRepeater:0:action:action");
-
+        
         formTester = TESTER.newFormTester(
                 "body:toggle:outerObjectsRepeater:3:outer:form:content:provision:container:content:wizard:form");
         formTester.submit("buttons:next");
@@ -443,7 +443,7 @@ public class TopologyITCase extends AbstractConsoleITCase {
                 "body:toggle:outerObjectsRepeater:2:outer:form:content:tasks:firstLevelContainer:first:"
                 + "container:content:wizard:form");
         formTester.setValue("view:name:textField", "test");
-        formTester.select("view:jobDelegate:dropDownChoiceField", 0);
+        formTester.select("view:jobDelegateClassName:dropDownChoiceField", 0);
 
         formTester.submit("buttons:next");
         TESTER.cleanupFeedbackMessages();

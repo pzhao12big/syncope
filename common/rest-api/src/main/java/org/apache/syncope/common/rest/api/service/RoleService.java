@@ -18,8 +18,6 @@
  */
 package org.apache.syncope.common.rest.api.service;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.Authorization;
 import java.io.InputStream;
 import java.util.List;
 import javax.validation.constraints.NotNull;
@@ -38,9 +36,6 @@ import org.apache.syncope.common.lib.to.RoleTO;
 /**
  * REST operations for roles.
  */
-@Api(tags = "Roles", authorizations = {
-    @Authorization(value = "BasicAuthentication")
-    , @Authorization(value = "Bearer") })
 @Path("roles")
 public interface RoleService extends JAXRSService {
 
@@ -78,22 +73,20 @@ public interface RoleService extends JAXRSService {
      * Updates the role matching the provided key.
      *
      * @param roleTO role to be stored
-     * @return an empty response if operation was successful
      */
     @PUT
     @Path("{key}")
     @Consumes({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML })
-    Response update(@NotNull RoleTO roleTO);
+    void update(@NotNull RoleTO roleTO);
 
     /**
      * Deletes the role matching the provided key.
      *
      * @param key role key to be deleted
-     * @return an empty response if operation was successful
      */
     @DELETE
     @Path("{key}")
-    Response delete(@NotNull @PathParam("key") String key);
+    void delete(@NotNull @PathParam("key") String key);
 
     /**
      * Gets the console layout information as JSON string for the role with the given key, if available.
@@ -111,20 +104,18 @@ public interface RoleService extends JAXRSService {
      *
      * @param key role key
      * @param consoleLayoutInfoIn console layout information to be set
-     * @return an empty response if operation was successful
      */
     @PUT
     @Path("{key}/consoleLayout")
     @Consumes({ MediaType.APPLICATION_JSON })
-    Response setConsoleLayoutInfo(@NotNull @PathParam("key") String key, InputStream consoleLayoutInfoIn);
+    void setConsoleLayoutInfo(@NotNull @PathParam("key") String key, InputStream consoleLayoutInfoIn);
 
     /**
      * Removes the console layout information for the role with the given key, if available.
      *
      * @param key role key
-     * @return an empty response if operation was successful
      */
     @DELETE
     @Path("{key}/consoleLayout")
-    Response removeConsoleLayoutInfo(@NotNull @PathParam("key") String key);
+    void removeConsoleLayoutInfo(@NotNull @PathParam("key") String key);
 }

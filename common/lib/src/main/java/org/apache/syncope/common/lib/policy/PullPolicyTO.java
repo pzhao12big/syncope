@@ -18,14 +18,8 @@
  */
 package org.apache.syncope.common.lib.policy;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import java.util.HashMap;
-import java.util.Map;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
-import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
-import org.apache.syncope.common.lib.jaxb.XmlGenericMapAdapter;
-import org.apache.syncope.common.lib.types.ConflictResolutionAction;
 
 @XmlRootElement(name = "pullPolicy")
 @XmlType
@@ -33,23 +27,14 @@ public class PullPolicyTO extends AbstractPolicyTO {
 
     private static final long serialVersionUID = 993024634238024242L;
 
-    private ConflictResolutionAction conflictResolutionAction;
+    private PullPolicySpec specification;
 
-    @XmlJavaTypeAdapter(XmlGenericMapAdapter.class)
-    private final Map<String, String> correlationRules = new HashMap<>();
-
-    public ConflictResolutionAction getConflictResolutionAction() {
-        return conflictResolutionAction == null
-                ? ConflictResolutionAction.IGNORE
-                : conflictResolutionAction;
+    public PullPolicySpec getSpecification() {
+        return specification;
     }
 
-    public void setConflictResolutionAction(final ConflictResolutionAction conflictResolutionAction) {
-        this.conflictResolutionAction = conflictResolutionAction;
+    public void setSpecification(final PullPolicySpec specification) {
+        this.specification = specification;
     }
 
-    @JsonProperty
-    public Map<String, String> getCorrelationRules() {
-        return correlationRules;
-    }
 }

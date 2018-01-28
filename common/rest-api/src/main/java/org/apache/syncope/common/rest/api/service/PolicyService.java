@@ -18,8 +18,6 @@
  */
 package org.apache.syncope.common.rest.api.service;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.Authorization;
 import java.util.List;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
@@ -39,9 +37,6 @@ import org.apache.syncope.common.lib.types.PolicyType;
 /**
  * REST operations for policies.
  */
-@Api(tags = "Policies", authorizations = {
-    @Authorization(value = "BasicAuthentication")
-    , @Authorization(value = "Bearer") })
 @Path("policies")
 public interface PolicyService extends JAXRSService {
 
@@ -82,21 +77,19 @@ public interface PolicyService extends JAXRSService {
      * Updates policy matching the given key.
      *
      * @param policyTO Policy to replace existing policy
-     * @return an empty response if operation was successful
      */
     @PUT
     @Path("{key}")
     @Consumes({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML })
-    Response update(@NotNull AbstractPolicyTO policyTO);
+    void update(@NotNull AbstractPolicyTO policyTO);
 
     /**
      * Delete policy matching the given key.
      *
      * @param key key of policy to be deleted
-     * @return an empty response if operation was successful
      */
     @DELETE
     @Path("{key}")
-    Response delete(@NotNull @PathParam("key") String key);
+    void delete(@NotNull @PathParam("key") String key);
 
 }

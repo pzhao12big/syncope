@@ -18,20 +18,15 @@
  */
 package org.apache.syncope.fit.core;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
-import javax.ws.rs.core.Response;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.SerializationUtils;
 import org.apache.syncope.common.lib.SyncopeClientException;
 import org.apache.syncope.common.lib.policy.AccountPolicyTO;
@@ -39,41 +34,23 @@ import org.apache.syncope.common.lib.policy.PasswordPolicyTO;
 import org.apache.syncope.common.lib.policy.PullPolicyTO;
 import org.apache.syncope.common.lib.policy.DefaultAccountRuleConf;
 import org.apache.syncope.common.lib.types.AnyTypeKind;
+import org.apache.syncope.common.lib.types.ClientExceptionType;
 import org.apache.syncope.common.lib.policy.DefaultPasswordRuleConf;
 import org.apache.syncope.common.lib.types.PolicyType;
-import org.apache.syncope.common.lib.to.ImplementationTO;
-import org.apache.syncope.common.lib.types.ImplementationEngine;
-import org.apache.syncope.common.lib.types.ImplementationType;
-import org.apache.syncope.common.rest.api.RESTHeaders;
-import org.apache.syncope.common.rest.api.service.ImplementationService;
-import org.apache.syncope.core.provisioning.api.serialization.POJOHelper;
+import org.apache.syncope.common.lib.policy.PullPolicySpec;
 import org.apache.syncope.fit.AbstractITCase;
-import org.apache.syncope.fit.core.reference.DummyPullCorrelationRule;
-import org.junit.jupiter.api.Test;
+import org.apache.syncope.fit.core.reference.TestPullRule;
+import org.junit.Test;
 
 public class PolicyITCase extends AbstractITCase {
 
-    private PullPolicyTO buildPullPolicyTO() throws IOException {
-        ImplementationTO corrRule = null;
-        try {
-            corrRule = implementationService.read("TestPullRule");
-        } catch (SyncopeClientException e) {
-            if (e.getType().getResponseStatus() == Response.Status.NOT_FOUND) {
-                corrRule = new ImplementationTO();
-                corrRule.setKey("TestPullRule");
-                corrRule.setEngine(ImplementationEngine.GROOVY);
-                corrRule.setType(ImplementationType.PULL_CORRELATION_RULE);
-                corrRule.setBody(IOUtils.toString(
-                        getClass().getResourceAsStream("/TestPullRule.groovy"), StandardCharsets.UTF_8));
-                Response response = implementationService.create(corrRule);
-                corrRule = getObject(response.getLocation(), ImplementationService.class, ImplementationTO.class);
-                assertNotNull(corrRule);
-            }
-        }
-        assertNotNull(corrRule);
-
+    private PullPolicyTO buildPullPolicyTO() {
         PullPolicyTO policy = new PullPolicyTO();
-        policy.getCorrelationRules().put(AnyTypeKind.USER.name(), corrRule.getKey());
+
+        PullPolicySpec spec = new PullPolicySpec();
+        spec.getCorrelationRules().put(AnyTypeKind.USER.name(), TestPullRule.class.getName());
+
+        policy.setSpecification(spec);
         policy.setDescription("Pull policy");
 
         return policy;
@@ -114,10 +91,27 @@ public class PolicyITCase extends AbstractITCase {
     }
 
     @Test
-    public void create() throws IOException {
-        PullPolicyTO policyTO = createPolicy(buildPullPolicyTO());
+    public void createMissingDescription() {
+        PullPolicyTO policy = new PullPolicyTO();
+        policy.setSpecification(new PullPolicySpec());
+
+        try {
+            createPolicy(policy);
+            fail();
+        } catch (SyncopeClientException e) {
+            assertEquals(ClientExceptionType.InvalidPolicy, e.getType());
+        }
+    }
+
+    @Test
+    public void create() {
+        PullPolicyTO policy = buildPullPolicyTO();
+
+        PullPolicyTO policyTO = createPolicy(policy);
+
         assertNotNull(policyTO);
-        assertEquals("TestPullRule", policyTO.getCorrelationRules().get(AnyTypeKind.USER.name()));
+        assertEquals(TestPullRule.class.getName(),
+                policyTO.getSpecification().getCorrelationRules().get(AnyTypeKind.USER.name()));
     }
 
     @Test
@@ -132,25 +126,19 @@ public class PolicyITCase extends AbstractITCase {
         assertNotNull(policy);
         assertNotEquals("ce93fcda-dc3a-4369-a7b0-a6108c261c85", policy.getKey());
 
-        ImplementationTO rule = implementationService.read(policy.getRules().get(0));
-        assertNotNull(rule);
-
-        DefaultPasswordRuleConf ruleConf = POJOHelper.deserialize(rule.getBody(), DefaultPasswordRuleConf.class);
-        ruleConf.setMaxLength(22);
-        rule.setBody(POJOHelper.serialize(ruleConf));
+        ((DefaultPasswordRuleConf) policy.getRuleConfs().get(0)).setMaxLength(22);
 
         // update new password policy
         policyService.update(policy);
         policy = policyService.read(policy.getKey());
-        assertNotNull(policy);
 
-        ruleConf = POJOHelper.deserialize(rule.getBody(), DefaultPasswordRuleConf.class);
-        assertEquals(22, ruleConf.getMaxLength());
-        assertEquals(8, ruleConf.getMinLength());
+        assertNotNull(policy);
+        assertEquals(22, ((DefaultPasswordRuleConf) policy.getRuleConfs().get(0)).getMaxLength());
+        assertEquals(8, ((DefaultPasswordRuleConf) policy.getRuleConfs().get(0)).getMinLength());
     }
 
     @Test
-    public void delete() throws IOException {
+    public void delete() {
         PullPolicyTO policy = buildPullPolicyTO();
 
         PullPolicyTO policyTO = createPolicy(policy);
@@ -160,18 +148,15 @@ public class PolicyITCase extends AbstractITCase {
 
         try {
             policyService.read(policyTO.getKey());
-            fail("This should not happen");
+            fail();
         } catch (SyncopeClientException e) {
             assertNotNull(e);
         }
     }
 
     @Test
-    public void getPullCorrelationRuleJavaClasses() {
-        Set<String> classes = syncopeService.platform().
-                getJavaImplInfo(ImplementationType.PULL_CORRELATION_RULE).get().getClasses();
-        assertEquals(1, classes.size());
-        assertEquals(DummyPullCorrelationRule.class.getName(), classes.iterator().next());
+    public void getCorrelationRules() {
+        assertEquals(1, syncopeService.platform().getPullCorrelationRules().size());
     }
 
     @Test
@@ -182,16 +167,7 @@ public class PolicyITCase extends AbstractITCase {
         DefaultAccountRuleConf ruleConf = new DefaultAccountRuleConf();
         ruleConf.setMinLength(3);
         ruleConf.setMaxLength(8);
-
-        ImplementationTO rule = new ImplementationTO();
-        rule.setKey("DefaultAccountRuleConf" + getUUIDString());
-        rule.setEngine(ImplementationEngine.JAVA);
-        rule.setType(ImplementationType.ACCOUNT_RULE);
-        rule.setBody(POJOHelper.serialize(ruleConf));
-        Response response = implementationService.create(rule);
-        rule.setKey(response.getHeaderString(RESTHeaders.RESOURCE_KEY));
-
-        policy.getRules().add(rule.getKey());
+        policy.getRuleConfs().add(ruleConf);
 
         policy = createPolicy(policy);
         assertNotNull(policy);
@@ -206,16 +182,7 @@ public class PolicyITCase extends AbstractITCase {
         DefaultAccountRuleConf ruleConf = new DefaultAccountRuleConf();
         ruleConf.setMinLength(3);
         ruleConf.setMaxLength(8);
-
-        ImplementationTO rule = new ImplementationTO();
-        rule.setKey("DefaultAccountRuleConf" + getUUIDString());
-        rule.setEngine(ImplementationEngine.JAVA);
-        rule.setType(ImplementationType.ACCOUNT_RULE);
-        rule.setBody(POJOHelper.serialize(ruleConf));
-        Response response = implementationService.create(rule);
-        rule.setKey(response.getHeaderString(RESTHeaders.RESOURCE_KEY));
-
-        policy.getRules().add(rule.getKey());
+        policy.getRuleConfs().add(ruleConf);
 
         policy = createPolicy(policy);
         assertNotNull(policy);

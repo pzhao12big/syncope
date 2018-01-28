@@ -24,7 +24,6 @@ import java.lang.management.RuntimeMXBean;
 import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -32,21 +31,19 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.annotation.Resource;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.syncope.common.lib.AbstractBaseBean;
 import org.apache.syncope.common.lib.SyncopeConstants;
-import org.apache.syncope.common.lib.info.JavaImplInfo;
 import org.apache.syncope.common.lib.info.NumbersInfo;
 import org.apache.syncope.common.lib.info.SystemInfo;
 import org.apache.syncope.common.lib.info.PlatformInfo;
 import org.apache.syncope.common.lib.to.GroupTO;
 import org.apache.syncope.common.lib.to.TypeExtensionTO;
 import org.apache.syncope.common.lib.types.AnyTypeKind;
-import org.apache.syncope.common.lib.types.ImplementationType;
 import org.apache.syncope.common.lib.types.TaskType;
 import org.apache.syncope.core.spring.security.PasswordGenerator;
 import org.apache.syncope.core.persistence.api.ImplementationLookup;
+import org.apache.syncope.core.persistence.api.ImplementationLookup.Type;
 import org.apache.syncope.core.persistence.api.dao.AnyObjectDAO;
 import org.apache.syncope.core.persistence.api.dao.AnySearchDAO;
 import org.apache.syncope.core.persistence.api.dao.AnyTypeClassDAO;
@@ -62,9 +59,7 @@ import org.apache.syncope.core.persistence.api.dao.SecurityQuestionDAO;
 import org.apache.syncope.core.persistence.api.dao.TaskDAO;
 import org.apache.syncope.core.persistence.api.dao.UserDAO;
 import org.apache.syncope.core.persistence.api.dao.VirSchemaDAO;
-import org.apache.syncope.core.persistence.api.dao.search.AnyCond;
 import org.apache.syncope.core.persistence.api.dao.search.AssignableCond;
-import org.apache.syncope.core.persistence.api.dao.search.AttributeCond;
 import org.apache.syncope.core.persistence.api.dao.search.OrderByClause;
 import org.apache.syncope.core.persistence.api.dao.search.SearchCond;
 import org.apache.syncope.core.persistence.api.entity.AnyType;
@@ -79,7 +74,6 @@ import org.apache.syncope.core.provisioning.api.GroupProvisioningManager;
 import org.apache.syncope.core.provisioning.api.UserProvisioningManager;
 import org.apache.syncope.core.provisioning.api.cache.VirAttrCache;
 import org.apache.syncope.core.provisioning.api.data.GroupDataBinder;
-import org.apache.syncope.core.provisioning.api.propagation.PropagationTaskExecutor;
 import org.apache.syncope.core.spring.security.AuthContextUtils;
 import org.apache.syncope.core.workflow.api.AnyObjectWorkflowAdapter;
 import org.apache.syncope.core.workflow.api.GroupWorkflowAdapter;
@@ -157,9 +151,6 @@ public class SyncopeLogic extends AbstractLogic<AbstractBaseBean> {
     private ConnIdBundleManager bundleManager;
 
     @Autowired
-    private PropagationTaskExecutor propagationTaskExecutor;
-
-    @Autowired
     private AnyObjectWorkflowAdapter awfAdapter;
 
     @Autowired
@@ -214,7 +205,6 @@ public class SyncopeLogic extends AbstractLogic<AbstractBaseBean> {
                             forEach(location -> PLATFORM_INFO.getConnIdLocations().add(location.toASCIIString()));
                 }
 
-                PLATFORM_INFO.setPropagationTaskExecutor(AopUtils.getTargetClass(propagationTaskExecutor).getName());
                 PLATFORM_INFO.setAnyObjectWorkflowAdapter(AopUtils.getTargetClass(awfAdapter).getName());
                 PLATFORM_INFO.setUserWorkflowAdapter(AopUtils.getTargetClass(uwfAdapter).getName());
                 PLATFORM_INFO.setGroupWorkflowAdapter(AopUtils.getTargetClass(gwfAdapter).getName());
@@ -226,14 +216,23 @@ public class SyncopeLogic extends AbstractLogic<AbstractBaseBean> {
                 PLATFORM_INFO.setPasswordGenerator(AopUtils.getTargetClass(passwordGenerator).getName());
                 PLATFORM_INFO.setAnySearchDAO(AopUtils.getTargetClass(anySearchDAO).getName());
 
-                Arrays.stream(ImplementationType.values()).
-                        forEach(type -> {
-                            JavaImplInfo javaImplInfo = new JavaImplInfo();
-                            javaImplInfo.setType(type);
-                            javaImplInfo.getClasses().addAll(implLookup.getClassNames(type));
-
-                            PLATFORM_INFO.getJavaImplInfos().add(javaImplInfo);
-                        });
+                PLATFORM_INFO.getJwtSSOProviders().addAll(implLookup.getClassNames(Type.JWT_SSO_PROVIDER));
+                PLATFORM_INFO.getReportletConfs().addAll(implLookup.getClassNames(Type.REPORTLET_CONF));
+                PLATFORM_INFO.getAccountRules().addAll(implLookup.getClassNames(Type.ACCOUNT_RULE_CONF));
+                PLATFORM_INFO.getPasswordRules().addAll(implLookup.getClassNames(Type.PASSWORD_RULE_CONF));
+                PLATFORM_INFO.getItemTransformers().addAll(
+                        implLookup.getClassNames(Type.ITEM_TRANSFORMER));
+                PLATFORM_INFO.getTaskJobs().addAll(implLookup.getClassNames(Type.TASKJOBDELEGATE));
+                PLATFORM_INFO.getReconciliationFilterBuilders().
+                        addAll(implLookup.getClassNames(Type.RECONCILIATION_FILTER_BUILDER));
+                PLATFORM_INFO.getLogicActions().addAll(implLookup.getClassNames(Type.LOGIC_ACTIONS));
+                PLATFORM_INFO.getPropagationActions().addAll(implLookup.getClassNames(Type.PROPAGATION_ACTIONS));
+                PLATFORM_INFO.getPullActions().addAll(implLookup.getClassNames(Type.PULL_ACTIONS));
+                PLATFORM_INFO.getPushActions().addAll(implLookup.getClassNames(Type.PUSH_ACTIONS));
+                PLATFORM_INFO.getPullCorrelationRules().addAll(implLookup.getClassNames(Type.PULL_CORRELATION_RULE));
+                PLATFORM_INFO.getValidators().addAll(implLookup.getClassNames(Type.VALIDATOR));
+                PLATFORM_INFO.getNotificationRecipientsProviders().
+                        addAll(implLookup.getClassNames(Type.NOTIFICATION_RECIPIENTS_PROVIDER));
             }
 
             PLATFORM_INFO.setSelfRegAllowed(isSelfRegAllowed());
@@ -363,33 +362,11 @@ public class SyncopeLogic extends AbstractLogic<AbstractBaseBean> {
 
     @PreAuthorize("isAuthenticated()")
     public Pair<Integer, List<GroupTO>> searchAssignableGroups(
-            final String realm,
-            final String term,
-            final int page,
-            final int size) {
+            final String realm, final int page, final int size) {
 
         AssignableCond assignableCond = new AssignableCond();
         assignableCond.setRealmFullPath(realm);
-
-        SearchCond searchCond;
-        if (StringUtils.isNotBlank(term)) {
-            AnyCond termCond = new AnyCond(AttributeCond.Type.ILIKE);
-            termCond.setSchema("name");
-
-            String termSearchableValue = (term.startsWith("*") && !term.endsWith("*"))
-                    ? term + "%"
-                    : (!term.startsWith("*") && term.endsWith("*"))
-                    ? "%" + term
-                    : (term.startsWith("*") && term.endsWith("*")
-                    ? term : "%" + term + "%");
-            termCond.setExpression(termSearchableValue);
-
-            searchCond = SearchCond.getAndCond(
-                    SearchCond.getLeafCond(assignableCond),
-                    SearchCond.getLeafCond(termCond));
-        } else {
-            searchCond = SearchCond.getLeafCond(assignableCond);
-        }
+        SearchCond searchCond = SearchCond.getLeafCond(assignableCond);
 
         int count = searchDAO.count(SyncopeConstants.FULL_ADMIN_REALMS, searchCond, AnyTypeKind.GROUP);
 

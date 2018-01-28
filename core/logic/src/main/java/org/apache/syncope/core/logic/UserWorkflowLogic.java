@@ -20,14 +20,14 @@ package org.apache.syncope.core.logic;
 
 import java.lang.reflect.Method;
 import java.util.List;
-import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.syncope.common.lib.patch.AnyPatch;
 import org.apache.syncope.common.lib.patch.UserPatch;
-import org.apache.syncope.common.lib.to.PropagationTaskTO;
 import org.apache.syncope.common.lib.to.UserTO;
 import org.apache.syncope.common.lib.to.WorkflowFormTO;
 import org.apache.syncope.common.lib.types.StandardEntitlement;
 import org.apache.syncope.core.persistence.api.dao.UserDAO;
+import org.apache.syncope.core.persistence.api.entity.task.PropagationTask;
 import org.apache.syncope.core.persistence.api.entity.user.User;
 import org.apache.syncope.core.provisioning.api.propagation.PropagationManager;
 import org.apache.syncope.core.provisioning.api.propagation.PropagationTaskExecutor;
@@ -70,9 +70,9 @@ public class UserWorkflowLogic extends AbstractTransactionalLogic<WorkflowFormTO
         UserPatch userPatch = new UserPatch();
         userPatch.setKey(userTO.getKey());
 
-        List<PropagationTaskTO> tasks = propagationManager.getUserUpdateTasks(
+        List<PropagationTask> tasks = propagationManager.getUserUpdateTasks(
                 new WorkflowResult<>(
-                        Pair.<UserPatch, Boolean>of(userPatch, null),
+                        new ImmutablePair<>(userPatch, null),
                         updated.getPropByRes(), updated.getPerformedTasks()));
 
         taskExecutor.execute(tasks, false);
@@ -104,9 +104,9 @@ public class UserWorkflowLogic extends AbstractTransactionalLogic<WorkflowFormTO
         if (updated.getResult() instanceof UserPatch
                 && updated.getPropByRes() != null && !updated.getPropByRes().isEmpty()) {
 
-            List<PropagationTaskTO> tasks = propagationManager.getUserUpdateTasks(
+            List<PropagationTask> tasks = propagationManager.getUserUpdateTasks(
                     new WorkflowResult<>(
-                            Pair.of((UserPatch) updated.getResult(), Boolean.TRUE),
+                            new ImmutablePair<>((UserPatch) updated.getResult(), Boolean.TRUE),
                             updated.getPropByRes(),
                             updated.getPerformedTasks()));
 

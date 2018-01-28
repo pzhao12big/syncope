@@ -20,6 +20,7 @@ package org.apache.syncope.core.persistence.api.entity;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import org.apache.syncope.common.lib.types.SAML2BindingType;
 
 public interface SAML2IdP extends Entity {
@@ -68,7 +69,6 @@ public interface SAML2IdP extends Entity {
 
     List<? extends SAML2IdPItem> getItems();
 
-    boolean add(Implementation action);
+    Set<String> getActionsClassNames();
 
-    List<? extends Implementation> getActions();
 }

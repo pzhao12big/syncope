@@ -50,7 +50,6 @@ import org.apache.syncope.common.lib.to.PlainSchemaTO;
 import org.apache.syncope.common.lib.to.UserTO;
 import org.apache.syncope.common.lib.types.AttrSchemaType;
 import org.apache.syncope.common.lib.types.SchemaType;
-import org.apache.wicket.PageReference;
 import org.apache.wicket.extensions.markup.html.tabs.AbstractTab;
 import org.apache.wicket.extensions.markup.html.tabs.ITab;
 import org.apache.wicket.markup.html.WebMarkupContainer;
@@ -178,7 +177,7 @@ public class PlainAttrs extends AbstractAttrs<PlainSchemaTO> {
                 // is important to set the schema info only after values setting
                 attrTO.setSchemaInfo(schema);
             } else {
-                attrTO = attrMap.get(schema.getKey());
+                attrTO.getValues().addAll(attrMap.get(schema.getKey()).getValues());
             }
             return attrTO;
         }).forEachOrdered(attrTO -> {
@@ -313,18 +312,9 @@ public class PlainAttrs extends AbstractAttrs<PlainSchemaTO> {
                 break;
 
             case Binary:
-                final PageReference pageReference = getPageReference();
                 panel = new BinaryFieldPanel("panel", schemaTO.getKey(), new Model<>(), schemaTO.getMimeType(),
-                        fileKey) {
+                        fileKey);
 
-                    private static final long serialVersionUID = -3268213909514986831L;
-
-                    @Override
-                    protected PageReference getPageReference() {
-                        return pageReference;
-                    }
-
-                };
                 if (required) {
                     panel.addRequiredLabel();
                 }
@@ -384,8 +374,6 @@ public class PlainAttrs extends AbstractAttrs<PlainSchemaTO> {
                                 "panel",
                                 attrTO.getSchema(),
                                 FieldPanel.class.cast(panel));
-                        // SYNCOPE-1215 the entire multifield panel must be readonly, not only its field
-                        ((MultiFieldPanel) panel).setReadOnly(availableSchemas.get(attrTO.getSchema()).isReadonly());
                     }
                     item.add(panel);
 

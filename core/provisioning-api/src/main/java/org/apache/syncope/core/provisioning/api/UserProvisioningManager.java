@@ -48,7 +48,7 @@ public interface UserProvisioningManager extends ProvisioningManager<UserTO, Use
             Set<String> excludedResources,
             boolean nullPriorityAsync);
 
-    Pair<UserPatch, List<PropagationStatus>> update(
+    Pair<String, List<PropagationStatus>> update(
             UserPatch userPatch,
             ProvisioningReport result,
             Boolean enabled,

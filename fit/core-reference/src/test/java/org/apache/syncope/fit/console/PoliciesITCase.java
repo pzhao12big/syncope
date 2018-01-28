@@ -18,23 +18,25 @@
  */
 package org.apache.syncope.fit.console;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 import de.agilecoders.wicket.core.markup.html.bootstrap.dialog.Modal;
 import org.apache.syncope.client.console.commons.Constants;
 import org.apache.syncope.client.console.pages.Policies;
 import org.apache.syncope.client.console.pages.Realms;
+import org.apache.syncope.common.lib.types.ConflictResolutionAction;
 import org.apache.wicket.Component;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.form.TextField;
 import org.apache.wicket.util.tester.FormTester;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 
 public class PoliciesITCase extends AbstractConsoleITCase {
 
-    @BeforeEach
+    @Before
     public void login() {
         doLogin(ADMIN_UNAME, ADMIN_PWD);
         TESTER.clickLink("body:configurationLI:configurationUL:policiesLI:policies");
@@ -70,7 +72,7 @@ public class PoliciesITCase extends AbstractConsoleITCase {
         Component component = findComponentByProp("description", "body:content:tabbedPanel:panel:container:content:"
                 + "searchContainer:resultTable:tablePanel:groupForm:checkgroup:dataTable", description);
 
-        assertNotNull(component);
+        Assert.assertNotNull(component);
         TESTER.executeAjaxEvent(component.getPageRelativePath(), Constants.ON_CLICK);
         TESTER.clickLink("body:content:tabbedPanel:panel:outerObjectsRepeater:1:outer:container:content:"
                 + "togglePanelContainer:container:actions:actions:actionRepeater:0:action:action");
@@ -92,7 +94,7 @@ public class PoliciesITCase extends AbstractConsoleITCase {
 
         component = findComponentByProp("description", "body:content:tabbedPanel:panel:container:content:"
                 + "searchContainer:resultTable:tablePanel:groupForm:checkgroup:dataTable", description);
-        assertNotNull(component);
+        Assert.assertNotNull(component);
     }
 
     private void createPasswordPolicy(final String description) {
@@ -120,7 +122,7 @@ public class PoliciesITCase extends AbstractConsoleITCase {
         Component component = findComponentByProp("description", "body:content:tabbedPanel:panel:container:content:"
                 + "searchContainer:resultTable:tablePanel:groupForm:checkgroup:dataTable", description);
 
-        assertNotNull(component);
+        Assert.assertNotNull(component);
         TESTER.executeAjaxEvent(component.getPageRelativePath(), Constants.ON_CLICK);
         TESTER.clickLink("body:content:tabbedPanel:panel:outerObjectsRepeater:1:outer:container:content:"
                 + "togglePanelContainer:container:actions:actions:actionRepeater:0:action:action");
@@ -138,7 +140,7 @@ public class PoliciesITCase extends AbstractConsoleITCase {
                 "body:content:tabbedPanel:panel:outerObjectsRepeater:0:outer:dialog:footer:buttons:0:button",
                 Constants.ON_CLICK);
 
-        assertNotNull(findComponentByProp("description", "body:content:tabbedPanel:panel:container:content:"
+        Assert.assertNotNull(findComponentByProp("description", "body:content:tabbedPanel:panel:container:content:"
                 + "searchContainer:resultTable:tablePanel:groupForm:checkgroup:dataTable", description));
     }
 
@@ -166,7 +168,7 @@ public class PoliciesITCase extends AbstractConsoleITCase {
         Component component = findComponentByProp("description", "body:content:tabbedPanel:panel:container:content:"
                 + "searchContainer:resultTable:tablePanel:groupForm:checkgroup:dataTable", description);
 
-        assertNotNull(component);
+        Assert.assertNotNull(component);
         TESTER.executeAjaxEvent(component.getPageRelativePath(), Constants.ON_CLICK);
         TESTER.clickLink("body:content:tabbedPanel:panel:outerObjectsRepeater:1:outer:container:content:"
                 + "togglePanelContainer:container:actions:actions:actionRepeater:0:action:action");
@@ -180,7 +182,7 @@ public class PoliciesITCase extends AbstractConsoleITCase {
                 "body:content:tabbedPanel:panel:outerObjectsRepeater:0:outer:dialog:footer:buttons:0:button",
                 Constants.ON_CLICK);
 
-        assertNotNull(findComponentByProp("description", "body:content:tabbedPanel:panel:container:content:"
+        Assert.assertNotNull(findComponentByProp("description", "body:content:tabbedPanel:panel:container:content:"
                 + "searchContainer:resultTable:tablePanel:groupForm:checkgroup:dataTable", description));
     }
 
@@ -189,7 +191,7 @@ public class PoliciesITCase extends AbstractConsoleITCase {
         Component component = findComponentByProp("description", "body:content:tabbedPanel:panel:container:content:"
                 + "searchContainer:resultTable:tablePanel:groupForm:checkgroup:dataTable", description);
 
-        assertNotNull(component);
+        Assert.assertNotNull(component);
         TESTER.executeAjaxEvent(component.getPageRelativePath(), Constants.ON_CLICK);
         TESTER.getRequest().addParameter("confirm", "true");
         TESTER.clickLink(TESTER.getComponentFromLastRenderedPage(
@@ -204,7 +206,7 @@ public class PoliciesITCase extends AbstractConsoleITCase {
         TESTER.assertInfoMessages("Operation executed successfully");
         TESTER.cleanupFeedbackMessages();
 
-        assertNull(findComponentByProp("description", "body:content:tabbedPanel:panel:container:content:"
+        Assert.assertNull(findComponentByProp("description", "body:content:tabbedPanel:panel:container:content:"
                 + "searchContainer:resultTable:tablePanel:groupForm:checkgroup:dataTable", description));
     }
 
@@ -213,7 +215,7 @@ public class PoliciesITCase extends AbstractConsoleITCase {
         Component component = findComponentByProp("description", "body:content:tabbedPanel:panel:container:content:"
                 + "searchContainer:resultTable:tablePanel:groupForm:checkgroup:dataTable", description);
 
-        assertNotNull(component);
+        Assert.assertNotNull(component);
         TESTER.executeAjaxEvent(component.getPageRelativePath(), Constants.ON_CLICK);
         TESTER.getRequest().addParameter("confirm", "true");
         TESTER.clickLink(TESTER.getComponentFromLastRenderedPage(
@@ -228,7 +230,7 @@ public class PoliciesITCase extends AbstractConsoleITCase {
         TESTER.assertInfoMessages("Operation executed successfully");
         TESTER.cleanupFeedbackMessages();
 
-        assertNull(findComponentByProp("description", "body:content:tabbedPanel:panel:container:content:"
+        Assert.assertNull(findComponentByProp("description", "body:content:tabbedPanel:panel:container:content:"
                 + "searchContainer:resultTable:tablePanel:groupForm:checkgroup:dataTable", description));
     }
 
@@ -237,7 +239,7 @@ public class PoliciesITCase extends AbstractConsoleITCase {
         Component component = findComponentByProp("description", "body:content:tabbedPanel:panel:container:content:"
                 + "searchContainer:resultTable:tablePanel:groupForm:checkgroup:dataTable", description);
 
-        assertNotNull(component);
+        Assert.assertNotNull(component);
         TESTER.executeAjaxEvent(component.getPageRelativePath(), Constants.ON_CLICK);
         TESTER.getRequest().addParameter("confirm", "true");
         TESTER.clickLink(TESTER.getComponentFromLastRenderedPage(
@@ -252,13 +254,13 @@ public class PoliciesITCase extends AbstractConsoleITCase {
         TESTER.assertInfoMessages("Operation executed successfully");
         TESTER.cleanupFeedbackMessages();
 
-        assertNull(findComponentByProp("description", "body:content:tabbedPanel:panel:container:content:"
+        Assert.assertNull(findComponentByProp("description", "body:content:tabbedPanel:panel:container:content:"
                 + "searchContainer:resultTable:tablePanel:groupForm:checkgroup:dataTable", description));
     }
 
     @Test
     public void read() {
-        assertNotNull(findComponentByProp("description", "body:content:tabbedPanel:panel:container:content:"
+        Assert.assertNotNull(findComponentByProp("description", "body:content:tabbedPanel:panel:container:content:"
                 + "searchContainer:resultTable:tablePanel:groupForm:checkgroup:dataTable", "an account policy"));
     }
 
@@ -277,7 +279,7 @@ public class PoliciesITCase extends AbstractConsoleITCase {
         Component component = findComponentByProp("description", "body:content:tabbedPanel:panel:container:content:"
                 + "searchContainer:resultTable:tablePanel:groupForm:checkgroup:dataTable", description);
 
-        assertNotNull(component);
+        Assert.assertNotNull(component);
         TESTER.executeAjaxEvent(component.getPageRelativePath(), Constants.ON_CLICK);
         TESTER.clickLink("body:content:tabbedPanel:panel:outerObjectsRepeater:1:outer:container:content:"
                 + "togglePanelContainer:container:actions:actions:actionRepeater:1:action:action");
@@ -299,12 +301,12 @@ public class PoliciesITCase extends AbstractConsoleITCase {
 
         closeCallBack(modal);
 
-        assertNotNull(findComponentByProp("description", "body:content:tabbedPanel:panel:container:content:"
+        Assert.assertNotNull(findComponentByProp("description", "body:content:tabbedPanel:panel:container:content:"
                 + "searchContainer:resultTable:tablePanel:groupForm:checkgroup:dataTable", description));
 
         deleteAccountPolicy(description);
 
-        assertNotNull(findComponentByProp("description", "body:content:tabbedPanel:panel:container:content:"
+        Assert.assertNotNull(findComponentByProp("description", "body:content:tabbedPanel:panel:container:content:"
                 + "searchContainer:resultTable:tablePanel:groupForm:checkgroup:dataTable", description + "2"));
 
         deleteAccountPolicy(description + "2");
@@ -325,7 +327,7 @@ public class PoliciesITCase extends AbstractConsoleITCase {
         Component component = findComponentByProp("description", "body:content:tabbedPanel:panel:container:content:"
                 + "searchContainer:resultTable:tablePanel:groupForm:checkgroup:dataTable", description);
 
-        assertNotNull(component);
+        Assert.assertNotNull(component);
         TESTER.executeAjaxEvent(component.getPageRelativePath(), Constants.ON_CLICK);
         TESTER.clickLink("body:content:tabbedPanel:panel:outerObjectsRepeater:1:outer:container:content:"
                 + "togglePanelContainer:container:actions:actions:actionRepeater:1:action:action");
@@ -347,12 +349,12 @@ public class PoliciesITCase extends AbstractConsoleITCase {
 
         closeCallBack(modal);
 
-        assertNotNull(findComponentByProp("description", "body:content:tabbedPanel:panel:container:content:"
+        Assert.assertNotNull(findComponentByProp("description", "body:content:tabbedPanel:panel:container:content:"
                 + "searchContainer:resultTable:tablePanel:groupForm:checkgroup:dataTable", description));
 
         deletePasswordPolicy(description);
 
-        assertNotNull(findComponentByProp("description", "body:content:tabbedPanel:panel:container:content:"
+        Assert.assertNotNull(findComponentByProp("description", "body:content:tabbedPanel:panel:container:content:"
                 + "searchContainer:resultTable:tablePanel:groupForm:checkgroup:dataTable", description + "2"));
 
         deletePasswordPolicy(description + "2");
@@ -373,7 +375,7 @@ public class PoliciesITCase extends AbstractConsoleITCase {
         Component component = findComponentByProp("description", "body:content:tabbedPanel:panel:container:content:"
                 + "searchContainer:resultTable:tablePanel:groupForm:checkgroup:dataTable", description);
 
-        assertNotNull(component);
+        Assert.assertNotNull(component);
         TESTER.executeAjaxEvent(component.getPageRelativePath(), Constants.ON_CLICK);
         TESTER.clickLink("body:content:tabbedPanel:panel:outerObjectsRepeater:1:outer:container:content:"
                 + "togglePanelContainer:container:actions:actions:actionRepeater:1:action:action");
@@ -395,12 +397,12 @@ public class PoliciesITCase extends AbstractConsoleITCase {
 
         closeCallBack(modal);
 
-        assertNotNull(findComponentByProp("description", "body:content:tabbedPanel:panel:container:content:"
+        Assert.assertNotNull(findComponentByProp("description", "body:content:tabbedPanel:panel:container:content:"
                 + "searchContainer:resultTable:tablePanel:groupForm:checkgroup:dataTable", description));
 
         deletePullPolicy(description);
 
-        assertNotNull(findComponentByProp("description", "body:content:tabbedPanel:panel:container:content:"
+        Assert.assertNotNull(findComponentByProp("description", "body:content:tabbedPanel:panel:container:content:"
                 + "searchContainer:resultTable:tablePanel:groupForm:checkgroup:dataTable", description + "2"));
 
         deletePullPolicy(description + "2");
@@ -414,7 +416,7 @@ public class PoliciesITCase extends AbstractConsoleITCase {
         Component component = findComponentByProp("description", "body:content:tabbedPanel:panel:container:content:"
                 + "searchContainer:resultTable:tablePanel:groupForm:checkgroup:dataTable", description);
 
-        assertNotNull(component);
+        Assert.assertNotNull(component);
         TESTER.executeAjaxEvent(component.getPageRelativePath(), Constants.ON_CLICK);
         TESTER.clickLink("body:content:tabbedPanel:panel:outerObjectsRepeater:1:outer:container:content:"
                 + "togglePanelContainer:container:actions:actions:actionRepeater:0:action:action");
@@ -439,7 +441,7 @@ public class PoliciesITCase extends AbstractConsoleITCase {
         component = findComponentByProp("description", "body:content:tabbedPanel:panel:container:content:"
                 + "searchContainer:resultTable:tablePanel:groupForm:checkgroup:dataTable", description);
 
-        assertNotNull(component);
+        Assert.assertNotNull(component);
         TESTER.executeAjaxEvent(component.getPageRelativePath(), Constants.ON_CLICK);
         TESTER.clickLink("body:content:tabbedPanel:panel:outerObjectsRepeater:1:outer:container:content:"
                 + "togglePanelContainer:container:actions:actions:actionRepeater:0:action:action");
@@ -456,11 +458,12 @@ public class PoliciesITCase extends AbstractConsoleITCase {
         deleteAccountPolicy(description);
     }
 
-    private void composeDefaultAccountPolicy(final String policyDescription) {
+    private void composeDefaultAccountPolicy(final String policyDescription, final String ruleName) {
+
         Component component = findComponentByProp("description", "body:content:tabbedPanel:panel:container:content:"
                 + "searchContainer:resultTable:tablePanel:groupForm:checkgroup:dataTable", policyDescription);
 
-        assertNotNull(component);
+        Assert.assertNotNull(component);
         TESTER.executeAjaxEvent(component.getPageRelativePath(), Constants.ON_CLICK);
         TESTER.clickLink("body:content:tabbedPanel:panel:outerObjectsRepeater:1:outer:container:content:"
                 + "togglePanelContainer:container:actions:actions:actionRepeater:2:action:action");
@@ -475,15 +478,26 @@ public class PoliciesITCase extends AbstractConsoleITCase {
 
         FormTester formTester = TESTER.newFormTester("body:content:tabbedPanel:panel:outerObjectsRepeater:4:"
                 + "outer:form:content:container:content:wizard:form");
-        formTester.setValue("view:rule:dropDownChoiceField", "0");
+        formTester.setValue("view:name:textField", ruleName);
+        formTester.setValue("view:configuration:dropDownChoiceField", "0");
         formTester.submit("buttons:next");
+
+        TESTER.assertModelValue("body:content:tabbedPanel:panel:outerObjectsRepeater:4:outer:form:content:"
+                + "container:content:wizard:form:view:bean:propView:1:value:spinner", 0);
 
         formTester = TESTER.newFormTester("body:content:tabbedPanel:panel:outerObjectsRepeater:4:"
                 + "outer:form:content:container:content:wizard:form");
+        formTester.setValue("view:bean:propView:1:value:spinner", "6");
         formTester.submit("buttons:finish");
 
         TESTER.assertInfoMessages("Operation executed successfully");
         TESTER.cleanupFeedbackMessages();
+
+        component = findComponentByProp("name", "body:content:tabbedPanel:panel:outerObjectsRepeater:4:outer:form:"
+                + "content:container:content:searchContainer:resultTable:tablePanel:groupForm:checkgroup:dataTable",
+                ruleName);
+
+        Assert.assertNotNull(component);
 
         TESTER.clickLink(
                 "body:content:tabbedPanel:panel:outerObjectsRepeater:4:outer:form:content:container:content:exit");
@@ -495,7 +509,7 @@ public class PoliciesITCase extends AbstractConsoleITCase {
     public void createComposeDeleteAccountPolicy() {
         final String description = "Account Policy To Be Composed";
         createAccountPolicy(description);
-        composeDefaultAccountPolicy(description);
+        composeDefaultAccountPolicy(description, "myrule");
         deleteAccountPolicy(description);
     }
 
@@ -507,7 +521,7 @@ public class PoliciesITCase extends AbstractConsoleITCase {
         Component component = findComponentByProp("description", "body:content:tabbedPanel:panel:container:content:"
                 + "searchContainer:resultTable:tablePanel:groupForm:checkgroup:dataTable", description);
 
-        assertNotNull(component);
+        Assert.assertNotNull(component);
         TESTER.executeAjaxEvent(component.getPageRelativePath(), Constants.ON_CLICK);
         TESTER.clickLink("body:content:tabbedPanel:panel:outerObjectsRepeater:1:outer:container:content:"
                 + "togglePanelContainer:container:actions:actions:actionRepeater:0:action:action");
@@ -532,7 +546,7 @@ public class PoliciesITCase extends AbstractConsoleITCase {
         component = findComponentByProp("description", "body:content:tabbedPanel:panel:container:content:"
                 + "searchContainer:resultTable:tablePanel:groupForm:checkgroup:dataTable", description);
 
-        assertNotNull(component);
+        Assert.assertNotNull(component);
         TESTER.executeAjaxEvent(component.getPageRelativePath(), Constants.ON_CLICK);
         TESTER.clickLink("body:content:tabbedPanel:panel:outerObjectsRepeater:1:outer:container:content:"
                 + "togglePanelContainer:container:actions:actions:actionRepeater:0:action:action");
@@ -557,7 +571,7 @@ public class PoliciesITCase extends AbstractConsoleITCase {
         Component component = findComponentByProp("description", "body:content:tabbedPanel:panel:container:content:"
                 + "searchContainer:resultTable:tablePanel:groupForm:checkgroup:dataTable", description);
 
-        assertNotNull(component);
+        Assert.assertNotNull(component);
         TESTER.executeAjaxEvent(component.getPageRelativePath(), Constants.ON_CLICK);
         TESTER.clickLink("body:content:tabbedPanel:panel:outerObjectsRepeater:1:outer:container:content:"
                 + "togglePanelContainer:container:actions:actions:actionRepeater:2:action:action");
@@ -572,8 +586,12 @@ public class PoliciesITCase extends AbstractConsoleITCase {
 
         FormTester formTester = TESTER.newFormTester("body:content:tabbedPanel:panel:outerObjectsRepeater:4:"
                 + "outer:form:content:container:content:wizard:form");
-        formTester.setValue("view:rule:dropDownChoiceField", "0");
+        formTester.setValue("view:name:textField", "myrule");
+        formTester.setValue("view:configuration:dropDownChoiceField", "0");
         formTester.submit("buttons:next");
+
+        TESTER.assertModelValue("body:content:tabbedPanel:panel:outerObjectsRepeater:4:outer:form:content:"
+                + "container:content:wizard:form:view:bean:propView:0:value:spinner", 0);
 
         formTester = TESTER.newFormTester("body:content:tabbedPanel:panel:outerObjectsRepeater:4:"
                 + "outer:form:content:container:content:wizard:form");
@@ -581,6 +599,12 @@ public class PoliciesITCase extends AbstractConsoleITCase {
 
         TESTER.assertInfoMessages("Operation executed successfully");
         TESTER.cleanupFeedbackMessages();
+
+        component = findComponentByProp("name", "body:content:tabbedPanel:panel:outerObjectsRepeater:4:outer:form:"
+                + "content:container:content:searchContainer:resultTable:tablePanel:groupForm:checkgroup:dataTable",
+                "myrule");
+
+        Assert.assertNotNull(component);
 
         TESTER.clickLink(
                 "body:content:tabbedPanel:panel:outerObjectsRepeater:4:outer:form:content:container:content:exit");
@@ -601,7 +625,7 @@ public class PoliciesITCase extends AbstractConsoleITCase {
         Component modal = TESTER.getComponentFromLastRenderedPage(
                 "body:content:tabbedPanel:panel:outerObjectsRepeater:0:outer");
 
-        assertNotNull(component);
+        Assert.assertNotNull(component);
         TESTER.executeAjaxEvent(component.getPageRelativePath(), Constants.ON_CLICK);
         TESTER.clickLink("body:content:tabbedPanel:panel:outerObjectsRepeater:1:outer:container:content:"
                 + "togglePanelContainer:container:actions:actions:actionRepeater:0:action:action");
@@ -623,7 +647,7 @@ public class PoliciesITCase extends AbstractConsoleITCase {
         component = findComponentByProp("description", "body:content:tabbedPanel:panel:container:content:"
                 + "searchContainer:resultTable:tablePanel:groupForm:checkgroup:dataTable", description + "2");
 
-        assertNotNull(component);
+        Assert.assertNotNull(component);
         TESTER.executeAjaxEvent(component.getPageRelativePath(), Constants.ON_CLICK);
         TESTER.clickLink("body:content:tabbedPanel:panel:outerObjectsRepeater:1:outer:container:content:"
                 + "togglePanelContainer:container:actions:actions:actionRepeater:0:action:action");
@@ -647,8 +671,8 @@ public class PoliciesITCase extends AbstractConsoleITCase {
 
         Component component = findComponentByProp("description", "body:content:tabbedPanel:panel:container:content:"
                 + "searchContainer:resultTable:tablePanel:groupForm:checkgroup:dataTable", description);
-        assertNotNull(component);
 
+        Assert.assertNotNull(component);
         TESTER.executeAjaxEvent(component.getPageRelativePath(), Constants.ON_CLICK);
         TESTER.clickLink("body:content:tabbedPanel:panel:outerObjectsRepeater:1:outer:container:content:"
                 + "togglePanelContainer:container:actions:actions:actionRepeater:2:action:action");
@@ -664,21 +688,37 @@ public class PoliciesITCase extends AbstractConsoleITCase {
         TESTER.executeAjaxEvent("body:content:tabbedPanel:panel:outerObjectsRepeater:5:outer:form:content:"
                 + "correlationRules:multiValueContainer:innerForm:content:panelPlus:add", Constants.ON_CLICK);
 
-        component = findComponentById(
-                "body:content:tabbedPanel:panel:outerObjectsRepeater:5:outer:form:content:"
-                + "correlationRules:multiValueContainer:innerForm:content:view:0:panel:rule",
-                "dropDownChoiceField");
-        assertNotNull(component);
-
-        formTester.setValue(component, "0");
-        TESTER.executeAjaxEvent(component, Constants.ON_CHANGE);
-        formTester.setValue(component, "0");
+        formTester.setValue("content:conflictResolutionAction:dropDownChoiceField", "1");
+        formTester.setValue("content:correlationRules:multiValueContainer:innerForm:content:view:0:panel:"
+                + "jsonRule:paletteField:recorder", "fullname");
 
         TESTER.clickLink(
                 "body:content:tabbedPanel:panel:outerObjectsRepeater:5:outer:dialog:footer:inputs:0:submit");
 
         TESTER.assertInfoMessages("Operation executed successfully");
         TESTER.cleanupFeedbackMessages();
+
+        closeCallBack(modal);
+
+        component = findComponentByProp("description", "body:content:tabbedPanel:panel:container:content:"
+                + "searchContainer:resultTable:tablePanel:groupForm:checkgroup:dataTable", description);
+
+        Assert.assertNotNull(component);
+        TESTER.executeAjaxEvent(component.getPageRelativePath(), Constants.ON_CLICK);
+        TESTER.clickLink("body:content:tabbedPanel:panel:outerObjectsRepeater:1:outer:container:content:"
+                + "togglePanelContainer:container:actions:actions:actionRepeater:2:action:action");
+
+        TESTER.assertComponent("body:content:tabbedPanel:panel:outerObjectsRepeater:5:outer", Modal.class);
+
+        TESTER.assertModelValue("body:content:tabbedPanel:panel:outerObjectsRepeater:5:outer:form:"
+                + "content:conflictResolutionAction:dropDownChoiceField", ConflictResolutionAction.FIRSTMATCH);
+
+        TESTER.assertModelValue("body:content:tabbedPanel:panel:outerObjectsRepeater:5:outer:form:"
+                + "content:correlationRules:multiValueContainer:innerForm:content:view:0:panel:"
+                + "jsonRule:paletteField:recorder", "fullname");
+
+        TESTER.clickLink(
+                "body:content:tabbedPanel:panel:outerObjectsRepeater:5:outer:dialog:footer:buttons:0:button");
 
         closeCallBack(modal);
 
@@ -690,7 +730,7 @@ public class PoliciesITCase extends AbstractConsoleITCase {
         final String description = "SYNCOPE-1030";
         // Create account policy
         createAccountPolicy(description);
-        composeDefaultAccountPolicy(description);
+        composeDefaultAccountPolicy(description, "issue");
 
         // goto realms
         TESTER.clickLink("body:realmsLI:realms");

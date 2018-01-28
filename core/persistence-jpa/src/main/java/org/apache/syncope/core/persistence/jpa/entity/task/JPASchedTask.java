@@ -22,16 +22,12 @@ import java.util.Date;
 import javax.persistence.Basic;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
-import javax.persistence.OneToOne;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
-import org.apache.syncope.common.lib.types.ImplementationType;
-import org.apache.syncope.core.persistence.api.entity.Implementation;
 import org.apache.syncope.core.persistence.api.entity.task.SchedTask;
-import org.apache.syncope.core.persistence.jpa.entity.JPAImplementation;
 import org.apache.syncope.core.persistence.jpa.validation.entity.SchedTaskCheck;
 
 @Entity
@@ -46,8 +42,7 @@ public class JPASchedTask extends AbstractTask implements SchedTask {
 
     private String cronExpression;
 
-    @OneToOne(optional = false)
-    private JPAImplementation jobDelegate;
+    private String jobDelegateClassName;
 
     @NotNull
     private String name;
@@ -88,15 +83,13 @@ public class JPASchedTask extends AbstractTask implements SchedTask {
     }
 
     @Override
-    public Implementation getJobDelegate() {
-        return jobDelegate;
+    public String getJobDelegateClassName() {
+        return jobDelegateClassName;
     }
 
     @Override
-    public void setJobDelegate(final Implementation jobDelegate) {
-        checkType(jobDelegate, JPAImplementation.class);
-        checkImplementationType(jobDelegate, ImplementationType.TASKJOB_DELEGATE);
-        this.jobDelegate = (JPAImplementation) jobDelegate;
+    public void setJobDelegateClassName(final String jobDelegateClassName) {
+        this.jobDelegateClassName = jobDelegateClassName;
     }
 
     @Override

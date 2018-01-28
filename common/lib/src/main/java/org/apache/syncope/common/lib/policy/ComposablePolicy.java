@@ -21,12 +21,12 @@ package org.apache.syncope.common.lib.policy;
 import java.io.Serializable;
 import java.util.List;
 
-public interface ComposablePolicy extends Serializable {
+public interface ComposablePolicy<T extends RuleConf> extends Serializable {
 
     /**
      * Return policy rules.
      *
      * @return policy rules.
      */
-    List<String> getRules();
+    List<T> getRuleConfs();
 }

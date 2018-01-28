@@ -18,6 +18,7 @@
  */
 package org.apache.syncope.common.lib.to;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.HashMap;
 import java.util.Map;
@@ -38,11 +39,12 @@ public class PullTaskTO extends AbstractProvisioningTaskTO implements Templatabl
 
     private PullMode pullMode;
 
-    private String reconFilterBuilder;
+    private String reconciliationFilterBuilderClassName;
 
     private String destinationRealm;
 
     @XmlJavaTypeAdapter(XmlGenericMapAdapter.class)
+    @JsonIgnore
     private final Map<String, AnyTO> templates = new HashMap<>();
 
     public PullMode getPullMode() {
@@ -53,12 +55,12 @@ public class PullTaskTO extends AbstractProvisioningTaskTO implements Templatabl
         this.pullMode = pullMode;
     }
 
-    public String getReconFilterBuilder() {
-        return reconFilterBuilder;
+    public String getReconciliationFilterBuilderClassName() {
+        return reconciliationFilterBuilderClassName;
     }
 
-    public void setReconFilterBuilder(final String reconFilterBuilder) {
-        this.reconFilterBuilder = reconFilterBuilder;
+    public void setReconciliationFilterBuilderClassName(final String reconciliationFilterBuilderClassName) {
+        this.reconciliationFilterBuilderClassName = reconciliationFilterBuilderClassName;
     }
 
     public String getDestinationRealm() {

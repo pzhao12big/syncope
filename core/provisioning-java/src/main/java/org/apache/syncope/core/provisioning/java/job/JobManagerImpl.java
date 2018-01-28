@@ -25,15 +25,12 @@ import java.sql.SQLException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import javax.sql.DataSource;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.syncope.common.lib.SyncopeConstants;
-import org.apache.syncope.common.lib.types.ImplementationType;
 import org.apache.syncope.common.lib.types.TaskType;
 import org.apache.syncope.core.persistence.api.dao.ConfDAO;
 import org.apache.syncope.core.persistence.api.dao.NotFoundException;
@@ -49,8 +46,8 @@ import org.apache.syncope.core.spring.security.AuthContextUtils;
 import org.apache.syncope.core.spring.ApplicationContextProvider;
 import org.apache.syncope.core.persistence.api.SyncopeLoader;
 import org.apache.syncope.core.persistence.api.DomainsHolder;
-import org.apache.syncope.core.persistence.api.dao.ImplementationDAO;
-import org.apache.syncope.core.persistence.api.entity.Implementation;
+import org.apache.syncope.core.provisioning.java.pushpull.PushJobDelegate;
+import org.apache.syncope.core.provisioning.java.pushpull.PullJobDelegate;
 import org.quartz.CronScheduleBuilder;
 import org.quartz.Job;
 import org.quartz.JobBuilder;
@@ -72,11 +69,8 @@ import org.identityconnectors.common.IOUtil;
 import org.quartz.impl.jdbcjobstore.Constants;
 import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.apache.syncope.core.persistence.api.entity.task.PullTask;
-import org.apache.syncope.core.provisioning.api.job.SchedTaskJobDelegate;
 import org.apache.syncope.core.provisioning.java.job.notification.NotificationJob;
 import org.apache.syncope.core.provisioning.java.job.report.ReportJob;
-import org.apache.syncope.core.provisioning.java.pushpull.PullJobDelegate;
-import org.apache.syncope.core.provisioning.java.pushpull.PushJobDelegate;
 
 public class JobManagerImpl implements JobManager, SyncopeLoader {
 
@@ -97,9 +91,6 @@ public class JobManagerImpl implements JobManager, SyncopeLoader {
     @Autowired
     private ConfDAO confDAO;
 
-    @Autowired
-    private ImplementationDAO implementationDAO;
-
     private boolean disableQuartzInstance;
 
     public void setDisableQuartzInstance(final boolean disableQuartzInstance) {
@@ -116,8 +107,7 @@ public class JobManagerImpl implements JobManager, SyncopeLoader {
             return false;
         }
 
-        DataSource dataSource = domainsHolder.getDomains().get(SyncopeConstants.MASTER_DOMAIN);
-        Connection conn = DataSourceUtils.getConnection(dataSource);
+        Connection conn = DataSourceUtils.getConnection(domainsHolder.getDomains().get(SyncopeConstants.MASTER_DOMAIN));
         PreparedStatement stmt = null;
         ResultSet resultSet = null;
         try {
@@ -134,7 +124,7 @@ public class JobManagerImpl implements JobManager, SyncopeLoader {
         } finally {
             IOUtil.quietClose(resultSet);
             IOUtil.quietClose(stmt);
-            DataSourceUtils.releaseConnection(conn, dataSource);
+            IOUtil.quietClose(conn);
         }
     }
 
@@ -149,7 +139,7 @@ public class JobManagerImpl implements JobManager, SyncopeLoader {
             final Map<String, Object> jobMap)
             throws SchedulerException {
 
-        if (isRunning(new JobKey(jobName, Scheduler.DEFAULT_GROUP))) {
+        if (isRunningHere(new JobKey(jobName, Scheduler.DEFAULT_GROUP))) {
             LOG.debug("Job {} already running, cancel", jobName);
             return;
         }
@@ -224,26 +214,16 @@ public class JobManagerImpl implements JobManager, SyncopeLoader {
         TaskJob job = createSpringBean(TaskJob.class);
         job.setTaskKey(task.getKey());
 
-        Implementation jobDelegate = task.getJobDelegate() == null
-                ? task instanceof PullTask
-                        ? implementationDAO.find(ImplementationType.TASKJOB_DELEGATE).stream().
-                                filter(impl -> PullJobDelegate.class.getName().equals(impl.getBody())).
-                                findFirst().orElse(null)
-                        : task instanceof PushTask
-                                ? implementationDAO.find(ImplementationType.TASKJOB_DELEGATE).stream().
-                                        filter(impl -> PushJobDelegate.class.getName().equals(impl.getBody())).
-                                        findFirst().orElse(null)
-                                : null
-                : task.getJobDelegate();
-        if (jobDelegate == null) {
-            throw new IllegalArgumentException("Task " + task
-                    + " does not provide any " + SchedTaskJobDelegate.class.getSimpleName());
-        }
+        String jobDelegateClassName = task instanceof PullTask
+                ? PullJobDelegate.class.getName()
+                : task instanceof PushTask
+                        ? PushJobDelegate.class.getName()
+                        : task.getJobDelegateClassName();
 
         Map<String, Object> jobMap = new HashMap<>();
         jobMap.put(JobManager.DOMAIN_KEY, AuthContextUtils.getDomain());
-        jobMap.put(TaskJob.DELEGATE_IMPLEMENTATION, jobDelegate.getKey());
-        jobMap.put(JobManager.INTERRUPT_MAX_RETRIES_KEY, interruptMaxRetries);
+        jobMap.put(TaskJob.DELEGATE_CLASS_KEY, jobDelegateClassName);
+        jobMap.put(INTERRUPT_MAX_RETRIES_KEY, interruptMaxRetries);
 
         registerJob(
                 JobNamer.getJobKey(task).getName(),
@@ -263,7 +243,7 @@ public class JobManagerImpl implements JobManager, SyncopeLoader {
 
         Map<String, Object> jobMap = new HashMap<>();
         jobMap.put(JobManager.DOMAIN_KEY, AuthContextUtils.getDomain());
-        jobMap.put(JobManager.INTERRUPT_MAX_RETRIES_KEY, interruptMaxRetries);
+        jobMap.put(INTERRUPT_MAX_RETRIES_KEY, interruptMaxRetries);
 
         registerJob(JobNamer.getJobKey(report).getName(), job, report.getCronExpression(), startAt, jobMap);
     }
@@ -309,8 +289,6 @@ public class JobManagerImpl implements JobManager, SyncopeLoader {
             } catch (SchedulerException e) {
                 LOG.error("Could not put Quartz instance {} in standby", instanceId, e);
             }
-
-            return;
         }
 
         final Pair<String, Long> conf = AuthContextUtils.execWithAuthContext(SyncopeConstants.MASTER_DOMAIN, () -> {
@@ -334,36 +312,22 @@ public class JobManagerImpl implements JobManager, SyncopeLoader {
                 Set<SchedTask> tasks = new HashSet<>(taskDAO.<SchedTask>findAll(TaskType.SCHEDULED));
                 tasks.addAll(taskDAO.<PullTask>findAll(TaskType.PULL));
                 tasks.addAll(taskDAO.<PushTask>findAll(TaskType.PUSH));
-
-                boolean loadException = false;
-                for (Iterator<SchedTask> it = tasks.iterator(); it.hasNext() && !loadException;) {
-                    SchedTask task = it.next();
+                tasks.forEach(task -> {
                     try {
                         register(task, task.getStartAt(), conf.getRight());
                     } catch (Exception e) {
                         LOG.error("While loading job instance for task " + task.getKey(), e);
-                        loadException = true;
                     }
-                }
+                });
 
-                if (loadException) {
-                    LOG.debug("Errors while loading job instances for tasks, aborting");
-                } else {
-                    // 2. jobs for Reports
-                    for (Iterator<Report> it = reportDAO.findAll().iterator(); it.hasNext() && !loadException;) {
-                        Report report = it.next();
-                        try {
-                            register(report, null, conf.getRight());
-                        } catch (Exception e) {
-                            LOG.error("While loading job instance for report " + report.getName(), e);
-                            loadException = true;
-                        }
+                // 2. jobs for Reports
+                reportDAO.findAll().forEach(report -> {
+                    try {
+                        register(report, null, conf.getRight());
+                    } catch (Exception e) {
+                        LOG.error("While loading job instance for report " + report.getName(), e);
                     }
-
-                    if (loadException) {
-                        LOG.debug("Errors while loading job instances for reports, aborting");
-                    }
-                }
+                });
 
                 return null;
             });
@@ -371,7 +335,7 @@ public class JobManagerImpl implements JobManager, SyncopeLoader {
 
         Map<String, Object> jobMap = new HashMap<>();
         jobMap.put(JobManager.DOMAIN_KEY, AuthContextUtils.getDomain());
-        jobMap.put(JobManager.INTERRUPT_MAX_RETRIES_KEY, conf.getRight());
+        jobMap.put(INTERRUPT_MAX_RETRIES_KEY, conf.getRight());
 
         // 3. NotificationJob
         if (StringUtils.isBlank(conf.getLeft())) {

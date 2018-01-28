@@ -574,7 +574,7 @@ public abstract class AbstractProvisioningJobDelegate<T extends ProvisioningTask
     }
 
     @SuppressWarnings("unchecked")
-    protected Class<T> getTaskClassReference() {
+    private Class<T> getTaskClassReference() {
         return (Class<T>) ((ParameterizedType) this.getClass().getGenericSuperclass()).getActualTypeArguments()[0];
     }
 }

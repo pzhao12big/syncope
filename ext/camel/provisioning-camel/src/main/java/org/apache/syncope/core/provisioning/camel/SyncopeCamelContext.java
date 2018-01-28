@@ -92,12 +92,16 @@ public class SyncopeCamelContext {
             Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
             List<RouteDefinition> routeDefs = new ArrayList<>();
             for (String route : routes) {
-                try (InputStream input = IOUtils.toInputStream(route, StandardCharsets.UTF_8)) {
+                InputStream input = null;
+                try {
+                    input = IOUtils.toInputStream(route, StandardCharsets.UTF_8);
                     LSInput lsinput = domImpl.createLSInput();
                     lsinput.setByteStream(input);
 
                     Node routeElement = parser.parse(lsinput).getDocumentElement();
                     routeDefs.add(unmarshaller.unmarshal(routeElement, RouteDefinition.class).getValue());
+                } finally {
+                    IOUtils.closeQuietly(input);
                 }
             }
             camelContext.addRouteDefinitions(routeDefs);

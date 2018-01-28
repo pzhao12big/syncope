@@ -18,21 +18,13 @@
  */
 package org.apache.syncope.core.persistence.api.entity.policy;
 
-import java.util.List;
-import java.util.Optional;
-import org.apache.syncope.common.lib.types.ConflictResolutionAction;
-import org.apache.syncope.core.persistence.api.entity.AnyType;
+import org.apache.syncope.common.lib.policy.PullPolicySpec;
 import org.apache.syncope.core.persistence.api.entity.Policy;
 
 public interface PullPolicy extends Policy {
 
-    ConflictResolutionAction getConflictResolutionAction();
+    PullPolicySpec getSpecification();
 
-    void setConflictResolutionAction(ConflictResolutionAction conflictResolutionAction);
+    void setSpecification(PullPolicySpec spec);
 
-    boolean add(CorrelationRule rule);
-
-    Optional<? extends CorrelationRule> getCorrelationRule(AnyType anyType);
-
-    List<? extends CorrelationRule> getCorrelationRules();
 }

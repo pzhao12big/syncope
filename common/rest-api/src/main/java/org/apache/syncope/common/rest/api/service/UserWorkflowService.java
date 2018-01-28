@@ -18,8 +18,6 @@
  */
 package org.apache.syncope.common.rest.api.service;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.Authorization;
 import java.util.List;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
@@ -35,9 +33,6 @@ import org.apache.syncope.common.lib.to.WorkflowFormTO;
 /**
  * REST operations related to user workflow.
  */
-@Api(tags = "UserWorkflow", authorizations = {
-    @Authorization(value = "BasicAuthentication")
-    , @Authorization(value = "Bearer") })
 @Path("userworkflow")
 public interface UserWorkflowService extends JAXRSService {
 

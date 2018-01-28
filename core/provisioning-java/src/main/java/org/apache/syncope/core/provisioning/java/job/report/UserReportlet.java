@@ -260,11 +260,11 @@ public class UserReportlet extends AbstractReportlet {
                     atts.clear();
 
                     atts.addAttribute("", "", "anyObjectKey",
-                            ReportXMLConst.XSD_STRING, rel.getOtherEndKey());
+                            ReportXMLConst.XSD_STRING, rel.getRightKey());
                     handler.startElement("", "", "relationship", atts);
 
                     if (conf.getFeatures().contains(Feature.resources)) {
-                        for (URelationship actualRel : user.getRelationships(rel.getOtherEndKey())) {
+                        for (URelationship actualRel : user.getRelationships(rel.getRightKey())) {
                             doExtractResources(
                                     handler, anyObjectDataBinder.getAnyObjectTO(actualRel.getRightEnd(), true));
                         }
@@ -282,15 +282,15 @@ public class UserReportlet extends AbstractReportlet {
                     atts.clear();
 
                     atts.addAttribute("", "", "groupKey",
-                            ReportXMLConst.XSD_STRING, memb.getGroupKey());
+                            ReportXMLConst.XSD_STRING, memb.getRightKey());
                     atts.addAttribute("", "", "groupName", ReportXMLConst.XSD_STRING, memb.getGroupName());
                     handler.startElement("", "", "membership", atts);
 
                     if (conf.getFeatures().contains(Feature.resources)) {
-                        UMembership actualMemb = user.getMembership(memb.getGroupKey()).orElse(null);
+                        UMembership actualMemb = user.getMembership(memb.getRightKey()).orElse(null);
                         if (actualMemb == null) {
                             LOG.warn("Unexpected: cannot find membership for group {} for user {}",
-                                    memb.getGroupKey(), user);
+                                    memb.getRightKey(), user);
                         } else {
                             doExtractResources(handler, groupDataBinder.getGroupTO(actualMemb.getRightEnd(), true));
                         }

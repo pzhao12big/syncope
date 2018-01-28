@@ -18,8 +18,8 @@
  */
 package org.apache.syncope.client.cli.commands;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -29,11 +29,12 @@ import java.util.Properties;
 import javax.sql.DataSource;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
+import org.apache.commons.io.IOUtils;
 import org.apache.syncope.client.cli.Input;
 import org.apache.syncope.client.cli.commands.migrate.MigrateCommand;
 import org.apache.syncope.core.persistence.jpa.content.ContentLoaderHandler;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
@@ -44,15 +45,19 @@ public class MigrateTest {
 
     private static String BASE_PATH;
 
-    @BeforeAll
+    @BeforeClass
     public static void before() {
         Properties props = new Properties();
-        try (InputStream propStream = MigrateTest.class.getResourceAsStream("/test.properties")) {
+        InputStream propStream = null;
+        try {
+            propStream = MigrateTest.class.getResourceAsStream("/test.properties");
             props.load(propStream);
 
             BASE_PATH = props.getProperty("testClasses");
         } catch (IOException e) {
             fail(e.getMessage());
+        } finally {
+            IOUtils.closeQuietly(propStream);
         }
         assertNotNull(BASE_PATH);
     }
@@ -75,10 +80,14 @@ public class MigrateTest {
 
         // 3. attempt to set initial content from the migrated MasterContent.xml
         SAXParserFactory factory = SAXParserFactory.newInstance();
-        try (InputStream in = new FileInputStream(args[3])) {
+        InputStream in = null;
+        try {
+            in = new FileInputStream(args[3]);
 
             SAXParser parser = factory.newSAXParser();
             parser.parse(in, new ContentLoaderHandler(dataSource, ROOT_ELEMENT, false));
+        } finally {
+            IOUtils.closeQuietly(in);
         }
     }
 }

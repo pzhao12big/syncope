@@ -56,12 +56,11 @@ public abstract class AbstractAnyObjectWorkflowAdapter
         return doCreate(anyObjectTO);
     }
 
-    protected abstract WorkflowResult<AnyObjectPatch> doUpdate(AnyObject anyObject, AnyObjectPatch anyObjectPatch);
+    protected abstract WorkflowResult<String> doUpdate(AnyObject anyObject, AnyObjectPatch anyObjectPatch);
 
     @Override
-    public WorkflowResult<AnyObjectPatch> update(final AnyObjectPatch anyObjectPatch) {
-        WorkflowResult<AnyObjectPatch> result =
-                doUpdate(anyObjectDAO.authFind(anyObjectPatch.getKey()), anyObjectPatch);
+    public WorkflowResult<String> update(final AnyObjectPatch anyObjectPatch) {
+        WorkflowResult<String> result = doUpdate(anyObjectDAO.authFind(anyObjectPatch.getKey()), anyObjectPatch);
 
         // re-read to ensure that requester's administration rights are still valid
         anyObjectDAO.authFind(anyObjectPatch.getKey());

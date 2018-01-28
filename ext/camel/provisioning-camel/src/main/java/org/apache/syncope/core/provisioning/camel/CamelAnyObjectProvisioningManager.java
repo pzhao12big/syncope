@@ -66,7 +66,7 @@ public class CamelAnyObjectProvisioningManager
     }
 
     @Override
-    public Pair<AnyObjectPatch, List<PropagationStatus>> update(
+    public Pair<String, List<PropagationStatus>> update(
             final AnyObjectPatch anyPatch, final boolean nullPriorityAsync) {
 
         return update(anyPatch, Collections.<String>emptySet(), nullPriorityAsync);
@@ -75,7 +75,7 @@ public class CamelAnyObjectProvisioningManager
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     @Override
     @SuppressWarnings("unchecked")
-    public Pair<AnyObjectPatch, List<PropagationStatus>> update(
+    public Pair<String, List<PropagationStatus>> update(
             final AnyObjectPatch anyPatch, final Set<String> excludedResources, final boolean nullPriorityAsync) {
 
         PollingConsumer pollingConsumer = getConsumer("direct:updateAnyObjectPort");
@@ -135,7 +135,7 @@ public class CamelAnyObjectProvisioningManager
             throw (RuntimeException) exchange.getProperty(Exchange.EXCEPTION_CAUGHT);
         }
 
-        return exchange.getIn().getBody(AnyObjectPatch.class).getKey();
+        return exchange.getIn().getBody(String.class);
     }
 
     @Override
@@ -150,7 +150,7 @@ public class CamelAnyObjectProvisioningManager
             throw (RuntimeException) exchange.getProperty(Exchange.EXCEPTION_CAUGHT);
         }
 
-        return exchange.getIn().getBody(AnyObjectPatch.class).getKey();
+        return exchange.getIn().getBody(String.class);
     }
 
     @Override

@@ -19,7 +19,6 @@
 package org.apache.syncope.core.provisioning.java.propagation;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -28,7 +27,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.syncope.common.lib.collections.IteratorChain;
 import org.apache.syncope.common.lib.to.ExecTO;
 import org.apache.syncope.common.lib.to.PropagationTaskTO;
@@ -49,6 +47,7 @@ import org.apache.syncope.core.provisioning.api.TimeoutException;
 import org.apache.syncope.core.provisioning.api.propagation.PropagationActions;
 import org.apache.syncope.core.provisioning.api.propagation.PropagationReporter;
 import org.apache.syncope.core.provisioning.api.propagation.PropagationTaskExecutor;
+import org.apache.syncope.core.spring.ApplicationContextProvider;
 import org.apache.syncope.core.provisioning.java.utils.ConnObjectUtils;
 import org.apache.syncope.core.provisioning.api.utils.ExceptionUtils2;
 import org.apache.syncope.core.persistence.api.dao.AnyObjectDAO;
@@ -65,9 +64,7 @@ import org.apache.syncope.core.provisioning.api.cache.VirAttrCacheValue;
 import org.apache.syncope.core.provisioning.api.data.TaskDataBinder;
 import org.apache.syncope.core.provisioning.api.notification.NotificationManager;
 import org.apache.syncope.core.provisioning.api.propagation.PropagationException;
-import org.apache.syncope.core.provisioning.api.serialization.POJOHelper;
 import org.apache.syncope.core.provisioning.java.utils.MappingUtils;
-import org.apache.syncope.core.spring.ImplementationManager;
 import org.identityconnectors.framework.common.exceptions.ConnectorException;
 import org.identityconnectors.framework.common.objects.Attribute;
 import org.identityconnectors.framework.common.objects.AttributeBuilder;
@@ -80,6 +77,7 @@ import org.identityconnectors.framework.common.objects.Uid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.transaction.annotation.Transactional;
 
 @Transactional(rollbackFor = { Throwable.class })
@@ -157,20 +155,24 @@ public abstract class AbstractPropagationTaskExecutor implements PropagationTask
     protected VirAttrCache virAttrCache;
 
     @Override
-    public TaskExec execute(final PropagationTaskTO task) {
+    public TaskExec execute(final PropagationTask task) {
         return execute(task, null);
     }
 
     protected List<PropagationActions> getPropagationActions(final ExternalResource resource) {
         List<PropagationActions> result = new ArrayList<>();
 
-        resource.getPropagationActions().forEach(impl -> {
-            try {
-                result.add(ImplementationManager.build(impl));
-            } catch (Exception e) {
-                LOG.error("While building {}", impl, e);
-            }
-        });
+        if (!resource.getPropagationActionsClassNames().isEmpty()) {
+            resource.getPropagationActionsClassNames().forEach(className -> {
+                try {
+                    Class<?> actionsClass = Class.forName(className);
+                    result.add((PropagationActions) ApplicationContextProvider.getBeanFactory().
+                            createBean(actionsClass, AbstractBeanDefinition.AUTOWIRE_BY_TYPE, true));
+                } catch (ClassNotFoundException e) {
+                    LOG.error("Invalid PropagationAction class name '{}' for resource {}", resource, className, e);
+                }
+            });
+        }
 
         return result;
     }
@@ -212,7 +214,7 @@ public abstract class AbstractPropagationTaskExecutor implements PropagationTask
                     new ObjectClass(task.getObjectClassName()), attributes, null, propagationAttempted);
         } else {
             // 1. check if rename is really required
-            Name newName = AttributeUtil.getNameFromAttributes(attributes);
+            Name newName = (Name) AttributeUtil.find(Name.NAME, attributes);
 
             LOG.debug("Rename required with value {}", newName);
 
@@ -241,7 +243,7 @@ public abstract class AbstractPropagationTaskExecutor implements PropagationTask
 
             if (originalAttrs.equals(attributes)) {
                 LOG.debug("Don't need to propagate anything: {} is equal to {}", originalAttrs, attributes);
-                result = AttributeUtil.getUidAttribute(attributes);
+                result = (Uid) AttributeUtil.find(Uid.NAME, attributes);
             } else {
                 LOG.debug("Attributes that would be updated {}", attributes);
 
@@ -255,11 +257,7 @@ public abstract class AbstractPropagationTaskExecutor implements PropagationTask
                 LOG.debug("Update {} on {}", strictlyModified, task.getResource().getKey());
 
                 result = connector.update(
-                        beforeObj.getObjectClass(),
-                        new Uid(beforeObj.getUid().getUidValue()),
-                        strictlyModified,
-                        null,
-                        propagationAttempted);
+                        beforeObj.getObjectClass(), beforeObj.getUid(), strictlyModified, null, propagationAttempted);
             }
         }
 
@@ -334,22 +332,7 @@ public abstract class AbstractPropagationTaskExecutor implements PropagationTask
         return result;
     }
 
-    protected TaskExec execute(final PropagationTaskTO taskTO, final PropagationReporter reporter) {
-        PropagationTask task = entityFactory.newEntity(PropagationTask.class);
-        task.setResource(resourceDAO.find(taskTO.getResource()));
-        task.setObjectClassName(taskTO.getObjectClassName());
-        task.setAnyTypeKind(taskTO.getAnyTypeKind());
-        task.setAnyType(taskTO.getAnyType());
-        task.setEntityKey(taskTO.getEntityKey());
-        task.setOperation(taskTO.getOperation());
-        task.setConnObjectKey(taskTO.getConnObjectKey());
-        task.setOldConnObjectKey(taskTO.getOldConnObjectKey());
-        Set<Attribute> attributes = new HashSet<>();
-        if (StringUtils.isNotBlank(taskTO.getAttributes())) {
-            attributes.addAll(Arrays.asList(POJOHelper.deserialize(taskTO.getAttributes(), Attribute[].class)));
-        }
-        task.setAttributes(attributes);
-
+    protected TaskExec execute(final PropagationTask task, final PropagationReporter reporter) {
         List<PropagationActions> actions = getPropagationActions(task.getResource());
 
         String resource = task.getResource().getKey();
@@ -477,6 +460,9 @@ public abstract class AbstractPropagationTaskExecutor implements PropagationTask
                 execution.setTask(task);
                 task.add(execution);
 
+                // ensure that the resource instance is refreshed, as it might have been read from another thread
+                task.setResource(resourceDAO.find(task.getResource().getKey()));
+
                 taskDAO.save(task);
                 // needed to generate a value for the execution key
                 taskDAO.flush();
@@ -484,7 +470,7 @@ public abstract class AbstractPropagationTaskExecutor implements PropagationTask
 
             if (reporter != null) {
                 reporter.onSuccessOrNonPriorityResourceFailures(
-                        taskTO,
+                        task,
                         PropagationTaskExecStatus.valueOf(execution.getStatus()),
                         failureReason,
                         beforeObj,
@@ -505,6 +491,7 @@ public abstract class AbstractPropagationTaskExecutor implements PropagationTask
 
         if (notificationsAvailable || auditRequested) {
             ExecTO execTO = taskDataBinder.getExecTO(execution);
+            PropagationTaskTO taskTO = taskDataBinder.getTaskTO(task, taskUtilsFactory.getInstance(task), false);
             notificationManager.createTasks(AuditElements.EventCategoryType.PROPAGATION, anyTypeKind, resource,
                     operation,
                     result,
@@ -523,11 +510,15 @@ public abstract class AbstractPropagationTaskExecutor implements PropagationTask
     }
 
     protected abstract void doExecute(
-            Collection<PropagationTaskTO> tasks, PropagationReporter reporter, boolean nullPriorityAsync);
+            Collection<PropagationTask> tasks, PropagationReporter reporter, boolean nullPriorityAsync);
 
     @Override
-    public PropagationReporter execute(final Collection<PropagationTaskTO> tasks, final boolean nullPriorityAsync) {
-        PropagationReporter reporter = new DefaultPropagationReporter();
+    public PropagationReporter execute(
+            final Collection<PropagationTask> tasks,
+            final boolean nullPriorityAsync) {
+
+        PropagationReporter reporter =
+                ApplicationContextProvider.getBeanFactory().getBean(PropagationReporter.class);
         try {
             doExecute(tasks, reporter, nullPriorityAsync);
         } catch (PropagationException e) {
@@ -593,8 +584,10 @@ public abstract class AbstractPropagationTaskExecutor implements PropagationTask
                 ? task.getConnObjectKey()
                 : task.getOldConnObjectKey();
 
-        Set<MappingItem> linkingMappingItems = virSchemaDAO.findByProvision(provision).stream().
-                map(schema -> schema.asLinkingMappingItem()).collect(Collectors.toSet());
+        List<MappingItem> linkingMappingItems = new ArrayList<>();
+        virSchemaDAO.findByProvision(provision).forEach(schema -> {
+            linkingMappingItems.add(schema.asLinkingMappingItem());
+        });
 
         ConnectorObject obj = null;
         try {

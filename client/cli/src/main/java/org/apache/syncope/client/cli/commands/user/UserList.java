@@ -21,6 +21,8 @@ package org.apache.syncope.client.cli.commands.user;
 import java.util.Scanner;
 import org.apache.syncope.client.cli.Input;
 import org.apache.syncope.common.lib.SyncopeClientException;
+import org.apache.syncope.common.lib.to.PagedResult;
+import org.apache.syncope.common.lib.to.UserTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,7 +46,8 @@ public class UserList extends AbstractUserCommand {
                         "\nThis operation might produce very large output. Do you want to continue? [yes/no]");
                 final String answer = scanIn.nextLine();
                 if ("yes".equalsIgnoreCase(answer)) {
-                    userResultManager.printUsers(userSyncopeOperations.list());
+                    final PagedResult<UserTO> uResult = userSyncopeOperations.list();
+                    userResultManager.printUsers(uResult.getResult());
                 } else if ("no".equalsIgnoreCase(answer)) {
                     userResultManager.genericError("List operation skipped");
                 } else {

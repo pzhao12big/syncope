@@ -31,7 +31,7 @@ public class PolicyResultManager extends CommonsResultManager {
 
     public void printPolicies(final List<AbstractPolicyTO> policyTOs) {
         System.out.println("");
-        policyTOs.forEach(policyTO -> {
+        for (AbstractPolicyTO policyTO : policyTOs) {
             if (policyTO instanceof AccountPolicyTO) {
                 printAccountPolicy((AccountPolicyTO) policyTO);
             } else if (policyTO instanceof PasswordPolicyTO) {
@@ -39,7 +39,7 @@ public class PolicyResultManager extends CommonsResultManager {
             } else if (policyTO instanceof PullPolicyTO) {
                 printPullPolicy((PullPolicyTO) policyTO);
             }
-        });
+        }
     }
 
     public void printPoliciesByType(final String policyTypeString, final List<AbstractPolicyTO> policyTOs) {
@@ -47,24 +47,24 @@ public class PolicyResultManager extends CommonsResultManager {
         final PolicyType policyType = PolicyType.valueOf(policyTypeString);
         switch (policyType) {
             case ACCOUNT:
-                policyTOs.forEach(policyTO -> {
+                for (final AbstractPolicyTO policyTO : policyTOs) {
                     printAccountPolicy((AccountPolicyTO) policyTO);
-                });
+                }
                 break;
             case PASSWORD:
-                policyTOs.forEach(policyTO -> {
+                for (final AbstractPolicyTO policyTO : policyTOs) {
                     printPasswordPolicy((PasswordPolicyTO) policyTO);
-                });
+                }
                 break;
             case PUSH:
-                policyTOs.forEach(policyTO -> {
+                for (final AbstractPolicyTO policyTO : policyTOs) {
                     System.out.println(policyTO);
-                });
+                }
                 break;
             case PULL:
-                policyTOs.forEach(policyTO -> {
+                for (final AbstractPolicyTO policyTO : policyTOs) {
                     printPullPolicy((PullPolicyTO) policyTO);
-                });
+                }
                 break;
             default:
                 break;
@@ -80,7 +80,7 @@ public class PolicyResultManager extends CommonsResultManager {
         System.out.println("    max authentication attempts : " + policyTO.getMaxAuthenticationAttempts());
         System.out.println("    propagation suspension : " + policyTO.isPropagateSuspension());
         System.out.println("    RULES : ");
-        System.out.println("       > class : " + policyTO.getRules());
+        System.out.println("       > class : " + policyTO.getRuleConfs());
         System.out.println("");
     }
 
@@ -93,7 +93,7 @@ public class PolicyResultManager extends CommonsResultManager {
         System.out.println("    history lenght : " + policyTO.getHistoryLength());
         System.out.println("    allow null password : " + policyTO.isAllowNullPassword());
         System.out.println("    RULES : ");
-        System.out.println("       > class : " + policyTO.getRules());
+        System.out.println("       > class : " + policyTO.getRuleConfs());
         System.out.println("");
     }
 
@@ -103,10 +103,12 @@ public class PolicyResultManager extends CommonsResultManager {
         System.out.println("    description: " + policyTO.getDescription());
         System.out.println("    resources : " + policyTO.getUsedByResources().toString());
         System.out.println("    realms : " + policyTO.getUsedByRealms().toString());
-        System.out.println("    conflict resolution action: "
-                + policyTO.getConflictResolutionAction().name());
-        System.out.println("    correlation rules : "
-                + policyTO.getCorrelationRules().toString());
+        if (policyTO.getSpecification() != null) {
+            System.out.println("    conflict resolution action: "
+                    + policyTO.getSpecification().getConflictResolutionAction().name());
+            System.out.println("    correlation rule : "
+                    + policyTO.getSpecification().getCorrelationRules().toString());
+        }
         System.out.println("");
     }
 

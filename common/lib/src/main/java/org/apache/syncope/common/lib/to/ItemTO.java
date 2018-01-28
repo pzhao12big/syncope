@@ -77,7 +77,7 @@ public class ItemTO extends AbstractBaseBean implements EntityTO {
      */
     private String pullJEXLTransformer;
 
-    private final List<String> transformers = new ArrayList<>();
+    private final List<String> transformerClassNames = new ArrayList<>();
 
     public boolean isConnObjectKey() {
         return connObjectKey;
@@ -153,10 +153,11 @@ public class ItemTO extends AbstractBaseBean implements EntityTO {
         this.pullJEXLTransformer = pullJEXLTransformer;
     }
 
-    @XmlElementWrapper(name = "transformers")
-    @XmlElement(name = "transformer")
-    @JsonProperty("transformers")
-    public List<String> getTransformers() {
-        return transformers;
+    @XmlElementWrapper(name = "transformerClassNames")
+    @XmlElement(name = "transformerClassName")
+    @JsonProperty("transformerClassNames")
+    public List<String> getTransformerClassNames() {
+        return transformerClassNames;
     }
+
 }

@@ -18,19 +18,19 @@
  */
 package org.apache.syncope.fit.console;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 import java.util.Calendar;
 import org.apache.wicket.Component;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.form.TextField;
 import org.apache.wicket.util.tester.FormTester;
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 import org.apache.syncope.client.console.commons.Constants;
 import org.apache.syncope.client.console.wicket.markup.html.form.IndicatingOnConfirmAjaxLink;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.Before;
 
 public class UsersITCase extends AbstractConsoleITCase {
 
@@ -38,7 +38,7 @@ public class UsersITCase extends AbstractConsoleITCase {
 
     private static final String CONTAINER = TAB_PANEL + "container:content:";
 
-    @BeforeEach
+    @Before
     public void login() {
         doLogin(ADMIN_UNAME, ADMIN_PWD);
     }
@@ -152,16 +152,17 @@ public class UsersITCase extends AbstractConsoleITCase {
         formTester.setValue("view:relationships:specification:type:dropDownChoiceField", "1");
         TESTER.executeAjaxEvent(TAB_PANEL + "outerObjectsRepeater:0:outer:form:content:form:view:relationships:"
                 + "specification:type:dropDownChoiceField", Constants.ON_CHANGE);
-        // The ON_CHANGE above should enable this component, but it doesn't; doing it by hand
-        Component otherType = findComponentById(
-                TAB_PANEL + "outerObjectsRepeater:0:outer:form:content:form:view:relationships:specification",
-                "otherType");
-        assertNotNull(otherType);
-        otherType.setEnabled(true);
 
-        formTester.setValue("view:relationships:specification:otherType:dropDownChoiceField", "PRINTER");
+        // The ON_CHANGE above should enable this component, but it doesn't; doing it by hand
+        Component rightType = findComponentById(
+                TAB_PANEL + "outerObjectsRepeater:0:outer:form:content:form:view:relationships:specification",
+                "rightType");
+        assertNotNull(rightType);
+        rightType.setEnabled(true);
+
+        formTester.setValue("view:relationships:specification:rightType:dropDownChoiceField", "PRINTER");
         TESTER.executeAjaxEvent(TAB_PANEL + "outerObjectsRepeater:0:outer:form:content:form:view:relationships:"
-                + "specification:otherType:dropDownChoiceField", Constants.ON_CHANGE);
+                + "specification:rightType:dropDownChoiceField", Constants.ON_CHANGE);
 
         component = findComponentByProp("name", TAB_PANEL + "outerObjectsRepeater:"
                 + "0:outer:form:content:form:view:relationships:specification:searchPanelContainer:searchPanel:"

@@ -18,33 +18,27 @@
  */
 package org.apache.syncope.core.persistence.jpa.inner;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import java.util.List;
-import java.util.UUID;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.syncope.common.lib.types.AnyTypeKind;
 import org.apache.syncope.common.lib.policy.DefaultPasswordRuleConf;
-import org.apache.syncope.common.lib.policy.DefaultPullCorrelationRuleConf;
-import org.apache.syncope.common.lib.types.ConflictResolutionAction;
-import org.apache.syncope.common.lib.types.ImplementationEngine;
-import org.apache.syncope.common.lib.types.ImplementationType;
+import org.apache.syncope.common.lib.policy.PullPolicySpec;
 import org.apache.syncope.core.provisioning.api.serialization.POJOHelper;
 import org.apache.syncope.core.persistence.api.dao.AnyTypeDAO;
-import org.apache.syncope.core.persistence.api.dao.ImplementationDAO;
 import org.apache.syncope.core.persistence.api.dao.PolicyDAO;
-import org.apache.syncope.core.persistence.api.entity.Implementation;
 import org.apache.syncope.core.persistence.api.entity.policy.PasswordPolicy;
 import org.apache.syncope.core.persistence.api.entity.Policy;
-import org.apache.syncope.core.persistence.api.entity.policy.CorrelationRule;
 import org.apache.syncope.core.persistence.jpa.AbstractTest;
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.apache.syncope.core.persistence.api.entity.policy.PullPolicy;
-import org.apache.syncope.core.persistence.api.dao.PullCorrelationRule;
 
 @Transactional("Master")
 public class PolicyTest extends AbstractTest {
@@ -54,9 +48,6 @@ public class PolicyTest extends AbstractTest {
 
     @Autowired
     private PolicyDAO policyDAO;
-
-    @Autowired
-    private ImplementationDAO implementationDAO;
 
     @Test
     public void findAll() {
@@ -68,107 +59,77 @@ public class PolicyTest extends AbstractTest {
     @Test
     public void findByKey() {
         PullPolicy policy = policyDAO.find("880f8553-069b-4aed-9930-2cd53873f544");
-        assertNotNull(policy);
+        assertNotNull("findById did not work", policy);
 
-        CorrelationRule rule = policy.getCorrelationRule(anyTypeDAO.findUser()).orElse(null);
+        PullPolicySpec spec = policy.getSpecification();
+        assertNotNull(spec);
+
+        String rule = spec.getCorrelationRules().get(AnyTypeKind.USER.name());
         assertNotNull(rule);
-        DefaultPullCorrelationRuleConf ruleConf =
-                POJOHelper.deserialize(rule.getImplementation().getBody(), DefaultPullCorrelationRuleConf.class);
-        assertNotNull(ruleConf);
-        assertEquals(2, ruleConf.getSchemas().size());
-        assertTrue(ruleConf.getSchemas().contains("username"));
-        assertTrue(ruleConf.getSchemas().contains("firstname"));
+        String[] plainSchemas = POJOHelper.deserialize(rule, String[].class);
+        assertNotNull(plainSchemas);
+        assertEquals(2, plainSchemas.length);
+        assertTrue(ArrayUtils.contains(plainSchemas, "username"));
+        assertTrue(ArrayUtils.contains(plainSchemas, "firstname"));
     }
 
     @Test
     public void findByType() {
         List<PullPolicy> policies = policyDAO.find(PullPolicy.class);
-        assertNotNull(policies);
+        assertNotNull("findById did not work", policies);
         assertFalse(policies.isEmpty());
     }
 
     @Test
     public void create() {
         PullPolicy policy = entityFactory.newEntity(PullPolicy.class);
-        policy.setConflictResolutionAction(ConflictResolutionAction.IGNORE);
-        policy.setDescription("Pull policy");
 
         final String pullURuleName = "net.tirasa.pull.correlation.TirasaURule";
         final String pullGRuleName = "net.tirasa.pull.correlation.TirasaGRule";
 
-        Implementation impl1 = entityFactory.newEntity(Implementation.class);
-        impl1.setKey(pullURuleName);
-        impl1.setEngine(ImplementationEngine.JAVA);
-        impl1.setType(ImplementationType.PULL_CORRELATION_RULE);
-        impl1.setBody(PullCorrelationRule.class.getName());
-        impl1 = implementationDAO.save(impl1);
+        PullPolicySpec pullPolicySpec = new PullPolicySpec();
 
-        CorrelationRule rule1 = entityFactory.newEntity(CorrelationRule.class);
-        rule1.setAnyType(anyTypeDAO.findUser());
-        rule1.setPullPolicy(policy);
-        rule1.setImplementation(impl1);
-        policy.add(rule1);
+        pullPolicySpec.getCorrelationRules().put(anyTypeDAO.findUser().getKey(), pullURuleName);
+        pullPolicySpec.getCorrelationRules().put(anyTypeDAO.findGroup().getKey(), pullGRuleName);
 
-        Implementation impl2 = entityFactory.newEntity(Implementation.class);
-        impl2.setKey(pullGRuleName);
-        impl2.setEngine(ImplementationEngine.JAVA);
-        impl2.setType(ImplementationType.PULL_CORRELATION_RULE);
-        impl2.setBody(PullCorrelationRule.class.getName());
-        impl2 = implementationDAO.save(impl2);
-
-        CorrelationRule rule2 = entityFactory.newEntity(CorrelationRule.class);
-        rule2.setAnyType(anyTypeDAO.findGroup());
-        rule2.setPullPolicy(policy);
-        rule2.setImplementation(impl2);
-        policy.add(rule2);
+        policy.setSpecification(pullPolicySpec);
+        policy.setDescription("Pull policy");
 
         policy = policyDAO.save(policy);
 
         assertNotNull(policy);
         assertEquals(pullURuleName,
-                policy.getCorrelationRule(anyTypeDAO.findUser()).get().getImplementation().getKey());
+                policy.getSpecification().getCorrelationRules().get(anyTypeDAO.findUser().getKey()));
         assertEquals(pullGRuleName,
-                policy.getCorrelationRule(anyTypeDAO.findGroup()).get().getImplementation().getKey());
+                policy.getSpecification().getCorrelationRules().get(anyTypeDAO.findGroup().getKey()));
     }
 
     @Test
     public void update() {
-        PasswordPolicy policy = policyDAO.find("ce93fcda-dc3a-4369-a7b0-a6108c261c85");
-        assertNotNull(policy);
-        assertEquals(1, policy.getRules().size());
-
         DefaultPasswordRuleConf ruleConf = new DefaultPasswordRuleConf();
         ruleConf.setMaxLength(8);
         ruleConf.setMinLength(6);
 
-        Implementation rule = entityFactory.newEntity(Implementation.class);
-        rule.setKey("PasswordRule" + UUID.randomUUID().toString());
-        rule.setEngine(ImplementationEngine.JAVA);
-        rule.setType(ImplementationType.PASSWORD_RULE);
-        rule.setBody(POJOHelper.serialize(ruleConf));
-        rule = implementationDAO.save(rule);
-
-        policy.add(rule);
+        PasswordPolicy policy = policyDAO.find("ce93fcda-dc3a-4369-a7b0-a6108c261c85");
+        assertNotNull(policy);
+        assertEquals(1, policy.getRuleConfs().size());
+        policy.add(ruleConf);
 
         policy = policyDAO.save(policy);
 
         assertNotNull(policy);
-
-        rule = policy.getRules().get(1);
-
-        DefaultPasswordRuleConf actual = POJOHelper.deserialize(rule.getBody(), DefaultPasswordRuleConf.class);
-        assertEquals(actual.getMaxLength(), 8);
-        assertEquals(actual.getMinLength(), 6);
+        assertEquals(((DefaultPasswordRuleConf) policy.getRuleConfs().get(1)).getMaxLength(), 8);
+        assertEquals(((DefaultPasswordRuleConf) policy.getRuleConfs().get(1)).getMinLength(), 6);
     }
 
     @Test
     public void delete() {
         Policy policy = policyDAO.find("66691e96-285f-4464-bc19-e68384ea4c85");
-        assertNotNull(policy);
+        assertNotNull("find to delete did not work", policy);
 
         policyDAO.delete(policy);
 
         Policy actual = policyDAO.find("66691e96-285f-4464-bc19-e68384ea4c85");
-        assertNull(actual);
+        assertNull("delete did not work", actual);
     }
 }

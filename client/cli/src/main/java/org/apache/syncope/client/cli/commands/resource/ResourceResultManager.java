@@ -30,9 +30,9 @@ public class ResourceResultManager extends CommonsResultManager {
 
     public void printResources(final List<ResourceTO> resourceTOs) {
         System.out.println("");
-        resourceTOs.forEach(resourceTO -> {
+        for (final ResourceTO resourceTO : resourceTOs) {
             printResource(resourceTO);
-        });
+        }
     }
 
     private void printResource(final ResourceTO resourceTO) {
@@ -42,7 +42,7 @@ public class ResourceResultManager extends CommonsResultManager {
         System.out.println("    account policy key: " + resourceTO.getAccountPolicy());
         System.out.println("    password policy key: " + resourceTO.getPasswordPolicy());
         System.out.println("    pull policy key: " + resourceTO.getPullPolicy());
-        System.out.println("    propagation actions: " + resourceTO.getPropagationActions());
+        System.out.println("    propagation actions class: " + resourceTO.getPropagationActionsClassNames());
         System.out.println("    propagation priority: " + resourceTO.getPropagationPriority());
         System.out.println("    PROVISIONS:");
         printProvision(resourceTO.getProvisions());
@@ -57,7 +57,7 @@ public class ResourceResultManager extends CommonsResultManager {
     }
 
     private void printProvision(final List<ProvisionTO> provisionTOs) {
-        provisionTOs.forEach(provisionTO -> {
+        for (final ProvisionTO provisionTO : provisionTOs) {
             System.out.println("       provision key: " + provisionTO.getKey());
             System.out.println("       any type: " + provisionTO.getAnyType());
             System.out.println("       object class: " + provisionTO.getObjectClass());
@@ -65,32 +65,32 @@ public class ResourceResultManager extends CommonsResultManager {
             System.out.println("       virtual schema: " + provisionTO.getVirSchemas());
             System.out.println("       MAPPING: ");
             printMapping(provisionTO.getMapping());
-        });
+        }
     }
 
     private void printMapping(final MappingTO mappingTO) {
         System.out.println("          ConnObjectLink: " + mappingTO.getConnObjectLink());
         System.out.println("          MAPPING ITEM: ");
-        printItem(mappingTO.getItems());
+        printMappingItem(mappingTO.getItems());
     }
 
-    private void printItem(final List<ItemTO> itemTOs) {
-        itemTOs.forEach(itemTO -> {
-            System.out.println("             mapping key: " + itemTO.getKey());
-            System.out.println("             internal attribute name: " + itemTO.getIntAttrName());
-            System.out.println("             external attribute name: " + itemTO.getExtAttrName());
-            System.out.println("             mandatory condition: " + itemTO.getMandatoryCondition());
+    private void printMappingItem(final List<ItemTO> mappingItemTOs) {
+        for (final ItemTO mappingItemTO : mappingItemTOs) {
+            System.out.println("             mapping key: " + mappingItemTO.getKey());
+            System.out.println("             internal attribute name: " + mappingItemTO.getIntAttrName());
+            System.out.println("             external attribute name: " + mappingItemTO.getExtAttrName());
+            System.out.println("             mandatory condition: " + mappingItemTO.getMandatoryCondition());
             System.out.println("             JEXL propagation transformer: "
-                    + itemTO.getPropagationJEXLTransformer());
+                    + mappingItemTO.getPropagationJEXLTransformer());
             System.out.println("             JEXL pull transformer: "
-                    + itemTO.getPullJEXLTransformer());
-            System.out.println("             transformers: "
-                    + itemTO.getTransformers());
-            System.out.println("             purpose: " + itemTO.getPurpose());
-            System.out.println("             connector object key: " + itemTO.isConnObjectKey());
-            System.out.println("             password: " + itemTO.isPassword());
+                    + mappingItemTO.getPullJEXLTransformer());
+            System.out.println("             transformers classes: "
+                    + mappingItemTO.getTransformerClassNames());
+            System.out.println("             purpose: " + mappingItemTO.getPurpose());
+            System.out.println("             connector object key: " + mappingItemTO.isConnObjectKey());
+            System.out.println("             password: " + mappingItemTO.isPassword());
             System.out.println("");
-        });
+        }
     }
 
     public void printDetails(final Map<String, String> details) {

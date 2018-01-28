@@ -18,8 +18,6 @@
  */
 package org.apache.syncope.common.rest.api.service;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.Authorization;
 import java.util.List;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
@@ -36,9 +34,6 @@ import org.apache.syncope.common.lib.to.AttrTO;
 /**
  * REST operations for configuration.
  */
-@Api(tags = "Configuration", authorizations = {
-    @Authorization(value = "BasicAuthentication")
-    , @Authorization(value = "Bearer") })
 @Path("configurations")
 public interface ConfigurationService extends JAXRSService {
 
@@ -75,21 +70,19 @@ public interface ConfigurationService extends JAXRSService {
      * Creates / updates the configuration parameter with the given schema.
      *
      * @param value parameter value
-     * @return an empty response if operation was successful
      */
     @PUT
     @Path("{schema}")
     @Consumes({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML })
-    Response set(@NotNull AttrTO value);
+    void set(@NotNull AttrTO value);
 
     /**
      * Deletes the configuration parameter with matching schema.
      *
      * @param schema configuration parameter schema
-     * @return an empty response if operation was successful
      */
     @DELETE
     @Path("{schema}")
     @Consumes({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML })
-    Response delete(@NotNull @PathParam("schema") String schema);
+    void delete(@NotNull @PathParam("schema") String schema);
 }

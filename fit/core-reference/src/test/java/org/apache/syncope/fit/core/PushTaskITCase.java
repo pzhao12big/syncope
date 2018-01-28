@@ -18,12 +18,12 @@
  */
 package org.apache.syncope.fit.core;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -45,7 +45,6 @@ import org.apache.syncope.common.lib.to.ProvisionTO;
 import org.apache.syncope.common.lib.to.ResourceTO;
 import org.apache.syncope.common.lib.types.AnyTypeKind;
 import org.apache.syncope.common.lib.types.AttrSchemaType;
-import org.apache.syncope.common.lib.types.ImplementationType;
 import org.apache.syncope.common.lib.types.MappingPurpose;
 import org.apache.syncope.common.lib.types.MatchingRule;
 import org.apache.syncope.common.lib.types.PropagationTaskExecStatus;
@@ -58,12 +57,15 @@ import org.apache.syncope.common.rest.api.service.NotificationService;
 import org.apache.syncope.common.rest.api.service.ResourceService;
 import org.apache.syncope.common.rest.api.service.TaskService;
 import org.identityconnectors.framework.common.objects.ObjectClass;
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-@SpringJUnitConfig(locations = { "classpath:testJDBCEnv.xml" })
+@RunWith(SpringJUnit4ClassRunner.class)
+@ContextConfiguration(locations = { "classpath:testJDBCEnv.xml" })
 public class PushTaskITCase extends AbstractTaskITCase {
 
     @Autowired
@@ -71,8 +73,7 @@ public class PushTaskITCase extends AbstractTaskITCase {
 
     @Test
     public void getPushActionsClasses() {
-        Set<String> actions = syncopeService.platform().
-                getJavaImplInfo(ImplementationType.PUSH_ACTIONS).get().getClasses();
+        Set<String> actions = syncopeService.platform().getPushActions();
         assertNotNull(actions);
     }
 
@@ -90,7 +91,7 @@ public class PushTaskITCase extends AbstractTaskITCase {
         assertFalse(tasks.getResult().isEmpty());
         tasks.getResult().stream().
                 filter((task) -> (!(task instanceof PushTaskTO))).
-                forEach(item -> fail("This should not happen"));
+                forEach(item -> fail());
     }
 
     @Test
@@ -112,7 +113,7 @@ public class PushTaskITCase extends AbstractTaskITCase {
         task = taskService.read(actual.getKey(), true);
         assertNotNull(task);
         assertEquals(task.getKey(), actual.getKey());
-        assertEquals(task.getJobDelegate(), actual.getJobDelegate());
+        assertEquals(task.getJobDelegateClassName(), actual.getJobDelegateClassName());
         assertEquals(task.getFilters().get(AnyTypeKind.USER.name()),
                 actual.getFilters().get(AnyTypeKind.USER.name()));
         assertEquals(task.getFilters().get(AnyTypeKind.GROUP.name()),

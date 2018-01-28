@@ -65,7 +65,7 @@ interface can be provided, in case the required behavior does not fit into the p
 ===== PropagationActions
 
 The propagation process can be decorated with custom logic to be invoked around task execution, by associating
-external resources to one or more <<implementations,implementations>> of the
+external resources to one or more implementations of the
 ifeval::["{snapshotOrRelease}" == "release"]
 https://github.com/apache/syncope/blob/syncope-{docVersion}/core/provisioning-api/src/main/java/org/apache/syncope/core/provisioning/api/propagation/PropagationActions.java[PropagationActions^]
 endif::[]
@@ -110,30 +110,4 @@ endif::[]
 the cipher algorithm associated with the password must match the value of `Password cipher algorithm` for the 
 https://connid.atlassian.net/wiki/display/BASE/Database+Table#DatabaseTable-ConfigurationProperties[DatabaseTable connector bundle^].
 
-| 
-ifeval::["{snapshotOrRelease}" == "release"]
-https://github.com/apache/syncope/blob/syncope-{docVersion}/core/provisioning-java/src/main/java/org/apache/syncope/core/provisioning/java/propagation/GoogleAppsPropagationActions.java[GoogleAppsPropagationActions^]
-endif::[]
-ifeval::["{snapshotOrRelease}" == "snapshot"]
-https://github.com/apache/syncope/tree/master/core/provisioning-java/src/main/java/org/apache/syncope/core/provisioning/java/propagation/GoogleAppsPropagationActions.java[GoogleAppsPropagationActions^]
-endif::[]
-| Required for setup of an External Resource based on the https://connid.atlassian.net/wiki/display/BASE/Google+Apps#GoogleApps-Configuration[ConnId GoogleApps connector bundle^].
-
 |===
-
-[[propagation-password]]
-[TIP]
-.Propagate password values
-====
-Password values are kept in the internal storage according to the `password.cipher.algorithm` <<configuration-parameters, configuration parameter>>, whose value is `SHA1` by default.
-`SHA1` is a hash algorithm: this means that, once stored, the cleartext value cannot be reverted any more.
-
-During propagation, Syncope fetches all data of the given User, then prepares the attributes to propagate, according to the provided mapping; password has a special treatment:
-
-* if cleartext value is available (this cannot happen during <<provisioning-push>>), it is sent to the External Resource
-* if `password.cipher.algorithm` is `AES` (the only supported reversible algorithm), then the ciphered password value is made cleartext again, and sent to the External Resource
-* if the <<external-resource-details,generate random password flag>> is set, a random password value is generated according to the defined password policies, and sent to the External Resource
-* otherwise, a `null` value is sent to the External Resource
-
-Password values are always sent to External Resources wrapped as ConnId http://connid.tirasa.net/apidocs/1.4/org/identityconnectors/common/security/GuardedString.html[GuardedString^] objects.
-====

@@ -31,11 +31,9 @@ import org.apache.syncope.core.persistence.api.entity.EntityFactory;
 import org.apache.syncope.core.persistence.api.entity.Notification;
 import org.apache.syncope.core.spring.BeanUtils;
 import org.apache.syncope.core.persistence.api.dao.AnyTypeDAO;
-import org.apache.syncope.core.persistence.api.dao.ImplementationDAO;
 import org.apache.syncope.core.persistence.api.dao.MailTemplateDAO;
 import org.apache.syncope.core.persistence.api.entity.AnyAbout;
 import org.apache.syncope.core.persistence.api.entity.AnyType;
-import org.apache.syncope.core.persistence.api.entity.Implementation;
 import org.apache.syncope.core.persistence.api.entity.MailTemplate;
 import org.apache.syncope.core.provisioning.java.IntAttrNameParser;
 import org.slf4j.Logger;
@@ -48,16 +46,13 @@ public class NotificationDataBinderImpl implements NotificationDataBinder {
 
     private static final Logger LOG = LoggerFactory.getLogger(NotificationDataBinder.class);
 
-    private static final String[] IGNORE_PROPERTIES = { "key", "template", "abouts", "recipientsProvider" };
+    private static final String[] IGNORE_PROPERTIES = { "key", "template", "abouts" };
 
     @Autowired
     private MailTemplateDAO mailTemplateDAO;
 
     @Autowired
     private AnyTypeDAO anyTypeDAO;
-
-    @Autowired
-    private ImplementationDAO implementationDAO;
 
     @Autowired
     private EntityFactory entityFactory;
@@ -67,21 +62,17 @@ public class NotificationDataBinderImpl implements NotificationDataBinder {
 
     @Override
     public NotificationTO getNotificationTO(final Notification notification) {
-        NotificationTO notificationTO = new NotificationTO();
-        notificationTO.setKey(notification.getKey());
-        notificationTO.setTemplate(notification.getTemplate().getKey());
+        NotificationTO result = new NotificationTO();
+        result.setKey(notification.getKey());
+        result.setTemplate(notification.getTemplate().getKey());
 
-        BeanUtils.copyProperties(notification, notificationTO, IGNORE_PROPERTIES);
+        BeanUtils.copyProperties(notification, result, IGNORE_PROPERTIES);
 
         notification.getAbouts().forEach(about -> {
-            notificationTO.getAbouts().put(about.getAnyType().getKey(), about.get());
+            result.getAbouts().put(about.getAnyType().getKey(), about.get());
         });
 
-        if (notification.getRecipientsProvider() != null) {
-            notificationTO.setRecipientsProvider(notification.getRecipientsProvider().getKey());
-        }
-
-        return notificationTO;
+        return result;
     }
 
     @Override
@@ -149,17 +140,5 @@ public class NotificationDataBinderImpl implements NotificationDataBinder {
 
         // 3. verify recipientAttrName
         intAttrNameParser.parse(notification.getRecipientAttrName(), AnyTypeKind.USER);
-
-        if (notificationTO.getRecipientsProvider() == null) {
-            notification.setRecipientsProvider(null);
-        } else {
-            Implementation recipientsProvider = implementationDAO.find(notificationTO.getRecipientsProvider());
-            if (recipientsProvider == null) {
-                LOG.debug("Invalid " + Implementation.class.getSimpleName() + " {}, ignoring...",
-                        notificationTO.getRecipientsProvider());
-            } else {
-                notification.setRecipientsProvider(recipientsProvider);
-            }
-        }
     }
 }

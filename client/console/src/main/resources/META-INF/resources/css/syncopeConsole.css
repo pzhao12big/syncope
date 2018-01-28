@@ -805,19 +805,19 @@ START - Search - AjaxDateTimePicker
 }
 
 .clause .type{
-  width: 170px !important;
+  width: 120px !important;
 }
 
 .clause .type button{
-  width: 170px !important;
+  width: 120px !important;
 }
 
 .clause .property{
-  width: 300px;
+  width: 190px;
 }
 
 .clause .property button{
-  width: 300px;
+  width: 190px;
 }
 
 .clause .comparator{
@@ -857,11 +857,6 @@ START - Search - AjaxDateTimePicker
 .searchBox .input-group{
   margin-top: 1px;
 }
-
-.custom-autocomplete-box li.selected {
-  background-color: #eee;
-}
-
 /**
 END - Search - AjaxDateTimePicker
 */

@@ -20,7 +20,6 @@ package org.apache.syncope.core.provisioning.java.data;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -101,11 +100,7 @@ public class AnyObjectDataBinderImpl extends AbstractAnyDataBinder implements An
 
             // relationships
             anyObjectTO.getRelationships().addAll(
-                    anyObjectDAO.findAllRelationships(anyObject).stream().map(relationship -> getRelationshipTO(
-                    relationship.getType().getKey(),
-                    relationship.getLeftEnd().getKey().equals(anyObject.getKey())
-                    ? relationship.getRightEnd()
-                    : relationship.getLeftEnd())).
+                    anyObject.getRelationships().stream().map(relationship -> getRelationshipTO(relationship)).
                             collect(Collectors.toList()));
 
             // memberships
@@ -165,19 +160,19 @@ public class AnyObjectDataBinderImpl extends AbstractAnyDataBinder implements An
         if (anyObject.getRealm() != null) {
             // relationships
             anyObjectTO.getRelationships().forEach(relationshipTO -> {
-                if (StringUtils.isBlank(relationshipTO.getOtherEndType())
-                        || AnyTypeKind.USER.name().equals(relationshipTO.getOtherEndType())
-                        || AnyTypeKind.GROUP.name().equals(relationshipTO.getOtherEndType())) {
+                if (StringUtils.isBlank(relationshipTO.getRightType())
+                        || AnyTypeKind.USER.name().equals(relationshipTO.getRightType())
+                        || AnyTypeKind.GROUP.name().equals(relationshipTO.getRightType())) {
 
                     SyncopeClientException invalidAnyType =
                             SyncopeClientException.build(ClientExceptionType.InvalidAnyType);
                     invalidAnyType.getElements().add(AnyType.class.getSimpleName()
-                            + " not allowed for relationship: " + relationshipTO.getOtherEndType());
+                            + " not allowed for relationship: " + relationshipTO.getRightType());
                     scce.addException(invalidAnyType);
                 } else {
-                    AnyObject otherEnd = anyObjectDAO.find(relationshipTO.getOtherEndKey());
+                    AnyObject otherEnd = anyObjectDAO.find(relationshipTO.getRightKey());
                     if (otherEnd == null) {
-                        LOG.debug("Ignoring invalid anyObject " + relationshipTO.getOtherEndKey());
+                        LOG.debug("Ignoring invalid anyObject " + relationshipTO.getRightKey());
                     } else if (anyObject.getRealm().getFullPath().startsWith(otherEnd.getRealm().getFullPath())) {
                         RelationshipType relationshipType = relationshipTypeDAO.find(relationshipTO.getType());
                         if (relationshipType == null) {
@@ -203,12 +198,12 @@ public class AnyObjectDataBinderImpl extends AbstractAnyDataBinder implements An
 
             // memberships
             anyObjectTO.getMemberships().forEach(membershipTO -> {
-                Group group = membershipTO.getGroupKey() == null
+                Group group = membershipTO.getRightKey() == null
                         ? groupDAO.findByName(membershipTO.getGroupName())
-                        : groupDAO.find(membershipTO.getGroupKey());
+                        : groupDAO.find(membershipTO.getRightKey());
                 if (group == null) {
                     LOG.debug("Ignoring invalid group "
-                            + membershipTO.getGroupKey() + " / " + membershipTO.getGroupName());
+                            + membershipTO.getRightKey() + " / " + membershipTO.getGroupName());
                 } else if (anyObject.getRealm().getFullPath().startsWith(group.getRealm().getFullPath())) {
                     AMembership membership = entityFactory.newEntity(AMembership.class);
                     membership.setRightEnd(group);
@@ -267,6 +262,9 @@ public class AnyObjectDataBinderImpl extends AbstractAnyDataBinder implements An
         // attributes and resources
         propByRes.merge(fill(anyObject, anyObjectPatch, anyUtils, scce));
 
+        Set<String> toBeDeprovisioned = new HashSet<>();
+        Set<String> toBeProvisioned = new HashSet<>();
+
         // relationships
         anyObjectPatch.getRelationships().stream().
                 filter(patch -> patch.getRelationshipTO() != null).forEachOrdered((patch) -> {
@@ -275,26 +273,29 @@ public class AnyObjectDataBinderImpl extends AbstractAnyDataBinder implements An
                 LOG.debug("Ignoring invalid relationship type {}", patch.getRelationshipTO().getType());
             } else {
                 Optional<? extends ARelationship> relationship =
-                        anyObject.getRelationship(relationshipType, patch.getRelationshipTO().getOtherEndKey());
+                        anyObject.getRelationship(relationshipType, patch.getRelationshipTO().getRightKey());
                 if (relationship.isPresent()) {
                     anyObject.getRelationships().remove(relationship.get());
                     relationship.get().setLeftEnd(null);
+
+                    toBeDeprovisioned.addAll(
+                            anyObjectDAO.findAllResourceKeys(relationship.get().getRightEnd().getKey()));
                 }
 
                 if (patch.getOperation() == PatchOperation.ADD_REPLACE) {
-                    if (StringUtils.isBlank(patch.getRelationshipTO().getOtherEndType())
-                            || AnyTypeKind.USER.name().equals(patch.getRelationshipTO().getOtherEndType())
-                            || AnyTypeKind.GROUP.name().equals(patch.getRelationshipTO().getOtherEndType())) {
+                    if (StringUtils.isBlank(patch.getRelationshipTO().getRightType())
+                            || AnyTypeKind.USER.name().equals(patch.getRelationshipTO().getRightType())
+                            || AnyTypeKind.GROUP.name().equals(patch.getRelationshipTO().getRightType())) {
 
                         SyncopeClientException invalidAnyType =
                                 SyncopeClientException.build(ClientExceptionType.InvalidAnyType);
                         invalidAnyType.getElements().add(AnyType.class.getSimpleName()
-                                + " not allowed for relationship: " + patch.getRelationshipTO().getOtherEndType());
+                                + " not allowed for relationship: " + patch.getRelationshipTO().getRightType());
                         scce.addException(invalidAnyType);
                     } else {
-                        AnyObject otherEnd = anyObjectDAO.find(patch.getRelationshipTO().getOtherEndKey());
+                        AnyObject otherEnd = anyObjectDAO.find(patch.getRelationshipTO().getRightKey());
                         if (otherEnd == null) {
-                            LOG.debug("Ignoring invalid any object {}", patch.getRelationshipTO().getOtherEndKey());
+                            LOG.debug("Ignoring invalid any object {}", patch.getRelationshipTO().getRightKey());
                         } else if (anyObject.getRealm().getFullPath().startsWith(otherEnd.getRealm().getFullPath())) {
                             ARelationship newRelationship = entityFactory.newEntity(ARelationship.class);
                             newRelationship.setType(relationshipType);
@@ -302,6 +303,8 @@ public class AnyObjectDataBinderImpl extends AbstractAnyDataBinder implements An
                             newRelationship.setLeftEnd(anyObject);
 
                             anyObject.add(newRelationship);
+
+                            toBeProvisioned.addAll(anyObjectDAO.findAllResourceKeys(otherEnd.getKey()));
                         } else {
                             LOG.error("{} cannot be assigned to {}", otherEnd, anyObject);
 
@@ -315,25 +318,7 @@ public class AnyObjectDataBinderImpl extends AbstractAnyDataBinder implements An
             }
         });
 
-        // prepare for membership-related resource management
         Collection<ExternalResource> resources = anyObjectDAO.findAllResources(anyObject);
-
-        Map<String, Set<String>> reasons = new HashMap<>();
-        anyObject.getResources().forEach(resource -> {
-            reasons.put(resource.getKey(), new HashSet<>(Collections.singleton(anyObject.getKey())));
-        });
-        anyObjectDAO.findAllGroupKeys(anyObject).forEach(group -> {
-            groupDAO.findAllResourceKeys(group).forEach(resource -> {
-                if (!reasons.containsKey(resource)) {
-                    reasons.put(resource, new HashSet<>());
-                }
-                reasons.get(resource).add(group);
-            });
-        });
-
-        Set<String> toBeDeprovisioned = new HashSet<>();
-        Set<String> toBeProvisioned = new HashSet<>();
-
         SyncopeClientException invalidValues = SyncopeClientException.build(ClientExceptionType.InvalidValues);
 
         // memberships
@@ -348,14 +333,7 @@ public class AnyObjectDataBinderImpl extends AbstractAnyDataBinder implements An
                     attr.setOwner(null);
                 });
 
-                if (membPatch.getOperation() == PatchOperation.DELETE) {
-                    groupDAO.findAllResourceKeys(membership.get().getRightEnd().getKey()).stream().
-                            filter(resource -> reasons.containsKey(resource)).
-                            forEach(resource -> {
-                                reasons.get(resource).remove(membership.get().getRightEnd().getKey());
-                                toBeProvisioned.add(resource);
-                            });
-                }
+                toBeDeprovisioned.addAll(groupDAO.findAllResourceKeys(membership.get().getRightEnd().getKey()));
             }
             if (membPatch.getOperation() == PatchOperation.ADD_REPLACE) {
                 Group group = groupDAO.find(membPatch.getGroup());
@@ -409,15 +387,10 @@ public class AnyObjectDataBinderImpl extends AbstractAnyDataBinder implements An
             }
         });
 
-        // finalize resource management
-        reasons.entrySet().stream().
-                filter(entry -> entry.getValue().isEmpty()).
-                forEach(entry -> toBeDeprovisioned.add(entry.getKey()));
-
         propByRes.addAll(ResourceOperation.DELETE, toBeDeprovisioned);
         propByRes.addAll(ResourceOperation.UPDATE, toBeProvisioned);
 
-        // in case of new memberships all current resources need to be updated in order to propagate new group
+        // In case of new memberships all current resources need to be updated in order to propagate new group
         // attribute values.
         if (!toBeDeprovisioned.isEmpty() || !toBeProvisioned.isEmpty()) {
             currentResources.removeAll(toBeDeprovisioned);

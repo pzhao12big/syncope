@@ -37,7 +37,6 @@ import org.apache.syncope.common.lib.types.AnyTypeKind;
 import org.apache.wicket.PageReference;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.extensions.wizard.WizardModel;
-import org.apache.wicket.extensions.wizard.WizardModel.ICondition;
 import org.apache.wicket.extensions.wizard.WizardStep;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.model.Model;
@@ -52,8 +51,6 @@ public class ProvisionWizardBuilder extends AjaxWizardBuilder<ResourceProvision>
     private final ConnectorRestClient connectorRestClient = new ConnectorRestClient();
 
     private final ResourceTO resourceTO;
-
-    private final String adminRealm;
 
     protected AjaxTextFieldPanel clazz;
 
@@ -95,7 +92,7 @@ public class ProvisionWizardBuilder extends AjaxWizardBuilder<ResourceProvision>
     /**
      * AuxClasses definition step.
      */
-    private static final class AuxClasses extends WizardStep implements ICondition {
+    private static final class AuxClasses extends WizardStep implements WizardModel.ICondition {
 
         private static final long serialVersionUID = 5315236191866427500L;
 
@@ -185,13 +182,11 @@ public class ProvisionWizardBuilder extends AjaxWizardBuilder<ResourceProvision>
      * Construct.
      *
      * @param resourceTO external resource to be updated.
-     * @param adminRealm admin realm
      * @param pageRef Caller page reference.
      */
-    public ProvisionWizardBuilder(final ResourceTO resourceTO, final String adminRealm, final PageReference pageRef) {
+    public ProvisionWizardBuilder(final ResourceTO resourceTO, final PageReference pageRef) {
         super(new ResourceProvision(), pageRef);
         this.resourceTO = resourceTO;
-        this.adminRealm = adminRealm;
     }
 
     @Override
@@ -210,7 +205,7 @@ public class ProvisionWizardBuilder extends AjaxWizardBuilder<ResourceProvision>
             modelObject.getProvisionTO().setMapping(new MappingTO());
         }
         mapping.add(new ResourceMappingPanel(
-                "mapping", resourceTO, adminRealm, modelObject, itemTransformers, jexlTransformers));
+                "mapping", resourceTO, modelObject, itemTransformers, jexlTransformers));
 
         wizardModel.add(mapping);
 

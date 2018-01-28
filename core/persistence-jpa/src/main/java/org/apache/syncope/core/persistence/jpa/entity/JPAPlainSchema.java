@@ -18,6 +18,7 @@
  */
 package org.apache.syncope.core.persistence.jpa.entity;
 
+import java.lang.reflect.Constructor;
 import javax.persistence.Basic;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -34,14 +35,11 @@ import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import org.apache.syncope.common.lib.types.AttrSchemaType;
 import org.apache.syncope.common.lib.types.CipherAlgorithm;
-import org.apache.syncope.common.lib.types.ImplementationType;
 import org.apache.syncope.core.persistence.api.attrvalue.validation.Validator;
 import org.apache.syncope.core.persistence.api.entity.AnyTypeClass;
-import org.apache.syncope.core.persistence.api.entity.Implementation;
 import org.apache.syncope.core.persistence.api.entity.PlainSchema;
 import org.apache.syncope.core.persistence.jpa.attrvalue.validation.BasicValidator;
 import org.apache.syncope.core.persistence.jpa.validation.entity.PlainSchemaCheck;
-import org.apache.syncope.core.spring.ImplementationManager;
 
 @Entity
 @Table(name = JPAPlainSchema.TABLE)
@@ -82,6 +80,9 @@ public class JPAPlainSchema extends AbstractSchema implements PlainSchema {
     private String conversionPattern;
 
     @Column(nullable = true)
+    private String validatorClass;
+
+    @Column(nullable = true)
     @Lob
     private String enumerationValues;
 
@@ -99,11 +100,8 @@ public class JPAPlainSchema extends AbstractSchema implements PlainSchema {
     @Column(nullable = true)
     private String mimeType;
 
-    @OneToOne
-    private JPAImplementation validator;
-
     @Transient
-    private Validator validatorImpl;
+    private Validator validator;
 
     public JPAPlainSchema() {
         super();
@@ -176,37 +174,38 @@ public class JPAPlainSchema extends AbstractSchema implements PlainSchema {
         this.readonly = getBooleanAsInteger(readonly);
     }
 
-    public Validator validator() {
-        if (validatorImpl != null) {
-            return validatorImpl;
+    @Override
+    public Validator getValidator() {
+        if (validator != null) {
+            return validator;
         }
 
-        if (getValidator() != null) {
+        if (getValidatorClass() != null && getValidatorClass().length() > 0) {
             try {
-                validatorImpl = ImplementationManager.build(getValidator());
+                Constructor<?> validatorConstructor = Class.forName(getValidatorClass()).
+                        getConstructor(new Class<?>[] { PlainSchema.class });
+                validator = (Validator) validatorConstructor.newInstance(this);
             } catch (Exception e) {
-                LOG.error("While building {}", getValidator(), e);
+                LOG.error("Could not instantiate validator of type {}, reverting to {}",
+                        getValidatorClass(), BasicValidator.class.getSimpleName(), e);
             }
         }
 
-        if (validatorImpl == null) {
-            validatorImpl = new BasicValidator();
+        if (validator == null) {
+            validator = new BasicValidator(this);
         }
-        validatorImpl.setSchema(this);
 
-        return validatorImpl;
-    }
-
-    @Override
-    public Implementation getValidator() {
         return validator;
     }
 
     @Override
-    public void setValidator(final Implementation validator) {
-        checkType(validator, JPAImplementation.class);
-        checkImplementationType(validator, ImplementationType.VALIDATOR);
-        this.validator = (JPAImplementation) validator;
+    public String getValidatorClass() {
+        return validatorClass;
+    }
+
+    @Override
+    public void setValidatorClass(final String validatorClass) {
+        this.validatorClass = validatorClass;
     }
 
     @Override

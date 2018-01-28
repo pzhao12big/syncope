@@ -31,12 +31,10 @@ import java.util.ArrayList;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.syncope.client.console.SyncopeConsoleApplication;
 import org.apache.syncope.client.console.SyncopeConsoleSession;
 import org.apache.syncope.client.console.commons.Constants;
 import org.apache.syncope.client.console.commons.HttpResourceStream;
 import org.apache.syncope.client.console.commons.PreviewUtils;
-import org.apache.syncope.client.console.pages.BasePage;
 import org.apache.syncope.client.console.wicket.markup.html.form.preview.AbstractBinaryPreviewer;
 import org.apache.wicket.Component;
 import org.apache.wicket.ajax.AjaxRequestTarget;
@@ -78,11 +76,11 @@ public class BinaryFieldPanel extends FieldPanel<String> {
 
     private final AjaxDownload fileDownload;
 
+    private final transient PreviewUtils previewUtils = PreviewUtils.getInstance();
+
     private final AbstractBinaryPreviewer previewer;
 
     private final IndicatingAjaxLink<Void> resetLink;
-
-    private final Bytes maxUploadSize;
 
     public BinaryFieldPanel(final String id, final String name, final IModel<String> model, final String mimeType,
             final String fileKey) {
@@ -91,11 +89,9 @@ public class BinaryFieldPanel extends FieldPanel<String> {
 
         previewer = PREVIEW_UTILS.getPreviewer(mimeType);
 
-        maxUploadSize = SyncopeConsoleApplication.get().getMaxUploadFileSizeMB() == null
-                ? null
-                : Bytes.megabytes(SyncopeConsoleApplication.get().getMaxUploadFileSizeMB());
         uploadForm = new StatelessForm<>("uploadForm");
         uploadForm.setMultiPart(true);
+        uploadForm.setMaxSize(Bytes.megabytes(4));
         add(uploadForm);
 
         container = new WebMarkupContainer("previewContainer") {
@@ -180,32 +176,24 @@ public class BinaryFieldPanel extends FieldPanel<String> {
             protected void onSubmit(final AjaxRequestTarget target) {
                 final FileUpload uploadedFile = fileUpload.getFileUpload();
                 if (uploadedFile != null) {
-                    if (maxUploadSize != null && uploadedFile.getSize() > maxUploadSize.bytes()) {
-                        // SYNCOPE-1213 manage directly max upload file size (if set in properties file)
-                        SyncopeConsoleSession.get().error(getString("tooLargeFile")
-                                .replace("${maxUploadSizeB}", String.valueOf(maxUploadSize.bytes()))
-                                .replace("${maxUploadSizeMB}", String.valueOf(maxUploadSize.bytes() / 1000000L)));
-                        ((BasePage) getPageReference().getPage()).getNotificationPanel().refresh(target);
+                    final byte[] uploadedBytes = uploadedFile.getBytes();
+                    final String uploaded = new String(Base64.encodeBase64(uploadedBytes), StandardCharsets.UTF_8);
+                    field.setModelObject(uploaded);
+                    target.add(field);
+
+                    if (previewer == null) {
+                        container.addOrReplace(emptyFragment);
                     } else {
-                        final byte[] uploadedBytes = uploadedFile.getBytes();
-                        final String uploaded = new String(Base64.encodeBase64(uploadedBytes), StandardCharsets.UTF_8);
-                        field.setModelObject(uploaded);
-                        target.add(field);
-
-                        if (previewer == null) {
-                            container.addOrReplace(emptyFragment);
-                        } else {
-                            final Component panelPreview = previewer.preview(uploadedBytes);
-                            changePreviewer(panelPreview);
-                            fileUpload.setModelObject(null);
-                            uploadForm.addOrReplace(fileUpload);
-                        }
-
-                        setVisibleFileButtons(StringUtils.isNotBlank(uploaded));
-                        downloadLink.setEnabled(StringUtils.isNotBlank(uploaded));
-
-                        target.add(uploadForm);
+                        final Component panelPreview = previewer.preview(uploadedBytes);
+                        changePreviewer(panelPreview);
+                        fileUpload.setModelObject(null);
+                        uploadForm.addOrReplace(fileUpload);
                     }
+
+                    setVisibleFileButtons(StringUtils.isNotBlank(uploaded));
+                    downloadLink.setEnabled(StringUtils.isNotBlank(uploaded));
+
+                    target.add(uploadForm);
                 }
             }
         });

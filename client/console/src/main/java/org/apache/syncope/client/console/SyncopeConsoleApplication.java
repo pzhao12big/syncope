@@ -75,7 +75,7 @@ public class SyncopeConsoleApplication extends AuthenticatedWebApplication {
 
     public static final List<Locale> SUPPORTED_LOCALES = Collections.unmodifiableList(Arrays.asList(
             new Locale[] {
-                Locale.ENGLISH, Locale.ITALIAN, new Locale("pt", "BR"), new Locale("ru"), Locale.JAPANESE
+                Locale.ENGLISH, Locale.ITALIAN, new Locale("pt", "BR"), new Locale("ru")
             }));
 
     private static final String FLOWABLE_MODELER_CONTEXT = "flowable-modeler";
@@ -104,17 +104,13 @@ public class SyncopeConsoleApplication extends AuthenticatedWebApplication {
 
     private String useGZIPCompression;
 
-    private Integer maxUploadFileSizeMB;
-
-    private Integer maxWaitTime;
-
     private List<String> domains;
 
     private Map<String, Class<? extends BasePage>> pageClasses;
 
     @SuppressWarnings("unchecked")
     protected void populatePageClasses(final Properties props) {
-        Enumeration<String> propNames = (Enumeration<String>) props.propertyNames();
+        Enumeration<String> propNames = (Enumeration<String>) props.<String>propertyNames();
         while (propNames.hasMoreElements()) {
             String name = propNames.nextElement();
             if (name.startsWith("page.")) {
@@ -157,11 +153,6 @@ public class SyncopeConsoleApplication extends AuthenticatedWebApplication {
         Args.notNull(rootPath, "<rootPath>");
         useGZIPCompression = props.getProperty("useGZIPCompression");
         Args.notNull(useGZIPCompression, "<useGZIPCompression>");
-        maxUploadFileSizeMB = props.getProperty("maxUploadFileSizeMB") == null
-                ? null
-                : Integer.valueOf(props.getProperty("maxUploadFileSizeMB"));
-
-        maxWaitTime = Integer.valueOf(props.getProperty("maxWaitTimeOnApplyChanges", "30"));
 
         String csrf = props.getProperty("csrf");
 
@@ -287,14 +278,6 @@ public class SyncopeConsoleApplication extends AuthenticatedWebApplication {
 
     public String getReconciliationReportKey() {
         return reconciliationReportKey;
-    }
-
-    public Integer getMaxUploadFileSizeMB() {
-        return maxUploadFileSizeMB;
-    }
-
-    public Integer getMaxWaitTimeInSeconds() {
-        return maxWaitTime;
     }
 
     public SyncopeClientFactoryBean newClientFactory() {

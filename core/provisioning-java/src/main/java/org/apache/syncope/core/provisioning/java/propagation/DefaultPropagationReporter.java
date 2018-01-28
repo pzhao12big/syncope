@@ -24,7 +24,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import org.apache.syncope.common.lib.to.PropagationStatus;
-import org.apache.syncope.common.lib.to.PropagationTaskTO;
 import org.apache.syncope.common.lib.types.PropagationTaskExecStatus;
 import org.apache.syncope.core.persistence.api.entity.task.PropagationTask;
 import org.apache.syncope.core.provisioning.api.propagation.PropagationReporter;
@@ -32,10 +31,14 @@ import org.apache.syncope.core.provisioning.java.utils.ConnObjectUtils;
 import org.identityconnectors.framework.common.objects.ConnectorObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 
 public class DefaultPropagationReporter implements PropagationReporter {
 
     protected static final Logger LOG = LoggerFactory.getLogger(DefaultPropagationReporter.class);
+
+    @Autowired
+    protected ConnObjectUtils connObjectUtils;
 
     protected final List<PropagationStatus> statuses = new ArrayList<>();
 
@@ -47,38 +50,38 @@ public class DefaultPropagationReporter implements PropagationReporter {
 
     @Override
     public void onSuccessOrNonPriorityResourceFailures(
-            final PropagationTaskTO taskTO,
+            final PropagationTask propagationTask,
             final PropagationTaskExecStatus executionStatus,
             final String failureReason,
             final ConnectorObject beforeObj,
             final ConnectorObject afterObj) {
 
         PropagationStatus status = new PropagationStatus();
-        status.setResource(taskTO.getResource());
+        status.setResource(propagationTask.getResource().getKey());
         status.setStatus(executionStatus);
         status.setFailureReason(failureReason);
 
         if (beforeObj != null) {
-            status.setBeforeObj(ConnObjectUtils.getConnObjectTO(beforeObj));
+            status.setBeforeObj(connObjectUtils.getConnObjectTO(beforeObj));
         }
 
         if (afterObj != null) {
-            status.setAfterObj(ConnObjectUtils.getConnObjectTO(afterObj));
+            status.setAfterObj(connObjectUtils.getConnObjectTO(afterObj));
         }
 
         add(status);
     }
 
     @Override
-    public void onPriorityResourceFailure(final String failingResource, final Collection<PropagationTaskTO> tasks) {
+    public void onPriorityResourceFailure(final String failingResource, final Collection<PropagationTask> tasks) {
         LOG.debug("Propagation error: {} priority resource failed to propagate", failingResource);
 
-        Optional<PropagationTaskTO> propagationTask = tasks.stream().
-                filter(task -> task.getResource().equals(failingResource)).findFirst();
+        Optional<PropagationTask> propagationTask = tasks.stream().
+                filter(task -> task.getResource().getKey().equals(failingResource)).findFirst();
 
         if (propagationTask.isPresent()) {
             PropagationStatus status = new PropagationStatus();
-            status.setResource(propagationTask.get().getResource());
+            status.setResource(propagationTask.get().getResource().getKey());
             status.setStatus(PropagationTaskExecStatus.FAILURE);
             status.setFailureReason(
                     "Propagation error: " + failingResource + " priority resource failed to propagate.");

@@ -170,17 +170,23 @@ public class StatusUtils implements Serializable {
     }
 
     public static StatusPatch buildStatusPatch(final Collection<StatusBean> statuses, final Boolean enable) {
-        StatusPatch.Builder builder = new StatusPatch.Builder();
-        builder.onSyncope(false);
+        StatusPatch statusPatch = new StatusPatch();
+        statusPatch.setOnSyncope(false);
+
         for (StatusBean status : statuses) {
-            if ("syncope".equalsIgnoreCase(status.getResource())) {
-                builder.onSyncope(true);
-            } else {
-                builder.resource(status.getResource());
+            if (enable == null
+                    || (enable && !status.getStatus().isActive()) || (!enable && status.getStatus().isActive())) {
+
+                if ("syncope".equalsIgnoreCase(status.getResource())) {
+                    statusPatch.setOnSyncope(true);
+                } else {
+                    statusPatch.getResources().add(status.getResource());
+                }
+
             }
         }
 
-        return builder.build();
+        return statusPatch;
     }
 
     public static Panel getStatusImagePanel(final String componentId, final Status status) {

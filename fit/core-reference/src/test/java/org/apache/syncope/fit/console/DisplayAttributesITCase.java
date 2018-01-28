@@ -21,12 +21,12 @@ package org.apache.syncope.fit.console;
 import de.agilecoders.wicket.core.markup.html.bootstrap.dialog.Modal;
 import org.apache.syncope.client.console.pages.Realms;
 import org.apache.wicket.util.tester.FormTester;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.Before;
+import org.junit.Test;
 
 public class DisplayAttributesITCase extends AbstractConsoleITCase {
 
-    @BeforeEach
+    @Before
     public void login() {
         doLogin(ADMIN_UNAME, ADMIN_PWD);
         TESTER.clickLink("body:realmsLI:realms");

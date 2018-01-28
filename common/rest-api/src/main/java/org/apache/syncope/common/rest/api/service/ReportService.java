@@ -18,8 +18,6 @@
  */
 package org.apache.syncope.common.rest.api.service;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.Authorization;
 import java.util.List;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
@@ -39,9 +37,6 @@ import org.apache.syncope.common.lib.types.ReportExecExportFormat;
 /**
  * REST operations for reports.
  */
-@Api(tags = "Reports", authorizations = {
-    @Authorization(value = "BasicAuthentication")
-    , @Authorization(value = "Bearer") })
 @Path("reports")
 public interface ReportService extends ExecutableService {
 
@@ -79,22 +74,20 @@ public interface ReportService extends ExecutableService {
      * Updates report with matching key.
      *
      * @param reportTO report to be stored
-     * @return an empty response if operation was successful
      */
     @PUT
     @Path("{key}")
     @Consumes({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML })
-    Response update(@NotNull ReportTO reportTO);
+    void update(@NotNull ReportTO reportTO);
 
     /**
      * Deletes report with matching key.
      *
      * @param key Deletes report with matching key
-     * @return an empty response if operation was successful
      */
     @DELETE
     @Path("{key}")
-    Response delete(@NotNull @PathParam("key") String key);
+    void delete(@NotNull @PathParam("key") String key);
 
     /**
      * Exports the report execution with matching key in the requested format.

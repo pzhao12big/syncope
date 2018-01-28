@@ -112,6 +112,7 @@ under the License.
                   <directory>${project.build.directory}/swagger-ui/META-INF/resources/webjars/swagger-ui/${swagger-ui.version}</directory>
                   <excludes>
                     <exclude>index.html</exclude>
+                    <exclude>swagger-ui.min.js</exclude>
                   </excludes>
                 </resource>
               </resources>
@@ -133,15 +134,13 @@ under the License.
             </goals>
             <configuration>
               <target>
-                <replace file="${project.build.directory}/swagger-ui/META-INF/resources/webjars/swagger-ui/${swagger-ui.version}/swagger-ui-bundle.js"
-                         token="function i(e){var t=e.req,n=e.value,r=e.parameter,i=r.name,o=r.style,a=r.explode,s=(0,h.default)({key:r.name,value:n,style:o||&quot;simple&quot;,explode:a||!1,escape:!1});t.url=t.url.replace(&quot;{&quot;+i+&quot;}&quot;,s)}"
-                         value="function i(e){var t=e.req,r=e.value,n=e.parameter,a=n.name,u=n.style,o=n.explode,i=(0,h.default)({key:n.name,value:r,style:u||&quot;simple&quot;,explode:o||!1,escape:&quot;matrix&quot;===u});&quot;matrix&quot;!==u||!n.explode&amp;&amp;void 0!==n.explode?t.url=t.url.replace(&quot;{&quot;+a+&quot;}&quot;,i):t.url=t.url.concat(i)}"/>
+                <replace file="${project.build.directory}/swagger-ui/META-INF/resources/webjars/swagger-ui/${swagger-ui.version}/swagger-ui.js" token="return url + requestUrl + querystring;" value="&#xA;var matrixstring = '';&#xA; for (var i = 0; i &lt; this.parameters.length; i++) {&#xA; var param = this.parameters[i];&#xA; &#xA; if (param.in === 'matrix') {&#xA; matrixstring += ';' + this.encodeQueryParam(param.name) + '=' + this.encodeQueryParam(args[param.name]);&#xA; }&#xA; }&#xA; &#xA; var url = this.scheme + '://' + this.host;&#xA; &#xA; if (this.basePath !== '/') {&#xA; url += this.basePath;&#xA; }&#xA; return url + requestUrl + matrixstring + querystring;" />
               </target>
             </configuration>
           </execution>
         </executions>
       </plugin>
-
+          
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-checkstyle-plugin</artifactId>

@@ -18,14 +18,13 @@
  */
 package org.apache.syncope.fit.core;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -39,6 +38,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import javax.ws.rs.core.Response;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.SerializationUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.syncope.client.lib.SyncopeClient;
@@ -63,8 +63,8 @@ import org.apache.syncope.common.rest.api.service.ResourceService;
 import org.apache.syncope.fit.AbstractITCase;
 import org.identityconnectors.common.security.GuardedString;
 import org.identityconnectors.framework.common.objects.ObjectClass;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 public class ConnectorITCase extends AbstractITCase {
 
@@ -76,10 +76,12 @@ public class ConnectorITCase extends AbstractITCase {
 
     private static String testJDBCURL;
 
-    @BeforeAll
+    @BeforeClass
     public static void setUpConnIdBundles() throws IOException {
-        try (InputStream propStream = ConnectorITCase.class.getResourceAsStream("/connid.properties")) {
+        InputStream propStream = null;
+        try {
             Properties props = new Properties();
+            propStream = ConnectorITCase.class.getResourceAsStream("/connid.properties");
             props.load(propStream);
 
             for (String location : props.getProperty("connid.locations").split(",")) {
@@ -94,6 +96,8 @@ public class ConnectorITCase extends AbstractITCase {
             testJDBCURL = props.getProperty("testdb.url");
         } catch (Exception e) {
             LOG.error("Could not load /connid.properties", e);
+        } finally {
+            IOUtils.closeQuietly(propStream);
         }
         assertNotNull(connectorServerLocation);
         assertNotNull(connIdSoapVersion);
@@ -101,16 +105,14 @@ public class ConnectorITCase extends AbstractITCase {
         assertNotNull(testJDBCURL);
     }
 
-    @Test
+    @Test(expected = SyncopeClientException.class)
     public void createWithException() {
-        assertThrows(SyncopeClientException.class, () -> {
-            ConnInstanceTO connectorTO = new ConnInstanceTO();
+        ConnInstanceTO connectorTO = new ConnInstanceTO();
 
-            Response response = connectorService.create(connectorTO);
-            if (response.getStatusInfo().getStatusCode() != Response.Status.CREATED.getStatusCode()) {
-                throw (RuntimeException) clientFactory.getExceptionMapper().fromResponse(response);
-            }
-        });
+        Response response = connectorService.create(connectorTO);
+        if (response.getStatusInfo().getStatusCode() != Response.Status.CREATED.getStatusCode()) {
+            throw (RuntimeException) clientFactory.getExceptionMapper().fromResponse(response);
+        }
     }
 
     @Test
@@ -174,8 +176,8 @@ public class ConnectorITCase extends AbstractITCase {
         assertEquals(Integer.valueOf(15), actual.getConnRequestTimeout());
         assertEquals(connectorTO.getCapabilities(), actual.getCapabilities());
         assertNotNull(actual.getPoolConf());
-        assertEquals(1534, actual.getPoolConf().getMaxObjects().intValue());
-        assertEquals(10, actual.getPoolConf().getMaxIdle().intValue());
+        assertEquals(1534, actual.getPoolConf().getMaxObjects(), 0);
+        assertEquals(10, actual.getPoolConf().getMaxIdle(), 0);
 
         Throwable t = null;
 
@@ -194,7 +196,7 @@ public class ConnectorITCase extends AbstractITCase {
         assertNull(t);
         assertNotNull(actual);
         assertEquals(EnumSet.of(ConnectorCapability.CREATE), actual.getCapabilities());
-        assertEquals(10, actual.getPoolConf().getMaxObjects().intValue());
+        assertEquals(10, actual.getPoolConf().getMaxObjects(), 0);
 
         // check also for the deletion of the created object
         try {
@@ -444,7 +446,7 @@ public class ConnectorITCase extends AbstractITCase {
 
         try {
             connectorService.check(connectorTO);
-            fail("This should not happen");
+            fail();
         } catch (Exception e) {
             assertNotNull(e);
         }
@@ -526,7 +528,7 @@ public class ConnectorITCase extends AbstractITCase {
         // 2. attempt to read a connector with a different admin realm: fail
         try {
             pcs.read("88a7a819-dab5-46b4-9b90-0b9769eabdb8", null);
-            fail("This should not happen");
+            fail();
         } catch (SyncopeClientException e) {
             assertEquals(ClientExceptionType.DelegatedAdministration, e.getType());
         }
@@ -687,7 +689,7 @@ public class ConnectorITCase extends AbstractITCase {
         try {
             try {
                 connectorService.check(connectorTO);
-                fail("This should not happen");
+                fail();
             } catch (Exception e) {
                 assertNotNull(e);
             }

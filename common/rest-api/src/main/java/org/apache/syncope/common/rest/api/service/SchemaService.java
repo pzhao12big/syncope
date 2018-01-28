@@ -18,8 +18,6 @@
  */
 package org.apache.syncope.common.rest.api.service;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.Authorization;
 import java.util.List;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.BeanParam;
@@ -40,9 +38,6 @@ import org.apache.syncope.common.rest.api.beans.SchemaQuery;
 /**
  * REST operations for attribute schemas.
  */
-@Api(tags = "Schemas", authorizations = {
-    @Authorization(value = "BasicAuthentication")
-    , @Authorization(value = "Bearer") })
 @Path("schemas")
 public interface SchemaService extends JAXRSService {
 
@@ -89,21 +84,19 @@ public interface SchemaService extends JAXRSService {
      *
      * @param type type for schemas to be updated
      * @param schemaTO updated schema to be stored
-     * @return an empty response if operation was successful
      */
     @PUT
     @Path("{type}/{key}")
     @Consumes({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML })
-    Response update(@NotNull @PathParam("type") SchemaType type, @NotNull AbstractSchemaTO schemaTO);
+    void update(@NotNull @PathParam("type") SchemaType type, @NotNull AbstractSchemaTO schemaTO);
 
     /**
      * Deletes the schema matching the given type and key.
      *
      * @param type type for schema to be deleted
      * @param key name of schema to be deleted
-     * @return an empty response if operation was successful
      */
     @DELETE
     @Path("{type}/{key}")
-    Response delete(@NotNull @PathParam("type") SchemaType type, @NotNull @PathParam("key") String key);
+    void delete(@NotNull @PathParam("type") SchemaType type, @NotNull @PathParam("key") String key);
 }

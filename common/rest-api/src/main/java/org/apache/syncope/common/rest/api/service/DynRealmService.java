@@ -18,8 +18,6 @@
  */
 package org.apache.syncope.common.rest.api.service;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.Authorization;
 import java.util.List;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
@@ -37,9 +35,6 @@ import org.apache.syncope.common.lib.to.DynRealmTO;
 /**
  * REST operations for dynamic realms.
  */
-@Api(tags = "DynamicRealms", authorizations = {
-    @Authorization(value = "BasicAuthentication")
-    , @Authorization(value = "Bearer") })
 @Path("dynRealms")
 public interface DynRealmService extends JAXRSService {
 
@@ -77,21 +72,19 @@ public interface DynRealmService extends JAXRSService {
      * Updates the dynamic realm matching the provided key.
      *
      * @param dynDynRealmTO dynamic realm to be stored
-     * @return an empty response if operation was successful
      */
     @PUT
     @Path("{key}")
     @Consumes({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML })
-    Response update(@NotNull DynRealmTO dynDynRealmTO);
+    void update(@NotNull DynRealmTO dynDynRealmTO);
 
     /**
      * Deletes the dynamic realm matching the provided key.
      *
      * @param key dynamic realm key to be deleted
-     * @return an empty response if operation was successful
      */
     @DELETE
     @Path("{key}")
-    Response delete(@NotNull @PathParam("key") String key);
+    void delete(@NotNull @PathParam("key") String key);
 
 }

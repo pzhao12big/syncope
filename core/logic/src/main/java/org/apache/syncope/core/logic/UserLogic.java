@@ -125,6 +125,12 @@ public class UserLogic extends AbstractAnyLogic<UserTO, UserPatch> {
     }
 
     @PreAuthorize("hasRole('" + StandardEntitlement.USER_CREATE + "')")
+    @Override
+    public ProvisioningResult<UserTO> create(final UserTO userTO, final boolean nullPriorityAsync) {
+        return doCreate(userTO, true, false, nullPriorityAsync);
+    }
+
+    @PreAuthorize("hasRole('" + StandardEntitlement.USER_CREATE + "')")
     public ProvisioningResult<UserTO> create(
             final UserTO userTO, final boolean storePassword, final boolean nullPriorityAsync) {
 
@@ -189,11 +195,10 @@ public class UserLogic extends AbstractAnyLogic<UserTO, UserPatch> {
                     securityChecks(effectiveRealms, before.getLeft().getRealm().getValue(), before.getLeft().getKey());
         }
 
-        Pair<UserPatch, List<PropagationStatus>> updated =
-                provisioningManager.update(before.getLeft(), nullPriorityAsync);
+        Pair<String, List<PropagationStatus>> updated = provisioningManager.update(before.getLeft(), nullPriorityAsync);
 
         return afterUpdate(
-                binder.returnUserTO(binder.getUserTO(updated.getLeft().getKey())),
+                binder.returnUserTO(binder.getUserTO(updated.getKey())),
                 updated.getRight(),
                 before.getRight(),
                 authDynRealms,
@@ -236,19 +241,6 @@ public class UserLogic extends AbstractAnyLogic<UserTO, UserPatch> {
         // ensures the actual user key is effectively on the patch - as the binder.getUserTO(statusPatch.getKey())
         // call above works with username as well
         statusPatch.setKey(toUpdate.getKey());
-        Pair<String, List<PropagationStatus>> updated = setStatusOnWfAdapter(statusPatch, nullPriorityAsync);
-
-        return afterUpdate(
-                binder.returnUserTO(binder.getUserTO(updated.getKey())),
-                updated.getRight(),
-                Collections.<LogicActions>emptyList(),
-                false,
-                Collections.<String>emptySet());
-    }
-
-    @PreAuthorize("isAuthenticated()")
-    public ProvisioningResult<UserTO> selfStatus(final StatusPatch statusPatch, final boolean nullPriorityAsync) {
-        statusPatch.setKey(userDAO.findKey(AuthContextUtils.getUsername()));
         Pair<String, List<PropagationStatus>> updated = setStatusOnWfAdapter(statusPatch, nullPriorityAsync);
 
         return afterUpdate(
@@ -482,9 +474,7 @@ public class UserLogic extends AbstractAnyLogic<UserTO, UserPatch> {
     protected UserTO resolveReference(final Method method, final Object... args) throws UnresolvedReferenceException {
         String key = null;
 
-        if ("requestPasswordReset".equals(method.getName())) {
-            key = userDAO.findKey((String) args[0]);
-        } else if (!"confirmPasswordReset".equals(method.getName()) && ArrayUtils.isNotEmpty(args)) {
+        if (!"confirmPasswordReset".equals(method.getName()) && ArrayUtils.isNotEmpty(args)) {
             for (int i = 0; key == null && i < args.length; i++) {
                 if (args[i] instanceof String) {
                     key = (String) args[i];
@@ -492,15 +482,13 @@ public class UserLogic extends AbstractAnyLogic<UserTO, UserPatch> {
                     key = ((UserTO) args[i]).getKey();
                 } else if (args[i] instanceof UserPatch) {
                     key = ((UserPatch) args[i]).getKey();
-                } else if (args[i] instanceof StatusPatch) {
-                    key = ((StatusPatch) args[i]).getKey();
                 }
             }
         }
 
         if (key != null) {
             try {
-                return binder.getUserTO(key);
+                return binder.getUserTO((String) key);
             } catch (Throwable ignore) {
                 LOG.debug("Unresolved reference", ignore);
                 throw new UnresolvedReferenceException(ignore);

@@ -36,8 +36,8 @@ under the License.
   <bean id="jaxbProvider" class="org.apache.cxf.jaxrs.provider.JAXBElementProvider">
     <property name="namespacePrefixes">
       <map>
-        <entry key="http://syncope.apache.org/2.1">
-          <value>syncope21</value>
+        <entry key="http://syncope.apache.org/2.0">
+          <value>syncope2</value>
         </entry>
       </map>      
     </property>
@@ -88,7 +88,7 @@ under the License.
   
   <bean id="wadlGenerator" class="org.apache.syncope.core.rest.cxf.WadlGenerator">
     <property name="applicationTitle" value="Apache Syncope ${syncope.version}"/>
-    <property name="namespacePrefix" value="syncope21"/>
+    <property name="namespacePrefix" value="syncope2"/>
     <property name="incrementNamespacePrefix" value="false"/>    
     <property name="linkAnyMediaTypeToXmlSchema" value="true"/>
     <property name="useJaxbContextForQnames" value="true"/>
@@ -97,14 +97,9 @@ under the License.
     <property name="usePathParamsToCompareOperations" value="false"/>
   </bean>
   
-  <bean id="basicAuth" class="io.swagger.models.auth.BasicAuthDefinition"/>
-  <bean id="bearer" class="io.swagger.models.auth.ApiKeyAuthDefinition">
-    <property name="name" value="Authorization"/>
-    <property name="in" value="HEADER"/>
-  </bean>
   <bean id="swagger2customizer" class="org.apache.syncope.core.rest.cxf.SyncopeSwagger2Customizer">
     <property name="dynamicBasePath" value="true"/>
-    <property name="replaceTags" value="false"/>
+    <property name="replaceTags" value="true"/>
   </bean>
   <bean id="swagger2Feature" class="org.apache.cxf.jaxrs.swagger.Swagger2Feature">
     <property name="title" value="Apache Syncope"/>
@@ -117,15 +112,7 @@ under the License.
     <property name="activateOnlyIfJaxrsSupported" value="true"/>
 
     <property name="customizer" ref="swagger2customizer"/>
-    
-    <property name="securityDefinitions">
-      <map>
-        <entry key="BasicAuthentication" value-ref="basicAuth"/>
-        <entry key="Bearer" value-ref="bearer"/>
-      </map>
-    </property>
   </bean>
-  <bean id="sw2OpenAPI" class="org.apache.cxf.jaxrs.swagger.openapi.SwaggerToOpenApiConversionFilter"/>
 
   <jaxrs:server id="restContainer" address="/"
                 basePackages="org.apache.syncope.common.rest.api.service, org.apache.syncope.core.rest.cxf.service" 
@@ -152,7 +139,6 @@ under the License.
       <ref bean="addDomainFilter"/>
       <ref bean="addETagFilter"/>
       <ref bean="wadlGenerator"/>
-      <ref bean="sw2OpenAPI"/>
     </jaxrs:providers>
     <jaxrs:features>
       <ref bean="swagger2Feature"/>

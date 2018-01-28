@@ -20,6 +20,7 @@ package org.apache.syncope.core.logic;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
@@ -60,7 +61,6 @@ import org.apache.syncope.core.persistence.api.entity.AnyType;
 import org.apache.syncope.core.persistence.api.entity.ConnInstance;
 import org.apache.syncope.core.persistence.api.entity.resource.Provision;
 import org.apache.syncope.core.provisioning.api.MappingManager;
-import org.apache.syncope.core.provisioning.api.data.ConnInstanceDataBinder;
 import org.apache.syncope.core.provisioning.api.utils.RealmUtils;
 import org.apache.syncope.core.provisioning.java.utils.MappingUtils;
 import org.apache.syncope.core.spring.security.AuthContextUtils;
@@ -72,9 +72,9 @@ import org.identityconnectors.framework.common.objects.ConnectorObject;
 import org.identityconnectors.framework.common.objects.Name;
 import org.identityconnectors.framework.common.objects.ObjectClass;
 import org.identityconnectors.framework.common.objects.OperationOptions;
-import org.identityconnectors.framework.common.objects.ResultsHandler;
 import org.identityconnectors.framework.common.objects.SearchResult;
 import org.identityconnectors.framework.common.objects.Uid;
+import org.identityconnectors.framework.spi.SearchResultsHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Component;
@@ -108,7 +108,7 @@ public class ResourceLogic extends AbstractTransactionalLogic<ResourceTO> {
     private ResourceDataBinder binder;
 
     @Autowired
-    private ConnInstanceDataBinder connInstanceDataBinder;
+    private ConnObjectUtils connObjectUtils;
 
     @Autowired
     private MappingManager mappingManager;
@@ -117,6 +117,7 @@ public class ResourceLogic extends AbstractTransactionalLogic<ResourceTO> {
     private ConnectorFactory connFactory;
 
     protected void securityChecks(final Set<String> effectiveRealms, final String realm, final String key) {
+        effectiveRealms.stream().anyMatch(ownedRealm -> realm.startsWith(ownedRealm));
         boolean authorized = effectiveRealms.stream().anyMatch(ownedRealm -> realm.startsWith(ownedRealm));
         if (!authorized) {
             throw new DelegatedAdministrationException(realm, ExternalResource.class.getSimpleName(), key);
@@ -321,8 +322,10 @@ public class ResourceLogic extends AbstractTransactionalLogic<ResourceTO> {
         Optional<String> connObjectKeyValue = mappingManager.getConnObjectKeyValue(any, init.getRight());
 
         // 3. determine attributes to query
-        Set<MappingItem> linkinMappingItems = virSchemaDAO.findByProvision(init.getRight()).stream().
-                map(virSchema -> virSchema.asLinkingMappingItem()).collect(Collectors.toSet());
+        Set<MappingItem> linkinMappingItems = new HashSet<>();
+        virSchemaDAO.findByProvision(init.getRight()).forEach(virSchema -> {
+            linkinMappingItems.add(virSchema.asLinkingMappingItem());
+        });
         Iterator<MappingItem> mapItems = new IteratorChain<>(
                 init.getRight().getMapping().getItems().iterator(),
                 linkinMappingItems.iterator());
@@ -348,7 +351,7 @@ public class ResourceLogic extends AbstractTransactionalLogic<ResourceTO> {
             attributes.add(connectorObject.getName());
         }
 
-        return ConnObjectUtils.getConnObjectTO(connectorObject);
+        return connObjectUtils.getConnObjectTO(connectorObject);
     }
 
     @PreAuthorize("hasRole('" + StandardEntitlement.RESOURCE_LIST_CONNOBJECT + "')")
@@ -377,30 +380,38 @@ public class ResourceLogic extends AbstractTransactionalLogic<ResourceTO> {
             objectClass = init.getRight().getObjectClass();
             init.getRight().getMapping().getItems();
 
-            Set<MappingItem> linkinMappingItems = virSchemaDAO.findByProvision(init.getRight()).stream().
-                    map(virSchema -> virSchema.asLinkingMappingItem()).collect(Collectors.toSet());
+            Set<MappingItem> linkinMappingItems = new HashSet<>();
+            virSchemaDAO.findByProvision(init.getRight()).forEach(virSchema -> {
+                linkinMappingItems.add(virSchema.asLinkingMappingItem());
+            });
             Iterator<MappingItem> mapItems = new IteratorChain<>(
                     init.getRight().getMapping().getItems().iterator(),
                     linkinMappingItems.iterator());
             options = MappingUtils.buildOperationOptions(mapItems);
         }
 
+        final SearchResult[] searchResult = new SearchResult[1];
         final List<ConnObjectTO> connObjects = new ArrayList<>();
 
-        SearchResult searchResult = connFactory.getConnector(resource).search(objectClass, null, new ResultsHandler() {
+        connFactory.getConnector(resource).search(objectClass, null, new SearchResultsHandler() {
 
             private int count;
 
             @Override
+            public void handleResult(final SearchResult result) {
+                searchResult[0] = result;
+            }
+
+            @Override
             public boolean handle(final ConnectorObject connectorObject) {
-                connObjects.add(ConnObjectUtils.getConnObjectTO(connectorObject));
+                connObjects.add(connObjectUtils.getConnObjectTO(connectorObject));
                 // safety protection against uncontrolled result size
                 count++;
                 return count < size;
             }
         }, size, pagedResultsCookie, orderBy, options);
 
-        return ImmutablePair.of(searchResult, connObjects);
+        return ImmutablePair.of(searchResult[0], connObjects);
     }
 
     @PreAuthorize("hasRole('" + StandardEntitlement.CONNECTOR_READ + "')")
@@ -413,7 +424,7 @@ public class ResourceLogic extends AbstractTransactionalLogic<ResourceTO> {
 
         connFactory.createConnector(
                 connFactory.buildConnInstanceOverride(
-                        connInstanceDataBinder.getConnInstanceTO(connInstance),
+                        connInstance,
                         resourceTO.getConfOverride(),
                         resourceTO.isOverrideCapabilities() ? resourceTO.getCapabilitiesOverride() : null)).
                 test();

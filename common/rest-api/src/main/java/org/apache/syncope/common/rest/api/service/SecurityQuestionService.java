@@ -18,8 +18,6 @@
  */
 package org.apache.syncope.common.rest.api.service;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.Authorization;
 import java.util.List;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
@@ -37,9 +35,6 @@ import org.apache.syncope.common.lib.to.SecurityQuestionTO;
 /**
  * REST operations for configuration.
  */
-@Api(tags = "SecurityQuestions", authorizations = {
-    @Authorization(value = "BasicAuthentication")
-    , @Authorization(value = "Bearer") })
 @Path("securityQuestions")
 public interface SecurityQuestionService extends JAXRSService {
 
@@ -77,22 +72,20 @@ public interface SecurityQuestionService extends JAXRSService {
      * Updates the security question matching the provided key.
      *
      * @param securityQuestionTO security question to be stored
-     * @return an empty response if operation was successful
      */
     @PUT
     @Path("{key}")
     @Consumes({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML })
-    Response update(@NotNull SecurityQuestionTO securityQuestionTO);
+    void update(@NotNull SecurityQuestionTO securityQuestionTO);
 
     /**
      * Deletes the security question matching the provided key.
      *
      * @param key security question key to be deleted
-     * @return an empty response if operation was successful
      */
     @DELETE
     @Path("{key}")
-    Response delete(@NotNull @PathParam("key") String key);
+    void delete(@NotNull @PathParam("key") String key);
 
     /**
      * Ask for security question configured for the user matching the given username, if any.

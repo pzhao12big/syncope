@@ -18,13 +18,12 @@
  */
 package org.apache.syncope.core.persistence.jpa.inner;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -45,7 +44,7 @@ import org.apache.syncope.core.spring.security.DelegatedAdministrationException;
 import org.apache.syncope.core.spring.security.SyncopeAuthenticationDetails;
 import org.apache.syncope.core.spring.security.SyncopeGrantedAuthority;
 import org.identityconnectors.framework.common.objects.ObjectClass;
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
@@ -64,22 +63,23 @@ public class ResourceTest extends AbstractTest {
     @Test
     public void findById() {
         ExternalResource resource = resourceDAO.find("ws-target-resource-1");
-        assertNotNull(resource);
+        assertNotNull("findById did not work", resource);
 
         ConnInstance connector = resource.getConnector();
-        assertNotNull(connector);
-        assertEquals("net.tirasa.connid.bundles.soap.WebServiceConnector", connector.getConnectorName());
-        assertEquals("net.tirasa.connid.bundles.soap", connector.getBundleName());
+        assertNotNull("connector not found", connector);
+        assertEquals("invalid connector name",
+                "net.tirasa.connid.bundles.soap.WebServiceConnector", connector.getConnectorName());
+        assertEquals("invalid bundle name", "net.tirasa.connid.bundles.soap", connector.getBundleName());
 
         Mapping mapping = resource.getProvision(anyTypeDAO.findUser()).get().getMapping();
-        assertFalse(mapping.getItems().isEmpty());
+        assertFalse("no mapping specified", mapping.getItems().isEmpty());
 
         assertTrue(mapping.getItems().stream().
                 anyMatch(item -> "7f55b09c-b573-41dc-a9eb-ccd80bd3ea7a".equals(item.getKey())));
 
         try {
             resourceDAO.authFind("ws-target-resource-1");
-            fail("This should not happen");
+            fail();
         } catch (DelegatedAdministrationException e) {
             assertNotNull(e);
         }
@@ -156,100 +156,94 @@ public class ResourceTest extends AbstractTest {
         assertEquals(Integer.valueOf(2), actual.getPropagationPriority());
     }
 
-    @Test
+    @Test(expected = InvalidEntityException.class)
     public void saveInvalidMappingIntAttr() {
-        assertThrows(InvalidEntityException.class, () -> {
-            ExternalResource resource = entityFactory.newEntity(ExternalResource.class);
-            resource.setKey("ws-target-resource-basic-save-invalid");
+        ExternalResource resource = entityFactory.newEntity(ExternalResource.class);
+        resource.setKey("ws-target-resource-basic-save-invalid");
 
-            ConnInstance connector = resourceDAO.find("ws-target-resource-1").getConnector();
-            resource.setConnector(connector);
+        ConnInstance connector = resourceDAO.find("ws-target-resource-1").getConnector();
+        resource.setConnector(connector);
 
-            Provision provision = entityFactory.newEntity(Provision.class);
-            provision.setAnyType(anyTypeDAO.findUser());
-            provision.setObjectClass(ObjectClass.ACCOUNT);
-            provision.setResource(resource);
-            resource.add(provision);
+        Provision provision = entityFactory.newEntity(Provision.class);
+        provision.setAnyType(anyTypeDAO.findUser());
+        provision.setObjectClass(ObjectClass.ACCOUNT);
+        provision.setResource(resource);
+        resource.add(provision);
 
-            Mapping mapping = entityFactory.newEntity(Mapping.class);
-            mapping.setProvision(provision);
-            provision.setMapping(mapping);
+        Mapping mapping = entityFactory.newEntity(Mapping.class);
+        mapping.setProvision(provision);
+        provision.setMapping(mapping);
 
-            MappingItem connObjectKey = entityFactory.newEntity(MappingItem.class);
-            connObjectKey.setConnObjectKey(true);
-            mapping.add(connObjectKey);
+        MappingItem connObjectKey = entityFactory.newEntity(MappingItem.class);
+        connObjectKey.setConnObjectKey(true);
+        mapping.add(connObjectKey);
 
-            // save the resource
-            resourceDAO.save(resource);
-        });
+        // save the resource
+        resourceDAO.save(resource);
     }
 
-    @Test
+    @Test(expected = InvalidEntityException.class)
     public void saveInvalidMappingExtAttr() {
-        assertThrows(InvalidEntityException.class, () -> {
-            ExternalResource resource = entityFactory.newEntity(ExternalResource.class);
-            resource.setKey("ws-target-resource-basic-save-invalid");
+        ExternalResource resource = entityFactory.newEntity(ExternalResource.class);
+        resource.setKey("ws-target-resource-basic-save-invalid");
 
-            ConnInstance connector = resourceDAO.find("ws-target-resource-1").getConnector();
-            resource.setConnector(connector);
+        ConnInstance connector = resourceDAO.find("ws-target-resource-1").getConnector();
+        resource.setConnector(connector);
 
-            Provision provision = entityFactory.newEntity(Provision.class);
-            provision.setAnyType(anyTypeDAO.findUser());
-            provision.setObjectClass(ObjectClass.ACCOUNT);
-            provision.setResource(resource);
-            resource.add(provision);
+        Provision provision = entityFactory.newEntity(Provision.class);
+        provision.setAnyType(anyTypeDAO.findUser());
+        provision.setObjectClass(ObjectClass.ACCOUNT);
+        provision.setResource(resource);
+        resource.add(provision);
 
-            Mapping mapping = entityFactory.newEntity(Mapping.class);
-            mapping.setProvision(provision);
-            provision.setMapping(mapping);
+        Mapping mapping = entityFactory.newEntity(Mapping.class);
+        mapping.setProvision(provision);
+        provision.setMapping(mapping);
 
-            MappingItem item = entityFactory.newEntity(MappingItem.class);
-            item.setConnObjectKey(true);
-            item.setIntAttrName("fullname");
-            mapping.add(item);
+        MappingItem item = entityFactory.newEntity(MappingItem.class);
+        item.setConnObjectKey(true);
+        item.setIntAttrName("fullname");
+        mapping.add(item);
 
-            item = entityFactory.newEntity(MappingItem.class);
-            item.setIntAttrName("userId");
-            mapping.add(item);
+        item = entityFactory.newEntity(MappingItem.class);
+        item.setIntAttrName("userId");
+        mapping.add(item);
 
-            resourceDAO.save(resource);
-        });
+        resourceDAO.save(resource);
     }
 
-    @Test
+    @Test(expected = InvalidEntityException.class)
     public void saveInvalidProvision() {
-        assertThrows(InvalidEntityException.class, () -> {
-            ExternalResource resource = entityFactory.newEntity(ExternalResource.class);
-            resource.setKey("invalidProvision");
+        ExternalResource resource = entityFactory.newEntity(ExternalResource.class);
+        resource.setKey("invalidProvision");
 
-            Provision provision = entityFactory.newEntity(Provision.class);
-            provision.setAnyType(anyTypeDAO.findUser());
-            provision.setObjectClass(ObjectClass.ACCOUNT);
-            provision.setResource(resource);
-            resource.add(provision);
+        Provision provision = entityFactory.newEntity(Provision.class);
+        provision.setAnyType(anyTypeDAO.findUser());
+        provision.setObjectClass(ObjectClass.ACCOUNT);
+        provision.setResource(resource);
+        resource.add(provision);
 
-            Mapping mapping = entityFactory.newEntity(Mapping.class);
-            mapping.setProvision(provision);
-            provision.setMapping(mapping);
+        Mapping mapping = entityFactory.newEntity(Mapping.class);
+        mapping.setProvision(provision);
+        provision.setMapping(mapping);
 
-            MappingItem connObjectKey = entityFactory.newEntity(MappingItem.class);
-            connObjectKey.setExtAttrName("username");
-            connObjectKey.setIntAttrName("fullname");
-            connObjectKey.setPurpose(MappingPurpose.BOTH);
-            mapping.setConnObjectKeyItem(connObjectKey);
+        MappingItem connObjectKey = entityFactory.newEntity(MappingItem.class);
+        connObjectKey.setExtAttrName("username");
+        connObjectKey.setIntAttrName("fullname");
+        connObjectKey.setPurpose(MappingPurpose.BOTH);
+        mapping.setConnObjectKeyItem(connObjectKey);
 
-            provision = entityFactory.newEntity(Provision.class);
-            provision.setAnyType(anyTypeDAO.findGroup());
-            provision.setObjectClass(ObjectClass.ACCOUNT);
-            provision.setResource(resource);
-            resource.add(provision);
+        provision = entityFactory.newEntity(Provision.class);
+        provision.setAnyType(anyTypeDAO.findGroup());
+        provision.setObjectClass(ObjectClass.ACCOUNT);
+        provision.setResource(resource);
+        resource.add(provision);
 
-            ConnInstance connector = resourceDAO.find("ws-target-resource-1").getConnector();
-            resource.setConnector(connector);
+        ConnInstance connector = resourceDAO.find("ws-target-resource-1").getConnector();
+        resource.setConnector(connector);
 
-            // save the resource
-            resourceDAO.save(resource);
-        });
+        // save the resource
+        resourceDAO.save(resource);
     }
 
     @Test
@@ -348,7 +342,7 @@ public class ResourceTest extends AbstractTest {
 
         try {
             resourceDAO.save(resource);
-            fail("This should not happen");
+            fail();
         } catch (InvalidEntityException e) {
             assertTrue(e.hasViolation(EntityViolationType.InvalidKey));
         }

@@ -18,19 +18,18 @@
  */
 package org.apache.syncope.fit.core;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Locale;
@@ -63,7 +62,6 @@ import org.apache.syncope.common.lib.to.ProvisionTO;
 import org.apache.syncope.common.lib.to.ItemTO;
 import org.apache.syncope.common.lib.to.PullTaskTO;
 import org.apache.syncope.common.lib.to.ExecTO;
-import org.apache.syncope.common.lib.to.ImplementationTO;
 import org.apache.syncope.common.lib.to.ProvisioningResult;
 import org.apache.syncope.common.lib.to.UserTO;
 import org.apache.syncope.common.lib.types.AnyTypeKind;
@@ -71,8 +69,6 @@ import org.apache.syncope.common.lib.types.CipherAlgorithm;
 import org.apache.syncope.common.lib.types.ClientExceptionType;
 import org.apache.syncope.common.lib.types.ConnConfProperty;
 import org.apache.syncope.common.lib.types.ConnectorCapability;
-import org.apache.syncope.common.lib.types.ImplementationEngine;
-import org.apache.syncope.common.lib.types.ImplementationType;
 import org.apache.syncope.common.lib.types.PropagationTaskExecStatus;
 import org.apache.syncope.common.lib.types.ResourceDeassociationAction;
 import org.apache.syncope.common.lib.types.PullMode;
@@ -80,54 +76,41 @@ import org.apache.syncope.common.lib.types.TaskType;
 import org.apache.syncope.common.rest.api.beans.AnyQuery;
 import org.apache.syncope.common.rest.api.beans.TaskQuery;
 import org.apache.syncope.common.rest.api.service.ConnectorService;
-import org.apache.syncope.common.rest.api.service.ImplementationService;
 import org.apache.syncope.common.rest.api.service.TaskService;
 import org.apache.syncope.core.provisioning.java.pushpull.DBPasswordPullActions;
 import org.apache.syncope.core.provisioning.java.pushpull.LDAPPasswordPullActions;
 import org.apache.syncope.core.spring.security.Encryptor;
 import org.apache.syncope.fit.FlowableDetector;
+import org.apache.syncope.fit.core.reference.PrefixItemTransformer;
+import org.apache.syncope.fit.core.reference.TestReconciliationFilterBuilder;
 import org.apache.syncope.fit.core.reference.TestPullActions;
+import org.apache.syncope.fit.core.reference.TestPullRule;
 import org.identityconnectors.framework.common.objects.Name;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-@SpringJUnitConfig(locations = { "classpath:testJDBCEnv.xml" })
+@RunWith(SpringJUnit4ClassRunner.class)
+@ContextConfiguration(locations = { "classpath:testJDBCEnv.xml" })
 public class PullTaskITCase extends AbstractTaskITCase {
 
     @Autowired
     private DataSource testDataSource;
 
-    @BeforeAll
+    @BeforeClass
     public static void testPullActionsSetup() {
-        ImplementationTO pullActions = null;
-        try {
-            pullActions = implementationService.read(TestPullActions.class.getSimpleName());
-        } catch (SyncopeClientException e) {
-            if (e.getType().getResponseStatus() == Response.Status.NOT_FOUND) {
-                pullActions = new ImplementationTO();
-                pullActions.setKey(TestPullActions.class.getSimpleName());
-                pullActions.setEngine(ImplementationEngine.JAVA);
-                pullActions.setType(ImplementationType.PULL_ACTIONS);
-                pullActions.setBody(TestPullActions.class.getName());
-                Response response = implementationService.create(pullActions);
-                pullActions = getObject(response.getLocation(), ImplementationService.class, ImplementationTO.class);
-                assertNotNull(pullActions);
-            }
-        }
-        assertNotNull(pullActions);
-
         PullTaskTO pullTask = taskService.read(PULL_TASK_KEY, true);
-        pullTask.getActions().add(pullActions.getKey());
+        pullTask.getActionsClassNames().add(TestPullActions.class.getName());
         taskService.update(pullTask);
     }
 
     @Test
     public void getPullActionsClasses() {
-        Set<String> actions = syncopeService.platform().
-                getJavaImplInfo(ImplementationType.PULL_ACTIONS).get().getClasses();
+        Set<String> actions = syncopeService.platform().getPullActions();
         assertNotNull(actions);
         assertFalse(actions.isEmpty());
     }
@@ -138,7 +121,7 @@ public class PullTaskITCase extends AbstractTaskITCase {
         assertFalse(tasks.getResult().isEmpty());
         tasks.getResult().stream().
                 filter(task -> (!(task instanceof PullTaskTO))).
-                forEach(item -> fail("This should not happen"));
+                forEach(item -> fail());
     }
 
     @Test
@@ -167,7 +150,7 @@ public class PullTaskITCase extends AbstractTaskITCase {
         task = taskService.read(actual.getKey(), true);
         assertNotNull(task);
         assertEquals(actual.getKey(), task.getKey());
-        assertEquals(actual.getJobDelegate(), task.getJobDelegate());
+        assertEquals(actual.getJobDelegateClassName(), task.getJobDelegateClassName());
         assertEquals(userTemplate, task.getTemplates().get(AnyTypeKind.USER.name()));
         assertEquals(groupTemplate, task.getTemplates().get(AnyTypeKind.GROUP.name()));
     }
@@ -192,15 +175,9 @@ public class PullTaskITCase extends AbstractTaskITCase {
         } catch (IOException e) {
             fail(e.getMessage());
         } finally {
-            if (propStream != null) {
-                propStream.close();
-            }
-            if (srcStream != null) {
-                srcStream.close();
-            }
-            if (dstStream != null) {
-                dstStream.close();
-            }
+            IOUtils.closeQuietly(propStream);
+            IOUtils.closeQuietly(srcStream);
+            IOUtils.closeQuietly(dstStream);
         }
 
         // -----------------------------
@@ -264,7 +241,7 @@ public class PullTaskITCase extends AbstractTaskITCase {
             assertTrue(userTO.getResources().contains(RESOURCE_NAME_TESTDB));
             assertTrue(userTO.getResources().contains(RESOURCE_NAME_WS2));
             assertEquals(1, userTO.getMemberships().size());
-            assertEquals("f779c0d4-633b-4be5-8f57-32eb478a3ca5", userTO.getMemberships().get(0).getGroupKey());
+            assertEquals("f779c0d4-633b-4be5-8f57-32eb478a3ca5", userTO.getMemberships().get(0).getRightKey());
 
             // Unmatching --> Assign (link) - SYNCOPE-658
             assertTrue(userTO.getResources().contains(RESOURCE_NAME_CSV));
@@ -278,7 +255,7 @@ public class PullTaskITCase extends AbstractTaskITCase {
             // Check for ignored user - SYNCOPE-663
             try {
                 userService.read("test2");
-                fail("This should not happen");
+                fail();
             } catch (SyncopeClientException e) {
                 assertEquals(Response.Status.NOT_FOUND, e.getType().getResponseStatus());
             }
@@ -310,7 +287,9 @@ public class PullTaskITCase extends AbstractTaskITCase {
     @Test
     public void dryRun() {
         ExecTO execution = execProvisioningTask(taskService, PULL_TASK_KEY, 50, true);
-        assertEquals("SUCCESS", execution.getStatus());
+        assertEquals(
+                "Execution of " + execution.getRefDesc() + " failed with message " + execution.getMessage(),
+                "SUCCESS", execution.getStatus());
     }
 
     @Test
@@ -422,7 +401,7 @@ public class PullTaskITCase extends AbstractTaskITCase {
     }
 
     @Test
-    public void reconcileFromScriptedSQL() throws IOException {
+    public void reconcileFromScriptedSQL() {
         // 0. reset sync token and set MappingItemTransformer
         ResourceTO resource = resourceService.read(RESOURCE_NAME_DBSCRIPTED);
         ResourceTO originalResource = SerializationUtils.clone(resource);
@@ -432,21 +411,8 @@ public class PullTaskITCase extends AbstractTaskITCase {
         ItemTO mappingItem = provision.getMapping().getItems().stream().
                 filter(object -> "location".equals(object.getIntAttrName())).findFirst().get();
         assertNotNull(mappingItem);
-
-        final String prefix = "PREFIX_";
-
-        ImplementationTO transformer = new ImplementationTO();
-        transformer.setKey("PrefixItemTransformer");
-        transformer.setEngine(ImplementationEngine.GROOVY);
-        transformer.setType(ImplementationType.ITEM_TRANSFORMER);
-        transformer.setBody(IOUtils.toString(
-                getClass().getResourceAsStream("/PrefixItemTransformer.groovy"), StandardCharsets.UTF_8));
-        Response response = implementationService.create(transformer);
-        transformer = getObject(response.getLocation(), ImplementationService.class, ImplementationTO.class);
-        assertNotNull(transformer);
-
-        mappingItem.getTransformers().clear();
-        mappingItem.getTransformers().add(transformer.getKey());
+        mappingItem.getTransformerClassNames().clear();
+        mappingItem.getTransformerClassNames().add(PrefixItemTransformer.class.getName());
 
         try {
             resourceService.update(resource);
@@ -462,7 +428,7 @@ public class PullTaskITCase extends AbstractTaskITCase {
             // 1. create printer on external resource
             AnyObjectTO anyObjectTO = AnyObjectITCase.getSampleTO("pull");
             String originalLocation = anyObjectTO.getPlainAttr("location").get().getValues().get(0);
-            assertFalse(originalLocation.startsWith(prefix));
+            assertFalse(originalLocation.startsWith(PrefixItemTransformer.PREFIX));
 
             anyObjectTO = createAnyObject(anyObjectTO).getEntity();
             assertNotNull(anyObjectTO);
@@ -471,8 +437,10 @@ public class PullTaskITCase extends AbstractTaskITCase {
             // (location starts with given prefix on external resource)
             ConnObjectTO connObjectTO = resourceService.
                     readConnObject(RESOURCE_NAME_DBSCRIPTED, anyObjectTO.getType(), anyObjectTO.getKey());
-            assertFalse(anyObjectTO.getPlainAttr("location").get().getValues().get(0).startsWith(prefix));
-            assertTrue(connObjectTO.getAttr("LOCATION").get().getValues().get(0).startsWith(prefix));
+            assertFalse(anyObjectTO.getPlainAttr("location").get().getValues().get(0).
+                    startsWith(PrefixItemTransformer.PREFIX));
+            assertTrue(connObjectTO.getAttr("LOCATION").get().getValues().get(0).
+                    startsWith(PrefixItemTransformer.PREFIX));
 
             // 3. unlink any existing printer and delete from Syncope (printer is now only on external resource)
             PagedResult<AnyObjectTO> matchingPrinters = anyObjectService.search(
@@ -481,8 +449,11 @@ public class PullTaskITCase extends AbstractTaskITCase {
                                     is("location").equalTo("pull*").query()).build());
             assertTrue(matchingPrinters.getSize() > 0);
             for (AnyObjectTO printer : matchingPrinters.getResult()) {
-                anyObjectService.deassociate(new DeassociationPatch.Builder().key(printer.getKey()).
-                        action(ResourceDeassociationAction.UNLINK).resource(RESOURCE_NAME_DBSCRIPTED).build());
+                DeassociationPatch deassociationPatch = new DeassociationPatch();
+                deassociationPatch.setKey(printer.getKey());
+                deassociationPatch.setAction(ResourceDeassociationAction.UNLINK);
+                deassociationPatch.getResources().add(RESOURCE_NAME_DBSCRIPTED);
+                anyObjectService.deassociate(deassociationPatch);
                 anyObjectService.delete(printer.getKey());
             }
 
@@ -492,10 +463,10 @@ public class PullTaskITCase extends AbstractTaskITCase {
             assertFalse(pullTask.isPerformDelete());
 
             // 4. pull
-            execProvisioningTask(taskService, pullTask.getKey(), 50, false);
+            execProvisioningTask(taskService, "30cfd653-257b-495f-8665-281281dbcb3d", 50, false);
 
             // 5. verify that printer was re-created in Syncope (implies that location does not start with given prefix,
-            // hence PrefixItemTransformer was applied during pull)
+            // hence PrefixMappingItemTransformer was applied during pull)
             matchingPrinters = anyObjectService.search(new AnyQuery.Builder().realm(SyncopeConstants.ROOT_REALM).
                     fiql(SyncopeClient.getAnyObjectSearchConditionBuilder("PRINTER").
                             is("location").equalTo("pull*").query()).build());
@@ -510,7 +481,7 @@ public class PullTaskITCase extends AbstractTaskITCase {
     }
 
     @Test
-    public void filteredReconciliation() throws IOException {
+    public void filteredReconciliation() {
         String user1OnTestPull = UUID.randomUUID().toString();
         String user2OnTestPull = UUID.randomUUID().toString();
 
@@ -520,28 +491,20 @@ public class PullTaskITCase extends AbstractTaskITCase {
         try {
             // 1. create 2 users on testpull
             jdbcTemplate.execute("INSERT INTO testpull VALUES ("
-                    + "'" + user1OnTestPull + "', 'user1', 'Doe', false, 'mail1@apache.org', NULL)");
+                    + "'" + user1OnTestPull + "', 'user1', 'Doe', 'mail1@apache.org', NULL)");
             jdbcTemplate.execute("INSERT INTO testpull VALUES ("
-                    + "'" + user2OnTestPull + "', 'user2', 'Rossi', false, 'mail2@apache.org', NULL)");
+                    + "'" + user2OnTestPull + "', 'user2', 'Rossi', 'mail2@apache.org', NULL)");
 
             // 2. create new pull task for test-db, with reconciliation filter (surname 'Rossi') 
-            ImplementationTO reconFilterBuilder = new ImplementationTO();
-            reconFilterBuilder.setKey("TestReconFilterBuilder");
-            reconFilterBuilder.setEngine(ImplementationEngine.GROOVY);
-            reconFilterBuilder.setType(ImplementationType.RECON_FILTER_BUILDER);
-            reconFilterBuilder.setBody(IOUtils.toString(
-                    getClass().getResourceAsStream("/TestReconFilterBuilder.groovy"), StandardCharsets.UTF_8));
-            Response response = implementationService.create(reconFilterBuilder);
-            reconFilterBuilder = getObject(response.getLocation(), ImplementationService.class, ImplementationTO.class);
-            assertNotNull(reconFilterBuilder);
-
             task = taskService.read("7c2242f4-14af-4ab5-af31-cdae23783655", true);
             task.setPullMode(PullMode.FILTERED_RECONCILIATION);
-            task.setReconFilterBuilder(reconFilterBuilder.getKey());
-            response = taskService.create(task);
+            task.setReconciliationFilterBuilderClassName(TestReconciliationFilterBuilder.class.getName());
+            Response response = taskService.create(task);
             task = getObject(response.getLocation(), TaskService.class, PullTaskTO.class);
             assertNotNull(task);
-            assertEquals(reconFilterBuilder.getKey(), task.getReconFilterBuilder());
+            assertEquals(
+                    TestReconciliationFilterBuilder.class.getName(),
+                    task.getReconciliationFilterBuilderClassName());
 
             // 3. exec task
             ExecTO execution = execProvisioningTask(taskService, task.getKey(), 50, false);
@@ -553,7 +516,7 @@ public class PullTaskITCase extends AbstractTaskITCase {
 
             try {
                 userService.read("user1");
-                fail("This should not happen");
+                fail();
             } catch (SyncopeClientException e) {
                 assertEquals(ClientExceptionType.NotFound, e.getType());
             }
@@ -621,10 +584,10 @@ public class PullTaskITCase extends AbstractTaskITCase {
             jdbcTemplate.execute("DELETE FROM testpull");
             jdbcTemplate.execute("INSERT INTO testpull VALUES "
                     + "(1040, 'syncTokenWithErrors1', 'Surname1', "
-                    + "false, 'syncTokenWithErrors1@syncope.apache.org', '2014-05-23 13:53:24.293')");
+                    + "'syncTokenWithErrors1@syncope.apache.org', '2014-05-23 13:53:24.293')");
             jdbcTemplate.execute("INSERT INTO testpull VALUES "
                     + "(1041, 'syncTokenWithErrors2', 'Surname2', "
-                    + "false, 'syncTokenWithErrors1@syncope.apache.org', '2015-05-23 13:53:24.293')");
+                    + "'syncTokenWithErrors1@syncope.apache.org', '2015-05-23 13:53:24.293')");
 
             ExecTO exec = execProvisioningTask(taskService, pullTask.getKey(), 50, false);
             assertEquals(PropagationTaskExecStatus.SUCCESS, PropagationTaskExecStatus.valueOf(exec.getStatus()));
@@ -729,7 +692,7 @@ public class PullTaskITCase extends AbstractTaskITCase {
 
         // 1. populate the external table
         jdbcTemplate.execute("INSERT INTO testpull VALUES"
-                + "('" + id + "', 'issuesyncope230', 'Surname', false, 'syncope230@syncope.apache.org', NULL)");
+                + "('" + id + "', 'issuesyncope230', 'Surname', 'syncope230@syncope.apache.org', NULL)");
 
         // 2. execute PullTask for resource-db-pull (table TESTPULL on external H2)
         execProvisioningTask(taskService, "7c2242f4-14af-4ab5-af31-cdae23783655", 50, false);
@@ -755,30 +718,12 @@ public class PullTaskITCase extends AbstractTaskITCase {
     }
 
     @Test
-    public void issueSYNCOPE258() throws IOException {
+    public void issueSYNCOPE258() {
         // -----------------------------
         // Add a custom correlation rule
         // -----------------------------
-        ImplementationTO corrRule = null;
-        try {
-            corrRule = implementationService.read("TestPullRule");
-        } catch (SyncopeClientException e) {
-            if (e.getType().getResponseStatus() == Response.Status.NOT_FOUND) {
-                corrRule = new ImplementationTO();
-                corrRule.setKey("TestPullRule");
-                corrRule.setEngine(ImplementationEngine.GROOVY);
-                corrRule.setType(ImplementationType.PULL_CORRELATION_RULE);
-                corrRule.setBody(IOUtils.toString(
-                        getClass().getResourceAsStream("/TestPullRule.groovy"), StandardCharsets.UTF_8));
-                Response response = implementationService.create(corrRule);
-                corrRule = getObject(response.getLocation(), ImplementationService.class, ImplementationTO.class);
-                assertNotNull(corrRule);
-            }
-        }
-        assertNotNull(corrRule);
-
         PullPolicyTO policyTO = policyService.read("9454b0d7-2610-400a-be82-fc23cf553dd6");
-        policyTO.getCorrelationRules().put(AnyTypeKind.USER.name(), corrRule.getKey());
+        policyTO.getSpecification().getCorrelationRules().put(AnyTypeKind.USER.name(), TestPullRule.class.getName());
         policyService.update(policyTO);
         // -----------------------------
 
@@ -820,8 +765,8 @@ public class PullTaskITCase extends AbstractTaskITCase {
         assertEquals(1, executed.getExecutions().size());
 
         // asser for just one match
-        assertTrue(executed.getExecutions().get(0).getMessage().contains("[updated/failures]: 1/0"),
-                executed.getExecutions().get(0).getMessage().substring(0, 55) + "...");
+        assertTrue(executed.getExecutions().get(0).getMessage().substring(0, 55) + "...",
+                executed.getExecutions().get(0).getMessage().contains("[updated/failures]: 1/0"));
     }
 
     @Test
@@ -919,15 +864,6 @@ public class PullTaskITCase extends AbstractTaskITCase {
         jdbcTemplate.execute("UPDATE test set PASSWORD='" + newPassword + "' where ID='" + user.getUsername() + "'");
 
         // 4. Pull the user from the resource
-        ImplementationTO pullActions = new ImplementationTO();
-        pullActions.setKey(DBPasswordPullActions.class.getSimpleName());
-        pullActions.setEngine(ImplementationEngine.JAVA);
-        pullActions.setType(ImplementationType.PULL_ACTIONS);
-        pullActions.setBody(DBPasswordPullActions.class.getName());
-        Response response = implementationService.create(pullActions);
-        pullActions = getObject(response.getLocation(), ImplementationService.class, ImplementationTO.class);
-        assertNotNull(pullActions);
-
         PullTaskTO pullTask = new PullTaskTO();
         pullTask.setDestinationRealm(SyncopeConstants.ROOT_REALM);
         pullTask.setName("DB Pull Task");
@@ -936,7 +872,7 @@ public class PullTaskITCase extends AbstractTaskITCase {
         pullTask.setPerformUpdate(true);
         pullTask.setPullMode(PullMode.FULL_RECONCILIATION);
         pullTask.setResource(RESOURCE_NAME_TESTDB);
-        pullTask.getActions().add(pullActions.getKey());
+        pullTask.getActionsClassNames().add(DBPasswordPullActions.class.getName());
         Response taskResponse = taskService.create(pullTask);
 
         PullTaskTO actual = getObject(taskResponse.getLocation(), TaskService.class, PullTaskTO.class);
@@ -945,7 +881,7 @@ public class PullTaskITCase extends AbstractTaskITCase {
         pullTask = taskService.read(actual.getKey(), true);
         assertNotNull(pullTask);
         assertEquals(actual.getKey(), pullTask.getKey());
-        assertEquals(actual.getJobDelegate(), pullTask.getJobDelegate());
+        assertEquals(actual.getJobDelegateClassName(), pullTask.getJobDelegateClassName());
 
         ExecTO execution = execProvisioningTask(taskService, pullTask.getKey(), 50, false);
         assertEquals(PropagationTaskExecStatus.SUCCESS, PropagationTaskExecStatus.valueOf(execution.getStatus()));
@@ -1008,15 +944,6 @@ public class PullTaskITCase extends AbstractTaskITCase {
             connectorService.update(resourceConnector);
 
             // 6. Pull the user from the resource
-            ImplementationTO pullActions = new ImplementationTO();
-            pullActions.setKey(LDAPPasswordPullActions.class.getSimpleName());
-            pullActions.setEngine(ImplementationEngine.JAVA);
-            pullActions.setType(ImplementationType.PULL_ACTIONS);
-            pullActions.setBody(LDAPPasswordPullActions.class.getName());
-            Response response = implementationService.create(pullActions);
-            pullActions = getObject(response.getLocation(), ImplementationService.class, ImplementationTO.class);
-            assertNotNull(pullActions);
-
             pullTask = new PullTaskTO();
             pullTask.setDestinationRealm(SyncopeConstants.ROOT_REALM);
             pullTask.setName("LDAP Pull Task");
@@ -1025,7 +952,7 @@ public class PullTaskITCase extends AbstractTaskITCase {
             pullTask.setPerformUpdate(true);
             pullTask.setPullMode(PullMode.FULL_RECONCILIATION);
             pullTask.setResource(RESOURCE_NAME_LDAP);
-            pullTask.getActions().add(pullActions.getKey());
+            pullTask.getActionsClassNames().add(LDAPPasswordPullActions.class.getName());
             Response taskResponse = taskService.create(pullTask);
 
             pullTask = getObject(taskResponse.getLocation(), TaskService.class, PullTaskTO.class);

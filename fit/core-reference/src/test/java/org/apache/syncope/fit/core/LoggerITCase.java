@@ -18,11 +18,11 @@
  */
 package org.apache.syncope.fit.core;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.IOException;
@@ -34,6 +34,7 @@ import java.util.Properties;
 import javax.ws.rs.core.Response;
 import javax.xml.ws.WebServiceException;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.syncope.common.lib.SyncopeClientException;
 import org.apache.syncope.common.lib.log.EventCategoryTO;
@@ -57,7 +58,7 @@ import org.apache.syncope.core.logic.ResourceLogic;
 import org.apache.syncope.core.logic.GroupLogic;
 import org.apache.syncope.core.logic.UserLogic;
 import org.apache.syncope.fit.AbstractITCase;
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 
 public class LoggerITCase extends AbstractITCase {
 
@@ -210,7 +211,8 @@ public class LoggerITCase extends AbstractITCase {
             if (AnyTypeKind.USER.name().toLowerCase().equals(eventCategoryTO.getCategory())) {
                 if (RESOURCE_NAME_LDAP.equals(eventCategoryTO.getSubcategory())
                         && EventCategoryType.PULL == eventCategoryTO.getType()) {
-
+                    assertTrue(eventCategoryTO.getEvents().contains(ResourceOperation.CREATE.name().toLowerCase()));
+                    assertTrue(eventCategoryTO.getEvents().contains(ResourceOperation.UPDATE.name().toLowerCase()));
                     assertTrue(eventCategoryTO.getEvents().contains(ResourceOperation.DELETE.name().toLowerCase()));
                     found = true;
                 }
@@ -223,12 +225,20 @@ public class LoggerITCase extends AbstractITCase {
             if (AnyTypeKind.USER.name().toLowerCase().equals(eventCategoryTO.getCategory())) {
                 if (RESOURCE_NAME_CSV.equals(eventCategoryTO.getSubcategory())
                         && EventCategoryType.PROPAGATION == eventCategoryTO.getType()) {
-
                     assertTrue(eventCategoryTO.getEvents().contains(ResourceOperation.CREATE.name().toLowerCase()));
                     assertTrue(eventCategoryTO.getEvents().contains(ResourceOperation.UPDATE.name().toLowerCase()));
                     assertTrue(eventCategoryTO.getEvents().contains(ResourceOperation.DELETE.name().toLowerCase()));
                     found = true;
                 }
+            }
+        }
+        assertTrue(found);
+
+        found = false;
+        for (EventCategoryTO eventCategoryTO : events) {
+            if (EventCategoryType.TASK == eventCategoryTO.getType()
+                    && "TestSampleJobDelegate".equals(eventCategoryTO.getCategory())) {
+                found = true;
             }
         }
         assertTrue(found);
@@ -245,8 +255,10 @@ public class LoggerITCase extends AbstractITCase {
 
     @Test
     public void customAuditAppender() throws IOException, InterruptedException {
-        try (InputStream propStream = getClass().getResourceAsStream("/core-test.properties")) {
+        InputStream propStream = null;
+        try {
             Properties props = new Properties();
+            propStream = getClass().getResourceAsStream("/core-test.properties");
             props.load(propStream);
 
             String auditFilePath = props.getProperty("test.log.dir")
@@ -318,6 +330,8 @@ public class LoggerITCase extends AbstractITCase {
             assertTrue(StringUtils.isEmpty(FileUtils.readFileToString(auditTempFile, Charset.defaultCharset())));
         } catch (IOException e) {
             fail("Unable to read/write log files" + e.getMessage());
+        } finally {
+            IOUtils.closeQuietly(propStream);
         }
     }
 

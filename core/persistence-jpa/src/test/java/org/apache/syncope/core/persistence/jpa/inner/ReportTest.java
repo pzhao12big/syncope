@@ -18,23 +18,18 @@
  */
 package org.apache.syncope.core.persistence.jpa.inner;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 import java.util.List;
 import java.util.UUID;
 import org.apache.syncope.common.lib.report.UserReportletConf;
-import org.apache.syncope.common.lib.types.ImplementationEngine;
-import org.apache.syncope.common.lib.types.ImplementationType;
-import org.apache.syncope.core.persistence.api.dao.ImplementationDAO;
 import org.apache.syncope.core.persistence.api.dao.ReportDAO;
 import org.apache.syncope.core.persistence.api.dao.ReportTemplateDAO;
-import org.apache.syncope.core.persistence.api.entity.Implementation;
 import org.apache.syncope.core.persistence.api.entity.Report;
 import org.apache.syncope.core.persistence.jpa.AbstractTest;
-import org.junit.jupiter.api.Test;
-import org.apache.syncope.core.provisioning.api.serialization.POJOHelper;
+import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -46,9 +41,6 @@ public class ReportTest extends AbstractTest {
 
     @Autowired
     private ReportTemplateDAO reportTemplateDAO;
-
-    @Autowired
-    private ImplementationDAO implementationDAO;
 
     @Test
     public void find() {
@@ -68,27 +60,13 @@ public class ReportTest extends AbstractTest {
 
     @Test
     public void save() {
-        Implementation reportlet1 = entityFactory.newEntity(Implementation.class);
-        reportlet1.setKey("UserReportlet" + UUID.randomUUID().toString());
-        reportlet1.setEngine(ImplementationEngine.JAVA);
-        reportlet1.setType(ImplementationType.REPORTLET);
-        reportlet1.setBody(POJOHelper.serialize(new UserReportletConf("first")));
-        reportlet1 = implementationDAO.save(reportlet1);
-
-        Implementation reportlet2 = entityFactory.newEntity(Implementation.class);
-        reportlet2.setKey("UserReportlet" + UUID.randomUUID().toString());
-        reportlet2.setEngine(ImplementationEngine.JAVA);
-        reportlet2.setType(ImplementationType.REPORTLET);
-        reportlet2.setBody(POJOHelper.serialize(new UserReportletConf("second")));
-        reportlet2 = implementationDAO.save(reportlet2);
-
         int beforeCount = reportDAO.findAll().size();
 
         Report report = entityFactory.newEntity(Report.class);
         report.setName("new report");
         report.setActive(true);
-        report.add(reportlet1);
-        report.add(reportlet2);
+        report.add(new UserReportletConf("first"));
+        report.add(new UserReportletConf("second"));
         report.setTemplate(reportTemplateDAO.find("sample"));
 
         report = reportDAO.save(report);

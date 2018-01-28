@@ -18,12 +18,12 @@
  */
 package org.apache.syncope.core.persistence.jpa.inner;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.util.HashSet;
@@ -40,7 +40,7 @@ import org.apache.syncope.core.persistence.jpa.AbstractTest;
 import org.apache.syncope.core.spring.security.DelegatedAdministrationException;
 import org.apache.syncope.core.spring.security.SyncopeAuthenticationDetails;
 import org.apache.syncope.core.spring.security.SyncopeGrantedAuthority;
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
@@ -78,12 +78,13 @@ public class ConnInstanceTest extends AbstractTest {
     public void findById() {
         ConnInstance connInstance = connInstanceDAO.find("88a7a819-dab5-46b4-9b90-0b9769eabdb8");
         assertNotNull(connInstance);
-        assertEquals("net.tirasa.connid.bundles.soap.WebServiceConnector", connInstance.getConnectorName());
-        assertEquals("net.tirasa.connid.bundles.soap", connInstance.getBundleName());
+        assertEquals("invalid connector name",
+                "net.tirasa.connid.bundles.soap.WebServiceConnector", connInstance.getConnectorName());
+        assertEquals("invalid bundle name", "net.tirasa.connid.bundles.soap", connInstance.getBundleName());
 
         try {
             connInstanceDAO.authFind("88a7a819-dab5-46b4-9b90-0b9769eabdb8");
-            fail("This should not happen");
+            fail();
         } catch (DelegatedAdministrationException e) {
             assertNotNull(e);
         }
@@ -139,31 +140,32 @@ public class ConnInstanceTest extends AbstractTest {
 
         assertNotNull("save did not work", actual.getKey());
 
-        assertEquals("WebService", actual.getConnectorName());
+        assertEquals("save did not work for \"name\" attribute", "WebService", actual.getConnectorName());
 
-        assertEquals("org.apache.syncope.core.persistence.test.util", actual.getBundleName());
+        assertEquals("save did not work for \"bundle name\" attribute", "org.apache.syncope.core.persistence.test.util",
+                actual.getBundleName());
 
-        assertEquals("1.0", connInstance.getVersion());
+        assertEquals("save did not work for \"majorVersion\" attribute", "1.0", connInstance.getVersion());
 
         assertEquals("New", actual.getDisplayName());
 
-        assertEquals(60, actual.getConnRequestTimeout().intValue());
+        assertEquals(60, actual.getConnRequestTimeout(), 0);
 
         conf = connInstance.getConf();
         assertFalse(conf.isEmpty());
 
-        assertNotNull(conf);
+        assertNotNull("configuration retrieving failed", conf);
         assertTrue(conf.size() == 2);
     }
 
     @Test
     public void delete() {
         ConnInstance connectorInstance = connInstanceDAO.find("88a7a819-dab5-46b4-9b90-0b9769eabdb8");
-        assertNotNull(connectorInstance);
+        assertNotNull("find to delete did not work", connectorInstance);
 
         connInstanceDAO.delete(connectorInstance.getKey());
 
         ConnInstance actual = connInstanceDAO.find("88a7a819-dab5-46b4-9b90-0b9769eabdb8");
-        assertNull(actual);
+        assertNull("delete did not work", actual);
     }
 }

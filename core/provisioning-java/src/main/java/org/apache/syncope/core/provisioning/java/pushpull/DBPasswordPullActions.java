@@ -60,7 +60,7 @@ public class DBPasswordPullActions implements PullActions {
 
     @Transactional(readOnly = true)
     @Override
-    public void beforeProvision(
+    public SyncDelta beforeProvision(
             final ProvisioningProfile<?, ?> profile,
             final SyncDelta delta,
             final EntityTO any) throws JobExecutionException {
@@ -69,11 +69,13 @@ public class DBPasswordPullActions implements PullActions {
             String password = ((UserTO) any).getPassword();
             parseEncodedPassword(password, profile.getConnector());
         }
+
+        return delta;
     }
 
     @Transactional(readOnly = true)
     @Override
-    public <M extends AnyPatch> void beforeUpdate(
+    public <M extends AnyPatch> SyncDelta beforeUpdate(
             final ProvisioningProfile<?, ?> profile,
             final SyncDelta delta,
             final EntityTO entityTO,
@@ -83,6 +85,8 @@ public class DBPasswordPullActions implements PullActions {
             PasswordPatch modPassword = ((UserPatch) anyPatch).getPassword();
             parseEncodedPassword(modPassword == null ? null : modPassword.getValue(), profile.getConnector());
         }
+
+        return delta;
     }
 
     private void parseEncodedPassword(final String password, final Connector connector) {

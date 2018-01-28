@@ -18,18 +18,17 @@
  */
 package org.apache.syncope.client.console.wizards.resources;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.apache.syncope.client.console.rest.ImplementationRestClient;
+import org.apache.syncope.client.console.SyncopeConsoleSession;
 import org.apache.syncope.client.console.wicket.markup.html.form.AjaxCheckBoxPanel;
 import org.apache.syncope.client.console.wicket.markup.html.form.AjaxDropDownChoicePanel;
 import org.apache.syncope.client.console.wicket.markup.html.form.AjaxPalettePanel;
 import org.apache.syncope.client.console.wicket.markup.html.form.AjaxSpinnerFieldPanel;
 import org.apache.syncope.client.console.wicket.markup.html.form.AjaxTextFieldPanel;
-import org.apache.syncope.common.lib.to.EntityTO;
 import org.apache.syncope.common.lib.to.ResourceTO;
-import org.apache.syncope.common.lib.types.ImplementationType;
 import org.apache.syncope.common.lib.types.TraceLevel;
 import org.apache.wicket.extensions.wizard.WizardStep;
 import org.apache.wicket.markup.html.WebMarkupContainer;
@@ -44,16 +43,13 @@ public class ResourceDetailsPanel extends WizardStep {
 
     private static final long serialVersionUID = -7982691107029848579L;
 
-    private final ImplementationRestClient implRestClient = new ImplementationRestClient();
-
-    private final IModel<List<String>> propagationActions = new LoadableDetachableModel<List<String>>() {
+    private final IModel<List<String>> propagationActionsClasses = new LoadableDetachableModel<List<String>>() {
 
         private static final long serialVersionUID = 5275935387613157437L;
 
         @Override
         protected List<String> load() {
-            return implRestClient.list(ImplementationType.PROPAGATION_ACTIONS).stream().
-                    map(EntityTO::getKey).sorted().collect(Collectors.toList());
+            return new ArrayList<>(SyncopeConsoleSession.get().getPlatformInfo().getPropagationActions());
         }
     };
 
@@ -92,9 +88,9 @@ public class ResourceDetailsPanel extends WizardStep {
 
         container.add(new AjaxPalettePanel.Builder<String>().
                 setAllowMoveAll(true).setAllowOrder(true).
-                build("propagationActions",
-                        new PropertyModel<List<String>>(resourceTO, "propagationActions"),
-                        new ListModel<>(propagationActions.getObject())).
+                build("propagationActionsClassNames",
+                        new PropertyModel<List<String>>(resourceTO, "propagationActionsClassNames"),
+                        new ListModel<>(propagationActionsClasses.getObject())).
                 setOutputMarkupId(true));
 
         container.add(new AjaxDropDownChoicePanel<>(

@@ -18,17 +18,15 @@
  */
 package org.apache.syncope.client.console.policies;
 
-import java.util.List;
 import org.apache.syncope.client.console.wicket.markup.html.form.ActionLink;
 import org.apache.syncope.client.console.wicket.markup.html.form.ActionsPanel;
+import org.apache.syncope.common.lib.policy.PullPolicySpec;
 import org.apache.syncope.common.lib.policy.PullPolicyTO;
 import org.apache.syncope.common.lib.types.PolicyType;
 import org.apache.syncope.common.lib.types.StandardEntitlement;
 import org.apache.wicket.PageReference;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.authroles.authorization.strategies.role.metadata.MetaDataRoleAuthorizationStrategy;
-import org.apache.wicket.extensions.markup.html.repeater.data.table.IColumn;
-import org.apache.wicket.extensions.markup.html.repeater.data.table.PropertyColumn;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.model.StringResourceModel;
@@ -44,18 +42,13 @@ public class PullPolicyDirectoryPanel extends PolicyDirectoryPanel<PullPolicyTO>
         super(id, PolicyType.PULL, pageRef);
 
         final PullPolicyTO defaultItem = new PullPolicyTO();
+        defaultItem.setSpecification(new PullPolicySpec());
 
         this.addNewItemPanelBuilder(
                 new PolicyModalPanelBuilder<>(defaultItem, modal, pageRef), true);
         MetaDataRoleAuthorizationStrategy.authorize(addAjaxLink, RENDER, StandardEntitlement.POLICY_CREATE);
 
         initResultTable();
-    }
-
-    @Override
-    protected void addCustomColumnFields(final List<IColumn<PullPolicyTO, String>> columns) {
-        columns.add(new PropertyColumn<>(new StringResourceModel(
-                "conflictResolutionAction", this), "conflictResolutionAction", "conflictResolutionAction"));
     }
 
     @Override
@@ -67,10 +60,10 @@ public class PullPolicyDirectoryPanel extends PolicyDirectoryPanel<PullPolicyTO>
             @Override
             public void onClick(final AjaxRequestTarget target, final PullPolicyTO ignore) {
                 target.add(policySpecModal.setContent(
-                        new PullPolicyModalPanel(model.getObject(), policySpecModal, pageRef)));
+                        new PolicySpecModalPanel(model.getObject(), policySpecModal, pageRef)));
 
                 policySpecModal.header(new StringResourceModel(
-                        "policy.rules", PullPolicyDirectoryPanel.this, Model.of(model.getObject())));
+                        "policy.rule.conf", PullPolicyDirectoryPanel.this, Model.of(model.getObject())));
 
                 MetaDataRoleAuthorizationStrategy.authorize(
                         policySpecModal.getForm(), ENABLE, StandardEntitlement.POLICY_UPDATE);

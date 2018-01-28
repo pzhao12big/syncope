@@ -112,8 +112,11 @@ public class ElasticsearchUtils {
 
             List<Object> relationships = new ArrayList<>();
             List<Object> relationshipTypes = new ArrayList<>();
-            anyObjectDAO.findAllRelationships(anyObject).forEach(relationship -> {
-                relationships.add(relationship.getRightEnd().getKey());
+            anyObjectDAO.findAllRelationships(anyObject).stream().
+                    map(relationship -> {
+                        relationships.add(relationship.getRightEnd().getKey());
+                        return relationship;
+                    }).forEachOrdered(relationship -> {
                 relationshipTypes.add(relationship.getType().getKey());
             });
             builder = builder.field("relationships", relationships);

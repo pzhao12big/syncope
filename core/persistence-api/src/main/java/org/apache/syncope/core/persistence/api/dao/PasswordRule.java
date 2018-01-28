@@ -26,12 +26,5 @@ import org.apache.syncope.core.persistence.api.entity.user.User;
  */
 public interface PasswordRule {
 
-    default PasswordRuleConf getConf() {
-        return null;
-    }
-
-    default void setConf(PasswordRuleConf conf) {
-    }
-
-    void enforce(User user);
+    void enforce(PasswordRuleConf conf, User user);
 }

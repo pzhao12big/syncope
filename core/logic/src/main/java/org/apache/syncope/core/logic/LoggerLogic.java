@@ -42,6 +42,7 @@ import org.apache.syncope.common.lib.types.LoggerLevel;
 import org.apache.syncope.common.lib.types.LoggerType;
 import org.apache.syncope.common.lib.types.MatchingRule;
 import org.apache.syncope.common.lib.types.ResourceOperation;
+import org.apache.syncope.common.lib.types.TaskType;
 import org.apache.syncope.common.lib.types.UnmatchingRule;
 import org.apache.syncope.common.lib.types.AnyTypeKind;
 import org.apache.syncope.common.lib.types.AuditElements;
@@ -51,8 +52,10 @@ import org.apache.syncope.core.logic.init.LoggerLoader;
 import org.apache.syncope.core.persistence.api.dao.ExternalResourceDAO;
 import org.apache.syncope.core.persistence.api.dao.LoggerDAO;
 import org.apache.syncope.core.persistence.api.dao.NotFoundException;
+import org.apache.syncope.core.persistence.api.dao.TaskDAO;
 import org.apache.syncope.core.persistence.api.entity.EntityFactory;
 import org.apache.syncope.core.persistence.api.entity.Logger;
+import org.apache.syncope.core.persistence.api.entity.task.SchedTask;
 import org.apache.syncope.core.spring.BeanUtils;
 import org.apache.syncope.core.provisioning.java.pushpull.PushJobDelegate;
 import org.apache.syncope.core.provisioning.java.pushpull.PullJobDelegate;
@@ -81,6 +84,9 @@ public class LoggerLogic extends AbstractTransactionalLogic<LoggerTO> {
 
     @Autowired
     private ExternalResourceDAO resourceDAO;
+
+    @Autowired
+    private TaskDAO taskDAO;
 
     @Autowired
     private EntityFactory entityFactory;
@@ -345,38 +351,45 @@ public class LoggerLogic extends AbstractTransactionalLogic<LoggerTO> {
             for (AnyTypeKind anyTypeKind : AnyTypeKind.values()) {
                 resourceDAO.findAll().forEach(resource -> {
                     EventCategoryTO propEventCategoryTO = new EventCategoryTO(EventCategoryType.PROPAGATION);
-                    EventCategoryTO pullEventCategoryTO = new EventCategoryTO(EventCategoryType.PULL);
+                    EventCategoryTO syncEventCategoryTO = new EventCategoryTO(EventCategoryType.PULL);
                     EventCategoryTO pushEventCategoryTO = new EventCategoryTO(EventCategoryType.PUSH);
 
                     propEventCategoryTO.setCategory(anyTypeKind.name().toLowerCase());
                     propEventCategoryTO.setSubcategory(resource.getKey());
 
-                    pullEventCategoryTO.setCategory(anyTypeKind.name().toLowerCase());
+                    syncEventCategoryTO.setCategory(anyTypeKind.name().toLowerCase());
                     pushEventCategoryTO.setCategory(anyTypeKind.name().toLowerCase());
-                    pullEventCategoryTO.setSubcategory(resource.getKey());
+                    syncEventCategoryTO.setSubcategory(resource.getKey());
                     pushEventCategoryTO.setSubcategory(resource.getKey());
 
                     for (ResourceOperation resourceOperation : ResourceOperation.values()) {
                         propEventCategoryTO.getEvents().add(resourceOperation.name().toLowerCase());
+                        syncEventCategoryTO.getEvents().add(resourceOperation.name().toLowerCase());
+                        pushEventCategoryTO.getEvents().add(resourceOperation.name().toLowerCase());
                     }
-                    pullEventCategoryTO.getEvents().add(ResourceOperation.DELETE.name().toLowerCase());
 
                     for (UnmatchingRule unmatching : UnmatchingRule.values()) {
                         String event = UnmatchingRule.toEventName(unmatching);
-                        pullEventCategoryTO.getEvents().add(event);
+                        syncEventCategoryTO.getEvents().add(event);
                         pushEventCategoryTO.getEvents().add(event);
                     }
 
                     for (MatchingRule matching : MatchingRule.values()) {
                         String event = MatchingRule.toEventName(matching);
-                        pullEventCategoryTO.getEvents().add(event);
+                        syncEventCategoryTO.getEvents().add(event);
                         pushEventCategoryTO.getEvents().add(event);
                     }
 
                     events.add(propEventCategoryTO);
-                    events.add(pullEventCategoryTO);
+                    events.add(syncEventCategoryTO);
                     events.add(pushEventCategoryTO);
                 });
+            }
+
+            for (SchedTask task : taskDAO.<SchedTask>findAll(TaskType.SCHEDULED)) {
+                EventCategoryTO eventCategoryTO = new EventCategoryTO(EventCategoryType.TASK);
+                eventCategoryTO.setCategory(Class.forName(task.getJobDelegateClassName()).getSimpleName());
+                events.add(eventCategoryTO);
             }
 
             EventCategoryTO eventCategoryTO = new EventCategoryTO(EventCategoryType.TASK);

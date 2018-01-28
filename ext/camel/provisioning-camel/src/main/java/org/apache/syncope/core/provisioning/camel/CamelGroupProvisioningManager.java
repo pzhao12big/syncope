@@ -85,16 +85,14 @@ public class CamelGroupProvisioningManager
     }
 
     @Override
-    public Pair<GroupPatch, List<PropagationStatus>> update(
-            final GroupPatch anyPatch, final boolean nullPriorityAsync) {
-
+    public Pair<String, List<PropagationStatus>> update(final GroupPatch anyPatch, final boolean nullPriorityAsync) {
         return update(anyPatch, Collections.<String>emptySet(), nullPriorityAsync);
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     @Override
     @SuppressWarnings("unchecked")
-    public Pair<GroupPatch, List<PropagationStatus>> update(
+    public Pair<String, List<PropagationStatus>> update(
             final GroupPatch anyPatch, final Set<String> excludedResources, final boolean nullPriorityAsync) {
 
         PollingConsumer pollingConsumer = getConsumer("direct:updateGroupPort");
@@ -154,7 +152,7 @@ public class CamelGroupProvisioningManager
             throw (RuntimeException) exchange.getProperty(Exchange.EXCEPTION_CAUGHT);
         }
 
-        return exchange.getIn().getBody(GroupPatch.class).getKey();
+        return exchange.getIn().getBody(String.class);
     }
 
     @Override
@@ -169,7 +167,7 @@ public class CamelGroupProvisioningManager
             throw (RuntimeException) exchange.getProperty(Exchange.EXCEPTION_CAUGHT);
         }
 
-        return exchange.getIn().getBody(GroupPatch.class).getKey();
+        return exchange.getIn().getBody(String.class);
     }
 
     @Override

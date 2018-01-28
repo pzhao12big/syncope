@@ -24,14 +24,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.apache.syncope.common.lib.SyncopeClientException;
 import org.apache.syncope.common.lib.to.AbstractTaskTO;
 import org.apache.syncope.common.lib.to.BulkActionResult;
 import org.apache.syncope.common.lib.to.ExecTO;
 import org.apache.syncope.common.lib.to.JobTO;
-import org.apache.syncope.common.lib.to.PropagationTaskTO;
 import org.apache.syncope.common.lib.to.SchedTaskTO;
 import org.apache.syncope.common.lib.types.AnyTypeKind;
 import org.apache.syncope.common.lib.types.ClientExceptionType;
@@ -44,6 +42,7 @@ import org.apache.syncope.core.persistence.api.dao.TaskDAO;
 import org.apache.syncope.core.persistence.api.dao.TaskExecDAO;
 import org.apache.syncope.core.persistence.api.dao.search.OrderByClause;
 import org.apache.syncope.core.persistence.api.entity.task.NotificationTask;
+import org.apache.syncope.core.persistence.api.entity.task.PropagationTask;
 import org.apache.syncope.core.persistence.api.entity.task.SchedTask;
 import org.apache.syncope.core.persistence.api.entity.task.Task;
 import org.apache.syncope.core.persistence.api.entity.task.TaskExec;
@@ -145,8 +144,20 @@ public class TaskLogic extends AbstractExecutableLogic<AbstractTaskTO> {
     }
 
     @PreAuthorize("hasRole('" + StandardEntitlement.TASK_LIST + "')")
+    public int count(
+            final TaskType type,
+            final String resource,
+            final String notification,
+            final AnyTypeKind anyTypeKind,
+            final String anyTypeKey) {
+
+        return taskDAO.count(
+                type, resourceDAO.find(resource), notificationDAO.find(notification), anyTypeKind, anyTypeKey);
+    }
+
+    @PreAuthorize("hasRole('" + StandardEntitlement.TASK_LIST + "')")
     @SuppressWarnings("unchecked")
-    public <T extends AbstractTaskTO> Pair<Integer, List<T>> list(
+    public <T extends AbstractTaskTO> List<T> list(
             final TaskType type,
             final String resource,
             final String notification,
@@ -157,16 +168,11 @@ public class TaskLogic extends AbstractExecutableLogic<AbstractTaskTO> {
             final List<OrderByClause> orderByClauses,
             final boolean details) {
 
-        int count = taskDAO.count(
-                type, resourceDAO.find(resource), notificationDAO.find(notification), anyTypeKind, entityKey);
-
-        List<T> result = taskDAO.findAll(
+        return taskDAO.findAll(
                 type, resourceDAO.find(resource), notificationDAO.find(notification), anyTypeKind, entityKey,
                 page, size, orderByClauses).stream().
                 <T>map(task -> binder.getTaskTO(task, taskUtilsFactory.getInstance(type), details)).
                 collect(Collectors.toList());
-
-        return Pair.of(count, result);
     }
 
     @PreAuthorize("hasRole('" + StandardEntitlement.TASK_READ + "')")
@@ -191,12 +197,10 @@ public class TaskLogic extends AbstractExecutableLogic<AbstractTaskTO> {
             throw sce;
         }
 
-        TaskUtils taskUtil = taskUtilsFactory.getInstance(task);
-
         ExecTO result = null;
-        switch (taskUtil.getType()) {
+        switch (taskUtilsFactory.getInstance(task).getType()) {
             case PROPAGATION:
-                TaskExec propExec = taskExecutor.execute((PropagationTaskTO) binder.getTaskTO(task, taskUtil, false));
+                TaskExec propExec = taskExecutor.execute((PropagationTask) task);
                 result = binder.getExecTO(propExec);
                 break;
 
@@ -273,7 +277,13 @@ public class TaskLogic extends AbstractExecutableLogic<AbstractTaskTO> {
 
     @PreAuthorize("hasRole('" + StandardEntitlement.TASK_READ + "')")
     @Override
-    public Pair<Integer, List<ExecTO>> listExecutions(
+    public int countExecutions(final String key) {
+        return taskExecDAO.count(key);
+    }
+
+    @PreAuthorize("hasRole('" + StandardEntitlement.TASK_READ + "')")
+    @Override
+    public List<ExecTO> listExecutions(
             final String key, final int page, final int size, final List<OrderByClause> orderByClauses) {
 
         Task task = taskDAO.find(key);
@@ -281,12 +291,8 @@ public class TaskLogic extends AbstractExecutableLogic<AbstractTaskTO> {
             throw new NotFoundException("Task " + key);
         }
 
-        Integer count = taskExecDAO.count(key);
-
-        List<ExecTO> result = taskExecDAO.findAll(task, page, size, orderByClauses).stream().
+        return taskExecDAO.findAll(task, page, size, orderByClauses).stream().
                 map(taskExec -> binder.getExecTO(taskExec)).collect(Collectors.toList());
-
-        return Pair.of(count, result);
     }
 
     @PreAuthorize("hasRole('" + StandardEntitlement.TASK_LIST + "')")

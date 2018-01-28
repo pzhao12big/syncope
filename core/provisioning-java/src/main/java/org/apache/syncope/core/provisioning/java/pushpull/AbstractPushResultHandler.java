@@ -96,7 +96,7 @@ public abstract class AbstractPushResultHandler extends AbstractSyncopeResultHan
         }
     }
 
-    protected void update(final Any<?> any, final ProvisioningReport result) {
+    private void update(final Any<?> any, final ProvisioningReport result) {
         boolean changepwd;
         Collection<String> resourceKeys;
         if (any instanceof User) {
@@ -241,7 +241,7 @@ public abstract class AbstractPushResultHandler extends AbstractSyncopeResultHan
         }
     }
 
-    protected void doHandle(final Any<?> any) throws JobExecutionException {
+    private void doHandle(final Any<?> any) throws JobExecutionException {
         AnyUtils anyUtils = anyUtilsFactory.getInstance(any);
 
         ProvisioningReport result = new ProvisioningReport();
@@ -473,7 +473,7 @@ public abstract class AbstractPushResultHandler extends AbstractSyncopeResultHan
         }
     }
 
-    protected ResourceOperation toResourceOperation(final UnmatchingRule rule) {
+    private ResourceOperation toResourceOperation(final UnmatchingRule rule) {
         switch (rule) {
             case ASSIGN:
             case PROVISION:
@@ -483,7 +483,7 @@ public abstract class AbstractPushResultHandler extends AbstractSyncopeResultHan
         }
     }
 
-    protected ResourceOperation toResourceOperation(final MatchingRule rule) {
+    private ResourceOperation toResourceOperation(final MatchingRule rule) {
         switch (rule) {
             case UPDATE:
                 return ResourceOperation.UPDATE;
@@ -495,7 +495,7 @@ public abstract class AbstractPushResultHandler extends AbstractSyncopeResultHan
         }
     }
 
-    protected ProvisioningReport.Status toProvisioningReportStatus(final PropagationTaskExecStatus status) {
+    private ProvisioningReport.Status toProvisioningReportStatus(final PropagationTaskExecStatus status) {
         switch (status) {
             case FAILURE:
                 return ProvisioningReport.Status.FAILURE;

@@ -18,6 +18,7 @@
  */
 package org.apache.syncope.common.lib.to;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -44,6 +45,7 @@ public class NotificationTO extends AbstractBaseBean implements EntityTO {
     private final List<String> events = new ArrayList<>();
 
     @XmlJavaTypeAdapter(XmlGenericMapAdapter.class)
+    @JsonIgnore
     private final Map<String, String> abouts = new HashMap<>();
 
     private String recipientsFIQL;
@@ -54,7 +56,7 @@ public class NotificationTO extends AbstractBaseBean implements EntityTO {
 
     private boolean selfAsRecipient;
 
-    private String recipientsProvider;
+    private String recipientsProviderClassName;
 
     private String sender;
 
@@ -120,12 +122,12 @@ public class NotificationTO extends AbstractBaseBean implements EntityTO {
         this.selfAsRecipient = selfAsRecipient;
     }
 
-    public String getRecipientsProvider() {
-        return recipientsProvider;
+    public String getRecipientsProviderClassName() {
+        return recipientsProviderClassName;
     }
 
-    public void setRecipientsProvider(final String recipientsProvider) {
-        this.recipientsProvider = recipientsProvider;
+    public void setRecipientsProviderClassName(final String recipientsProviderClassName) {
+        this.recipientsProviderClassName = recipientsProviderClassName;
     }
 
     public String getSender() {

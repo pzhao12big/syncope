@@ -37,6 +37,7 @@ import org.apache.syncope.core.persistence.api.dao.AnyDAO;
 import org.apache.syncope.core.persistence.api.dao.AnyObjectDAO;
 import org.apache.syncope.core.provisioning.java.utils.TemplateUtils;
 import org.apache.syncope.core.spring.security.DelegatedAdministrationException;
+import org.apache.syncope.core.spring.ApplicationContextProvider;
 import org.apache.syncope.core.persistence.api.dao.AnyTypeDAO;
 import org.apache.syncope.core.persistence.api.dao.GroupDAO;
 import org.apache.syncope.core.persistence.api.dao.RealmDAO;
@@ -47,8 +48,8 @@ import org.apache.syncope.core.persistence.api.entity.AnyType;
 import org.apache.syncope.core.persistence.api.entity.Realm;
 import org.apache.syncope.core.provisioning.api.LogicActions;
 import org.apache.syncope.core.provisioning.api.utils.RealmUtils;
-import org.apache.syncope.core.spring.ImplementationManager;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.support.AbstractBeanDefinition;
 
 public abstract class AbstractAnyLogic<TO extends AnyTO, P extends AnyPatch> extends AbstractResourceAssociator<TO> {
 
@@ -73,11 +74,15 @@ public abstract class AbstractAnyLogic<TO extends AnyTO, P extends AnyPatch> ext
     private List<LogicActions> getActions(final Realm realm) {
         List<LogicActions> actions = new ArrayList<>();
 
-        realm.getActions().forEach(impl -> {
+        realm.getActionsClassNames().forEach(className -> {
             try {
-                actions.add(ImplementationManager.build(impl));
+                Class<?> actionsClass = Class.forName(className);
+                LogicActions logicActions = (LogicActions) ApplicationContextProvider.getBeanFactory().
+                        createBean(actionsClass, AbstractBeanDefinition.AUTOWIRE_BY_TYPE, true);
+
+                actions.add(logicActions);
             } catch (Exception e) {
-                LOG.warn("While building {}", impl, e);
+                LOG.warn("Class '{}' not found", className, e);
             }
         });
 
@@ -229,7 +234,7 @@ public abstract class AbstractAnyLogic<TO extends AnyTO, P extends AnyPatch> ext
                             ? groupDAO
                             : anyObjectDAO;
             authorized = anyDAO.findDynRealms(key).stream().
-                    anyMatch(dynRealm -> effectiveRealms.contains(dynRealm));
+                    filter(dynRealm -> effectiveRealms.contains(dynRealm)).findFirst().isPresent();
         }
         if (!authorized) {
             throw new DelegatedAdministrationException(
@@ -247,13 +252,15 @@ public abstract class AbstractAnyLogic<TO extends AnyTO, P extends AnyPatch> ext
 
     public abstract TO read(String key);
 
+    public abstract ProvisioningResult<TO> create(TO anyTO, boolean nullPriorityAsync);
+
+    public abstract ProvisioningResult<TO> update(P anyPatch, boolean nullPriorityAsync);
+
+    public abstract ProvisioningResult<TO> delete(String key, boolean nullPriorityAsync);
+
     public abstract Pair<Integer, List<TO>> search(
             SearchCond searchCond,
             int page, int size, List<OrderByClause> orderBy,
             String realm,
             boolean details);
-
-    public abstract ProvisioningResult<TO> update(P anyPatch, boolean nullPriorityAsync);
-
-    public abstract ProvisioningResult<TO> delete(String key, boolean nullPriorityAsync);
 }

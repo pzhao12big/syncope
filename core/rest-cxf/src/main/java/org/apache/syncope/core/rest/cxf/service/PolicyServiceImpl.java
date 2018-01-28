@@ -38,16 +38,15 @@ public class PolicyServiceImpl extends AbstractServiceImpl implements PolicyServ
     @Override
     public Response create(final AbstractPolicyTO policyTO) {
         AbstractPolicyTO policy = logic.create(policyTO);
-        URI location = uriInfo.getAbsolutePathBuilder().path(policy.getKey()).build();
+        URI location = uriInfo.getAbsolutePathBuilder().path(String.valueOf(policy.getKey())).build();
         return Response.created(location).
                 header(RESTHeaders.RESOURCE_KEY, policy.getKey()).
                 build();
     }
 
     @Override
-    public Response delete(final String key) {
+    public void delete(final String key) {
         logic.delete(key);
-        return Response.noContent().build();
     }
 
     @Override
@@ -61,8 +60,7 @@ public class PolicyServiceImpl extends AbstractServiceImpl implements PolicyServ
     }
 
     @Override
-    public Response update(final AbstractPolicyTO policyTO) {
+    public void update(final AbstractPolicyTO policyTO) {
         logic.update(policyTO);
-        return Response.noContent().build();
     }
 }

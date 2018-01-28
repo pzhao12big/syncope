@@ -18,9 +18,12 @@
  */
 package org.apache.syncope.core.provisioning.java;
 
-import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
+import org.junit.runner.RunWith;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-@SpringJUnitConfig(locations = {
+@RunWith(SpringJUnit4ClassRunner.class)
+@ContextConfiguration(locations = {
     "classpath:persistenceTest.xml",
     "classpath:provisioningContext.xml",
     "classpath:workflowContext.xml",

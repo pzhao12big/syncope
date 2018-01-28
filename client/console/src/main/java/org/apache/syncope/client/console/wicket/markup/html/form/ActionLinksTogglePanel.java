@@ -24,8 +24,8 @@ import java.util.UUID;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.syncope.client.console.commons.status.StatusBean;
 import org.apache.syncope.client.console.panels.TogglePanel;
-import org.apache.syncope.client.console.policies.PolicyRuleWrapper;
-import org.apache.syncope.client.console.reports.ReportletWrapper;
+import org.apache.syncope.client.console.policies.PolicyRuleDirectoryPanel.PolicyRuleWrapper;
+import org.apache.syncope.client.console.reports.ReportletDirectoryPanel.ReportletWrapper;
 import org.apache.syncope.client.console.wizards.any.AnyWrapper;
 import org.apache.syncope.client.console.wizards.any.GroupWrapper;
 import org.apache.syncope.client.console.wizards.any.UserWrapper;
@@ -112,11 +112,11 @@ public class ActionLinksTogglePanel<T extends Serializable> extends TogglePanel<
         } else if (modelObject instanceof StatusBean) {
             header = ((StatusBean) modelObject).getResource();
         } else if (modelObject instanceof PolicyRuleWrapper) {
-            header = ((PolicyRuleWrapper) modelObject).getImplementationKey();
+            header = ((PolicyRuleWrapper) modelObject).getName();
         } else if (modelObject instanceof PolicyRuleWrapper) {
-            header = ((PolicyRuleWrapper) modelObject).getImplementationKey();
+            header = ((PolicyRuleWrapper) modelObject).getName();
         } else if (modelObject instanceof ReportletWrapper) {
-            header = ((ReportletWrapper) modelObject).getImplementationKey();
+            header = ((ReportletWrapper) modelObject).getName();
         } else if (modelObject instanceof JobTO) {
             header = ((JobTO) modelObject).getRefKey() == null
                     ? ((JobTO) modelObject).getRefDesc() : ((JobTO) modelObject).getRefKey();
@@ -125,7 +125,7 @@ public class ActionLinksTogglePanel<T extends Serializable> extends TogglePanel<
         } else {
             header = new ResourceModel("actions", StringUtils.EMPTY).getObject();
         }
-        setHeader(target, StringUtils.abbreviate(header, HEADER_FIRST_ABBREVIATION));
+        setHeader(target, StringUtils.abbreviate(header, 25));
     }
 
     public void toggleWithContent(
@@ -148,7 +148,7 @@ public class ActionLinksTogglePanel<T extends Serializable> extends TogglePanel<
         container.addOrReplace(frag);
         target.add(this.container);
 
-        toggle(target, modelObject, true);
+        this.toggle(target, true);
     }
 
     private Fragment getEmptyFragment() {

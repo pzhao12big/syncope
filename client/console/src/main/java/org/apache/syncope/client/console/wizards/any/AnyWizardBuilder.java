@@ -114,16 +114,7 @@ public abstract class AnyWizardBuilder<A extends AnyTO> extends AjaxWizardBuilde
                     null,
                     mode,
                     anyTypeClasses,
-                    formLayoutInfo.getWhichPlainAttrs()) {
-
-                private static final long serialVersionUID = 8167894751609598306L;
-
-                @Override
-                public PageReference getPageReference() {
-                    return pageRef;
-                }
-
-            });
+                    formLayoutInfo.getWhichPlainAttrs()));
         }
         if (formLayoutInfo.isDerAttrs() && mode != AjaxWizard.Mode.TEMPLATE) {
             wizardModel.add(new DerAttrs(

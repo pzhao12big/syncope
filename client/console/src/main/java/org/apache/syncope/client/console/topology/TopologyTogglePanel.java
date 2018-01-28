@@ -18,7 +18,6 @@
  */
 package org.apache.syncope.client.console.topology;
 
-
 import de.agilecoders.wicket.core.markup.html.bootstrap.dialog.Modal;
 import java.io.Serializable;
 import java.text.MessageFormat;
@@ -54,7 +53,6 @@ import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.markup.html.AjaxLink;
 import org.apache.wicket.authroles.authorization.strategies.role.metadata.MetaDataRoleAuthorizationStrategy;
 import org.apache.wicket.event.Broadcast;
-import org.apache.wicket.event.IEvent;
 import org.apache.wicket.extensions.ajax.markup.html.IndicatingAjaxLink;
 import org.apache.wicket.extensions.ajax.markup.html.modal.ModalWindow;
 import org.apache.wicket.markup.html.WebMarkupContainer;
@@ -150,7 +148,7 @@ public class TopologyTogglePanel extends TogglePanel<Serializable> {
                 container.addOrReplace(getConnectorFragment(node, pageRef));
                 break;
             case RESOURCE:
-                container.addOrReplace(getResourceFragment(node, pageRef));
+                container.addOrReplace(getResurceFragment(node, pageRef));
                 break;
             default:
                 container.addOrReplace(getEmptyFragment());
@@ -158,7 +156,7 @@ public class TopologyTogglePanel extends TogglePanel<Serializable> {
 
         target.add(container);
 
-        toggle(target, node, true);
+        this.toggle(target, true);
     }
 
     private Fragment getEmptyFragment() {
@@ -360,7 +358,7 @@ public class TopologyTogglePanel extends TogglePanel<Serializable> {
         return fragment;
     }
 
-    private Fragment getResourceFragment(final TopologyNode node, final PageReference pageRef) {
+    private Fragment getResurceFragment(final TopologyNode node, final PageReference pageRef) {
         Fragment fragment = new Fragment("actions", "resourceActions", this);
 
         AjaxLink<String> delete = new IndicatingOnConfirmAjaxLink<String>("delete", true) {
@@ -640,22 +638,6 @@ public class TopologyTogglePanel extends TogglePanel<Serializable> {
         fragment.add(clone);
 
         return fragment;
-    }
-
-    @Override
-    public void onEvent(final IEvent<?> event) {
-        super.onEvent(event);
-
-        if (event.getPayload() instanceof AjaxWizard.NewItemFinishEvent) {
-            final AjaxWizard.NewItemFinishEvent item = AjaxWizard.NewItemFinishEvent.class.cast(event.getPayload());
-            final Serializable result = item.getResult();
-            final AjaxRequestTarget target = item.getTarget();
-            if (result != null && result instanceof ConnInstanceTO) {
-                // update Toggle Panel header
-                ConnInstanceTO conn = ConnInstanceTO.class.cast(result);
-                setHeader(target, StringUtils.abbreviate(conn.getDisplayName(), HEADER_FIRST_ABBREVIATION));
-            }
-        }
     }
 
     public final class UpdateEvent {

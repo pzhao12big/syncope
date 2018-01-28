@@ -25,7 +25,6 @@ import org.apache.commons.jexl3.MapContext;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.syncope.common.lib.to.AnyTO;
 import org.apache.syncope.common.lib.to.EntityTO;
-import org.apache.syncope.common.lib.to.RealmTO;
 import org.apache.syncope.core.persistence.api.entity.Any;
 import org.apache.syncope.core.persistence.api.entity.Entity;
 import org.apache.syncope.core.persistence.api.entity.PlainAttrValue;
@@ -88,22 +87,16 @@ public class JEXLItemTransformerImpl implements JEXLItemTransformer {
                 JexlContext jexlContext = new MapContext();
                 jexlContext.set("value", value);
                 if (entityTO instanceof AnyTO) {
-                    JexlUtils.addFieldsToContext((AnyTO) entityTO, jexlContext);
-                    JexlUtils.addAttrTOsToContext(((AnyTO) entityTO).getPlainAttrs(), jexlContext);
-                    JexlUtils.addAttrTOsToContext(((AnyTO) entityTO).getDerAttrs(), jexlContext);
-                    JexlUtils.addAttrTOsToContext(((AnyTO) entityTO).getVirAttrs(), jexlContext);
-                } else if (entityTO instanceof RealmTO) {
-                    JexlUtils.addFieldsToContext((RealmTO) entityTO, jexlContext);
+                    newValues.add(JexlUtils.evaluate(pullJEXL, (AnyTO) entityTO, jexlContext));
+                } else {
                     newValues.add(JexlUtils.evaluate(pullJEXL, jexlContext));
                 }
-
-                newValues.add(JexlUtils.evaluate(pullJEXL, jexlContext));
             });
 
             return newValues;
         }
 
-        return JEXLItemTransformer.super.beforePull(item, entityTO, values);
+        return values;
     }
 
 }

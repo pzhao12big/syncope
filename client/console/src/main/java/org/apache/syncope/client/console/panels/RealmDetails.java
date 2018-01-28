@@ -19,10 +19,11 @@
 package org.apache.syncope.client.console.panels;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import org.apache.syncope.client.console.rest.ImplementationRestClient;
+import org.apache.syncope.client.console.SyncopeConsoleSession;
 import org.apache.syncope.client.console.rest.PolicyRestClient;
 import org.apache.syncope.client.console.rest.ResourceRestClient;
 import org.apache.syncope.client.console.wicket.markup.html.form.ActionsPanel;
@@ -32,9 +33,9 @@ import org.apache.syncope.client.console.wicket.markup.html.form.AjaxTextFieldPa
 import org.apache.syncope.client.console.wicket.markup.html.form.FieldPanel;
 import org.apache.syncope.client.console.wicket.markup.html.form.PolicyRenderer;
 import org.apache.syncope.common.lib.SyncopeConstants;
+import org.apache.syncope.common.lib.policy.AbstractPolicyTO;
 import org.apache.syncope.common.lib.to.EntityTO;
 import org.apache.syncope.common.lib.to.RealmTO;
-import org.apache.syncope.common.lib.types.ImplementationType;
 import org.apache.syncope.common.lib.types.PolicyType;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.form.DropDownChoice;
@@ -56,16 +57,17 @@ public class RealmDetails extends Panel {
 
     private final PolicyRestClient policyRestClient = new PolicyRestClient();
 
-    private final ImplementationRestClient implRestClient = new ImplementationRestClient();
-
     private final IModel<Map<String, String>> accountPolicies = new LoadableDetachableModel<Map<String, String>>() {
 
         private static final long serialVersionUID = -2012833443695917883L;
 
         @Override
         protected Map<String, String> load() {
-            return policyRestClient.getPolicies(PolicyType.ACCOUNT).stream().
-                    collect(Collectors.toMap(policyTO -> policyTO.getKey(), policyTO -> policyTO.getDescription()));
+            Map<String, String> res = new LinkedHashMap<>();
+            for (AbstractPolicyTO policyTO : policyRestClient.getPolicies(PolicyType.ACCOUNT)) {
+                res.put(policyTO.getKey(), policyTO.getDescription());
+            }
+            return res;
         }
     };
 
@@ -75,19 +77,21 @@ public class RealmDetails extends Panel {
 
         @Override
         protected Map<String, String> load() {
-            return policyRestClient.getPolicies(PolicyType.PASSWORD).stream().
-                    collect(Collectors.toMap(policyTO -> policyTO.getKey(), policyTO -> policyTO.getDescription()));
+            Map<String, String> res = new LinkedHashMap<>();
+            for (AbstractPolicyTO policyTO : policyRestClient.getPolicies(PolicyType.PASSWORD)) {
+                res.put(policyTO.getKey(), policyTO.getDescription());
+            }
+            return res;
         }
     };
 
-    private final IModel<List<String>> logicActions = new LoadableDetachableModel<List<String>>() {
+    private final IModel<List<String>> logicActionsClasses = new LoadableDetachableModel<List<String>>() {
 
         private static final long serialVersionUID = 5275935387613157437L;
 
         @Override
         protected List<String> load() {
-            return implRestClient.list(ImplementationType.LOGIC_ACTIONS).stream().
-                    map(EntityTO::getKey).sorted().collect(Collectors.toList());
+            return new ArrayList<>(SyncopeConsoleSession.get().getPlatformInfo().getLogicActions());
         }
     };
 
@@ -100,7 +104,7 @@ public class RealmDetails extends Panel {
     public RealmDetails(
             final String id,
             final RealmTO realmTO,
-            final ActionsPanel<?> actionsPanel,
+            final ActionsPanel<?> actions,
             final boolean unwrapped) {
 
         super(id);
@@ -143,13 +147,13 @@ public class RealmDetails extends Panel {
         ((DropDownChoice<?>) passwordPolicy.getField()).setNullValid(true);
         container.add(passwordPolicy);
 
-        AjaxPalettePanel<String> actions = new AjaxPalettePanel.Builder<String>().
+        AjaxPalettePanel<String> actionsClassNames = new AjaxPalettePanel.Builder<String>().
                 setAllowMoveAll(true).setAllowOrder(true).
-                build("actions",
-                        new PropertyModel<List<String>>(realmTO, "actions"),
-                        new ListModel<>(logicActions.getObject()));
-        actions.setOutputMarkupId(true);
-        container.add(actions);
+                build("actionsClassNames",
+                        new PropertyModel<List<String>>(realmTO, "actionsClassNames"),
+                        new ListModel<>(logicActionsClasses.getObject()));
+        actionsClassNames.setOutputMarkupId(true);
+        container.add(actionsClassNames);
 
         container.add(new AjaxPalettePanel.Builder<>().build("resources",
                 new PropertyModel<>(realmTO, "resources"),
@@ -159,11 +163,11 @@ public class RealmDetails extends Panel {
                 setEnabled(!SyncopeConstants.ROOT_REALM.equals(realmTO.getName())).
                 setVisible(!SyncopeConstants.ROOT_REALM.equals(realmTO.getName())));
 
-        if (actionsPanel == null) {
+        if (actions == null) {
             add(new Fragment("actions", "emptyFragment", this).setRenderBodyOnly(true));
         } else {
             Fragment fragment = new Fragment("actions", "actionsFragment", this);
-            fragment.add(actionsPanel);
+            fragment.add(actions);
             add(fragment.setRenderBodyOnly(true));
         }
     }

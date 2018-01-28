@@ -60,7 +60,6 @@ public class ResourceMappingPanel extends AbstractMappingPanel {
      *
      * @param id panel id
      * @param resourceTO external resource to be updated
-     * @param adminRealm admin realm
      * @param provision external resource provisioning configuration instance
      * @param itemTransformers mapping item transformers toggle panel
      * @param jexlTransformers JEXL transformers toggle panel
@@ -68,7 +67,6 @@ public class ResourceMappingPanel extends AbstractMappingPanel {
     public ResourceMappingPanel(
             final String id,
             final ResourceTO resourceTO,
-            final String adminRealm,
             final ResourceProvision provision,
             final ItemTransformersTogglePanel itemTransformers,
             final JEXLTransformersTogglePanel jexlTransformers) {
@@ -92,7 +90,6 @@ public class ResourceMappingPanel extends AbstractMappingPanel {
             @Override
             protected List<String> load() {
                 return new ConnectorRestClient().getExtAttrNames(
-                        adminRealm,
                         provision.getObjectClass(),
                         resourceTO.getConnector(),
                         resourceTO.getConfOverride());

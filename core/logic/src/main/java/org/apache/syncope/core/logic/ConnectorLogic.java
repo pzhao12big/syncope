@@ -207,14 +207,13 @@ public class ConnectorLogic extends AbstractTransactionalLogic<ConnInstanceTO> {
     public List<ConnIdObjectClassTO> buildObjectClassInfo(
             final ConnInstanceTO connInstanceTO, final boolean includeSpecial) {
 
-        ConnInstanceTO actual = connInstanceTO;
-        ConnInstance existing = connInstanceDAO.find(connInstanceTO.getKey());
-        if (existing != null) {
-            actual = binder.getConnInstanceTO(existing);
+        ConnInstance connInstance = connInstanceDAO.authFind(connInstanceTO.getKey());
+        if (connInstance == null) {
+            throw new NotFoundException("Connector '" + connInstanceTO.getKey() + "'");
         }
 
         Set<ObjectClassInfo> objectClassInfo = connFactory.createConnector(
-                connFactory.buildConnInstanceOverride(actual, connInstanceTO.getConf(), null)).
+                connFactory.buildConnInstanceOverride(connInstance, connInstanceTO.getConf(), null)).
                 getObjectClassInfo();
 
         List<ConnIdObjectClassTO> result = new ArrayList<>(objectClassInfo.size());

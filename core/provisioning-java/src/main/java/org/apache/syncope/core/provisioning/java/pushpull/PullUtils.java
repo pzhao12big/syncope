@@ -23,27 +23,27 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.syncope.common.lib.types.AnyTypeKind;
+import org.apache.syncope.common.lib.policy.PullPolicySpec;
+import org.apache.syncope.core.provisioning.api.serialization.POJOHelper;
 import org.apache.syncope.core.persistence.api.attrvalue.validation.ParsingValidationException;
 import org.apache.syncope.core.persistence.api.dao.AnyDAO;
 import org.apache.syncope.core.persistence.api.dao.AnyObjectDAO;
 import org.apache.syncope.core.persistence.api.dao.AnySearchDAO;
 import org.apache.syncope.core.persistence.api.dao.PlainSchemaDAO;
 import org.apache.syncope.core.persistence.api.dao.GroupDAO;
-import org.apache.syncope.core.persistence.api.dao.ImplementationDAO;
 import org.apache.syncope.core.persistence.api.dao.RealmDAO;
 import org.apache.syncope.core.persistence.api.dao.UserDAO;
 import org.apache.syncope.core.persistence.api.entity.Any;
 import org.apache.syncope.core.persistence.api.entity.AnyType;
 import org.apache.syncope.core.persistence.api.entity.AnyUtils;
 import org.apache.syncope.core.persistence.api.entity.AnyUtilsFactory;
-import org.apache.syncope.core.persistence.api.entity.Entity;
 import org.apache.syncope.core.persistence.api.entity.PlainAttrValue;
 import org.apache.syncope.core.persistence.api.entity.PlainSchema;
 import org.apache.syncope.core.persistence.api.entity.Realm;
 import org.apache.syncope.core.persistence.api.entity.anyobject.AnyObject;
 import org.apache.syncope.core.persistence.api.entity.group.Group;
-import org.apache.syncope.core.persistence.api.entity.policy.CorrelationRule;
 import org.apache.syncope.core.persistence.api.entity.resource.ExternalResource;
 import org.apache.syncope.core.persistence.api.entity.resource.MappingItem;
 import org.apache.syncope.core.persistence.api.entity.resource.OrgUnit;
@@ -65,10 +65,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-import org.apache.syncope.core.persistence.api.dao.PullCorrelationRule;
+import org.apache.syncope.core.provisioning.api.pushpull.PullCorrelationRule;
 import org.apache.syncope.core.provisioning.java.utils.MappingUtils;
 import org.apache.syncope.core.provisioning.api.data.ItemTransformer;
-import org.apache.syncope.core.spring.ImplementationManager;
 
 @Transactional(readOnly = true)
 @Component
@@ -108,9 +107,6 @@ public class PullUtils {
 
     @Autowired
     private RealmDAO realmDAO;
-
-    @Autowired
-    private ImplementationDAO implementationDAO;
 
     @Autowired
     private AnyUtilsFactory anyUtilsFactory;
@@ -266,13 +262,34 @@ public class PullUtils {
     }
 
     private List<String> findByCorrelationRule(
-            final ConnectorObject connObj,
-            final Provision provision,
-            final PullCorrelationRule rule,
-            final AnyTypeKind type) {
+            final ConnectorObject connObj, final PullCorrelationRule rule, final AnyTypeKind type) {
 
-        return searchDAO.search(rule.getSearchCond(connObj, provision), type).stream().
-                map(Entity::getKey).collect(Collectors.toList());
+        List<String> result = new ArrayList<>();
+        searchDAO.search(rule.getSearchCond(connObj), type).forEach(any -> {
+            result.add(any.getKey());
+        });
+
+        return result;
+    }
+
+    private PullCorrelationRule getCorrelationRule(final Provision provision, final PullPolicySpec policySpec) {
+        PullCorrelationRule result = null;
+
+        String pullCorrelationRule = policySpec.getCorrelationRules().get(provision.getAnyType().getKey());
+        if (StringUtils.isNotBlank(pullCorrelationRule)) {
+            if (pullCorrelationRule.charAt(0) == '[') {
+                result = new PlainAttrsPullCorrelationRule(
+                        POJOHelper.deserialize(pullCorrelationRule, String[].class), provision);
+            } else {
+                try {
+                    result = (PullCorrelationRule) Class.forName(pullCorrelationRule).newInstance();
+                } catch (Exception e) {
+                    LOG.error("Failure instantiating correlation rule class '{}'", pullCorrelationRule, e);
+                }
+            }
+        }
+
+        return result;
     }
 
     /**
@@ -290,23 +307,20 @@ public class PullUtils {
             final Provision provision,
             final AnyUtils anyUtils) {
 
-        Optional<? extends CorrelationRule> correlationRule = provision.getResource().getPullPolicy() == null
-                ? Optional.empty()
-                : provision.getResource().getPullPolicy().getCorrelationRule(provision.getAnyType());
+        PullPolicySpec pullPolicySpec = null;
+        if (provision.getResource().getPullPolicy() != null) {
+            pullPolicySpec = provision.getResource().getPullPolicy().getSpecification();
+        }
 
-        Optional<PullCorrelationRule> rule = Optional.empty();
-        if (correlationRule.isPresent()) {
-            try {
-                rule = ImplementationManager.buildPullCorrelationRule(correlationRule.get().getImplementation());
-            } catch (Exception e) {
-                LOG.error("While building {}", correlationRule.get().getImplementation(), e);
-            }
+        PullCorrelationRule pullRule = null;
+        if (pullPolicySpec != null) {
+            pullRule = getCorrelationRule(provision, pullPolicySpec);
         }
 
         try {
-            return rule.isPresent()
-                    ? findByCorrelationRule(connObj, provision, rule.get(), anyUtils.getAnyTypeKind())
-                    : findByConnObjectKeyItem(uid, provision, anyUtils);
+            return pullRule == null
+                    ? findByConnObjectKeyItem(uid, provision, anyUtils)
+                    : findByCorrelationRule(connObj, pullRule, anyUtils.getAnyTypeKind());
         } catch (RuntimeException e) {
             return Collections.<String>emptyList();
         }

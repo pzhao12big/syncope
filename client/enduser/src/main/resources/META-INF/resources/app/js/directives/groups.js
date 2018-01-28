@@ -19,55 +19,41 @@
 'use strict';
 
 angular.module('self')
-        .directive('groups', ['GroupService', function (GroupService) {
-            return {
-              restrict: 'E',
-              templateUrl: 'views/groups.html',
-              scope: {
-                dynamicForm: "=form",
-                user: "="
-              },
-              controller: function ($scope, $filter, $timeout) {
-                var groupsSearchTimer;
+        .directive('groups', function () {
+          return {
+            restrict: 'E',
+            templateUrl: 'views/groups.html',
+            scope: {
+              dynamicForm: "=form",
+              user: "="
+            },
+            controller: function ($scope, $filter) {
+              $scope.init = function () {
+                if (!$scope.user.memberships) {
+                  $scope.user.memberships = new Array();
+                }
+              };
+              
+              $scope.addGroup = function (item, model) {
+                var membership = item;
+                $scope.user.memberships.push({"rightKey": membership.rightKey, "groupName": membership.groupName});
+                $scope.$emit("groupAdded", membership.groupName);
+              };
 
-                $scope.init = function () {
-                  if (!$scope.user.memberships) {
-                    $scope.user.memberships = new Array();
-                  }
-                };
+              $scope.removeGroup = function (item, model) {
+                var groupIndex = $scope.getIndex(item);
+                var membership = $scope.user.memberships[groupIndex];
+                var groupName = membership.groupName;
+                $scope.user.memberships.splice(groupIndex, 1);
+                $scope.$emit("groupRemoved", groupName);
+              };
 
-                $scope.addGroup = function (item, model) {
-                  var membership = item;
-                  $scope.user.memberships.push({"groupKey": membership.groupKey, "groupName": membership.groupName});
-                  $scope.$emit("groupAdded", membership.groupName);
-                };
-
-                $scope.removeGroup = function (item, model) {
-                  var groupIndex = $scope.getIndex(item);
-                  var membership = $scope.user.memberships[groupIndex];
-                  var groupName = membership.groupName;
-                  $scope.user.memberships.splice(groupIndex, 1);
-                  $scope.$emit("groupRemoved", groupName);
-                };
-
-                $scope.onGroupsSearch = function (totGroups) {
-                  if (groupsSearchTimer) {
-                    $timeout.cancel(groupsSearchTimer);
-                  }
-                  if (totGroups > 30) {
-                    var that = this;
-                    groupsSearchTimer = $timeout(function () {
-                      $scope.$emit("groupSearched", that.$select);
-                    }, 800);
-                  }
-                };
-
-                $scope.getIndex = function (selectedGroup) {
-                  var groupIndex = $scope.user.memberships.map(function (membership) {
-                    return membership.groupName;
-                  }).indexOf(selectedGroup.groupName);
-                  return groupIndex;
-                };
-              }
-            };
-          }]);
+              $scope.getIndex = function (selectedGroup) {
+                var groupIndex = $scope.user.memberships.map(function (membership) {
+                  return membership.groupName;
+                }).indexOf(selectedGroup.groupName);
+                return groupIndex;
+              };
+            }
+          };
+        });

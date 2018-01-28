@@ -216,42 +216,18 @@ angular.module("self").controller("UserController", ['$scope', '$rootScope', '$l
         });
       };
 
-      var initGroups = function (service, selectElem) {
+      var initGroups = function () {
         var realm = $scope.user.realm || "/";
-        var term = null;
-
-        if (selectElem && selectElem.search) {
-          term = selectElem.search;
-        } else {
-          service = "getGroups";
-        }
-
-        GroupService[service](realm, term).then(function (response) {
-          var newGroups = [];
-          if (!term) {
-            $scope.dynamicForm.groups = new Array();
+        GroupService.getGroups(realm).then(function (response) {
+          $scope.dynamicForm.groups = new Array();
+          for (var i in response) {
+            $scope.dynamicForm.groups.push({"rightKey": response[i].key, "groupName": response[i].name});
           }
-
-          $scope.dynamicForm.totGroups = response.totGroups;
-          for (var i in response.groupTOs) {
-            newGroups.push({
-              "groupKey": i,
-              "groupName": response["groupTOs"][i]
-            });
-          }
-          newGroups.sort(function (a, b) {
+          $scope.dynamicForm.groups.sort(function (a, b) {
             var x = a.groupName;
             var y = b.groupName;
             return x < y ? -1 : x > y ? 1 : 0;
           });
-
-          if (service !== "getSearchedGroups") {
-            $scope.dynamicForm.groups = newGroups;
-          }
-          if (term) {
-            selectElem.refreshItems(newGroups);
-          }
-
         }, function (e) {
           $scope.showError("An error occur while retrieving groups " + e, $scope.notification);
         });
@@ -308,7 +284,7 @@ angular.module("self").controller("UserController", ['$scope', '$rootScope', '$l
           for (var index in $scope.user.memberships) {
             $scope.dynamicForm.selectedGroups.push(
                     {
-                      "groupKey": $scope.user.memberships[index]["groupKey"].toString(),
+                      "rightKey": $scope.user.memberships[index]["rightKey"].toString(),
                       "groupName": $scope.user.memberships[index]["groupName"]
                     });
           }
@@ -392,11 +368,6 @@ angular.module("self").controller("UserController", ['$scope', '$rootScope', '$l
       $scope.$on('groupRemoved', function (event, group) {
         if (group)
           removeUserSchemas(null, group);
-      });
-
-      $scope.$on('groupSearched', function (event, selectElem) {
-        if (selectElem)
-          initGroups("getSearchedGroups", selectElem);
       });
 
       if ($scope.createMode) {

@@ -18,11 +18,11 @@
  */
 package org.apache.syncope.core.persistence.jpa.inner;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
@@ -41,7 +41,7 @@ import org.apache.syncope.core.persistence.api.entity.user.User;
 import org.apache.syncope.core.persistence.jpa.AbstractTest;
 import org.apache.syncope.core.spring.security.Encryptor;
 import org.apache.syncope.core.persistence.api.entity.PlainSchema;
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -60,9 +60,9 @@ public class PlainAttrTest extends AbstractTest {
     @Test
     public void findByKey() {
         UPlainAttr attribute = plainAttrDAO.find("01f22fbd-b672-40af-b528-686d9b27ebc4", UPlainAttr.class);
-        assertNotNull(attribute);
+        assertNotNull("did not find expected attribute", attribute);
         attribute = plainAttrDAO.find("9d0d9e40-1b18-488e-9482-37dab82163c9", UPlainAttr.class);
-        assertNotNull(attribute);
+        assertNotNull("did not find expected attribute", attribute);
     }
 
     @Test
@@ -91,14 +91,14 @@ public class PlainAttrTest extends AbstractTest {
         } catch (ValidationException e) {
             thrown = e;
         }
-        assertNull(thrown);
+        assertNull("no validation exception expected here ", thrown);
 
         try {
             attr.add("http://www.apache.org", anyUtilsFactory.getInstance(AnyTypeKind.USER));
         } catch (ValidationException e) {
             thrown = e;
         }
-        assertNotNull(thrown);
+        assertNotNull("validation exception expected here ", thrown);
     }
 
     @Test
@@ -122,7 +122,7 @@ public class PlainAttrTest extends AbstractTest {
         } catch (ValidationException e) {
             thrown = e;
         }
-        assertNotNull(thrown);
+        assertNotNull("validation exception expected here ", thrown);
 
         attribute.add("M", anyUtilsFactory.getInstance(AnyTypeKind.USER));
 
@@ -161,7 +161,7 @@ public class PlainAttrTest extends AbstractTest {
         InvalidEntityException iee = null;
         try {
             userDAO.save(user);
-            fail("This should not happen");
+            fail();
         } catch (InvalidEntityException e) {
             iee = e;
         }
@@ -231,6 +231,6 @@ public class PlainAttrTest extends AbstractTest {
         plainAttrDAO.delete(attribute.getKey(), UPlainAttr.class);
 
         PlainSchema schema = plainSchemaDAO.find(attrSchemaName);
-        assertNotNull(schema);
+        assertNotNull("user attribute schema deleted when deleting values", schema);
     }
 }

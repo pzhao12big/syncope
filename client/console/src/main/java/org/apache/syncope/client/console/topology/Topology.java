@@ -29,7 +29,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
-import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.cxf.jaxrs.client.WebClient;
@@ -164,8 +163,7 @@ public class Topology extends BasePage {
             }
         });
 
-        final TopologyWebSocketBehavior websocket = new TopologyWebSocketBehavior();
-        body.add(websocket);
+        body.add(new TopologyWebSocketBehavior());
 
         togglePanel = new TopologyTogglePanel("toggle", getPageReference());
         body.add(togglePanel);
@@ -320,10 +318,7 @@ public class Topology extends BasePage {
                         final ConnInstanceTO conn = item.getModelObject();
 
                         final TopologyNode topologynode = new TopologyNode(
-                                conn.getKey(),
-                                StringUtils.isBlank(conn.getDisplayName()) // [SYNCOPE-1233]
-                                ? conn.getBundleName() : conn.getDisplayName(),
-                                TopologyNode.Kind.CONNECTOR);
+                                conn.getKey(), conn.getDisplayName(), TopologyNode.Kind.CONNECTOR);
 
                         // Define the parent note
                         final TopologyNode parent = servers.get(conn.getLocation());
@@ -375,15 +370,14 @@ public class Topology extends BasePage {
         // -----------------------------------------
         // Add Resources
         // -----------------------------------------
-        final Collection<String> adminConns = new HashSet<>();
+        final Collection<String> administrableConns = new HashSet<>();
         connModel.getObject().values().forEach(connInstances -> {
-            adminConns.addAll(connInstances.stream().map(EntityTO::getKey).collect(Collectors.toList()));
+            administrableConns.addAll(connInstances.stream().map(EntityTO::getKey).collect(Collectors.toList()));
         });
 
-        final Set<String> adminRes = new HashSet<>();
         final List<String> connToBeProcessed = new ArrayList<>();
         resModel.getObject().stream().
-                filter((resourceTO) -> (adminConns.contains(resourceTO.getConnector()))).
+                filter((resourceTO) -> (administrableConns.contains(resourceTO.getConnector()))).
                 forEachOrdered(resourceTO -> {
                     final TopologyNode topologynode = new TopologyNode(
                             resourceTO.getKey(), resourceTO.getKey(), TopologyNode.Kind.RESOURCE);
@@ -395,9 +389,6 @@ public class Topology extends BasePage {
                         connections.put(resourceTO.getConnector(), remoteConnections);
                     }
                     remoteConnections.put(topologynode.getKey(), topologynode);
-
-                    adminRes.add(resourceTO.getKey());
-
                     if (!connToBeProcessed.contains(resourceTO.getConnector())) {
                         connToBeProcessed.add(resourceTO.getConnector());
                     }
@@ -485,10 +476,6 @@ public class Topology extends BasePage {
 
             @Override
             protected void onTimer(final AjaxRequestTarget target) {
-                if (websocket.connCheckDone(adminConns) && websocket.resCheckDone(adminRes)) {
-                    stop(target);
-                }
-
                 target.appendJavaScript("checkConnection()");
 
                 if (getUpdateInterval().seconds() < 5.0) {

@@ -39,7 +39,6 @@ CREATE TABLE testpull (
 id CHAR(36) PRIMARY KEY,
 username VARCHAR(80),
 surname VARCHAR(80),
-mustChangePassword BOOLEAN,
 email VARCHAR(80),
 lastModification TIMESTAMP);
 

@@ -26,7 +26,6 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.syncope.common.lib.SyncopeClientException;
-import org.apache.syncope.common.lib.to.PropagationTaskTO;
 import org.apache.syncope.common.lib.to.ProvisioningResult;
 import org.apache.syncope.common.lib.to.RealmTO;
 import org.apache.syncope.common.lib.types.AnyTypeKind;
@@ -42,6 +41,7 @@ import org.apache.syncope.core.persistence.api.dao.search.AnyCond;
 import org.apache.syncope.core.persistence.api.dao.search.AttributeCond;
 import org.apache.syncope.core.persistence.api.dao.search.SearchCond;
 import org.apache.syncope.core.persistence.api.entity.Realm;
+import org.apache.syncope.core.persistence.api.entity.task.PropagationTask;
 import org.apache.syncope.core.provisioning.api.data.RealmDataBinder;
 import org.apache.syncope.core.provisioning.api.propagation.PropagationManager;
 import org.apache.syncope.core.provisioning.api.propagation.PropagationReporter;
@@ -85,43 +85,18 @@ public class RealmLogic extends AbstractTransactionalLogic<RealmTO> {
 
     @PreAuthorize("hasRole('" + StandardEntitlement.REALM_CREATE + "')")
     public ProvisioningResult<RealmTO> create(final String parentPath, final RealmTO realmTO) {
-        Realm parent;
-        if (StringUtils.isBlank(realmTO.getParent())) {
-            parent = realmDAO.findByFullPath(parentPath);
-            if (parent == null) {
-                LOG.error("Could not find parent realm " + parentPath);
-
-                throw new NotFoundException(parentPath);
-            }
-
-            realmTO.setParent(parent.getFullPath());
-        } else {
-            parent = realmDAO.find(realmTO.getParent());
-            if (parent == null) {
-                LOG.error("Could not find parent realm " + realmTO.getParent());
-
-                throw new NotFoundException(realmTO.getParent());
-            }
-
-            if (!parent.getFullPath().equals(parentPath)) {
-                SyncopeClientException sce = SyncopeClientException.build(ClientExceptionType.InvalidPath);
-                sce.getElements().add("Mismatching parent realm: " + parentPath + " Vs " + parent.getFullPath());
-                throw sce;
-            }
-        }
-
-        String fullPath = StringUtils.appendIfMissing(parent.getFullPath(), "/") + realmTO.getName();
+        String fullPath = StringUtils.appendIfMissing(parentPath, "/") + realmTO.getName();
         if (realmDAO.findByFullPath(fullPath) != null) {
             throw new DuplicateException(fullPath);
         }
 
-        Realm realm = realmDAO.save(binder.create(parent, realmTO));
+        Realm realm = realmDAO.save(binder.create(parentPath, realmTO));
 
         PropagationByResource propByRes = new PropagationByResource();
         realm.getResourceKeys().forEach(resource -> {
             propByRes.add(ResourceOperation.CREATE, resource);
         });
-        List<PropagationTaskTO> tasks = propagationManager.createTasks(realm, propByRes, null);
+        List<PropagationTask> tasks = propagationManager.createTasks(realm, propByRes, null);
         PropagationReporter propagationReporter = taskExecutor.execute(tasks, false);
 
         ProvisioningResult<RealmTO> result = new ProvisioningResult<>();
@@ -143,7 +118,7 @@ public class RealmLogic extends AbstractTransactionalLogic<RealmTO> {
         PropagationByResource propByRes = binder.update(realm, realmTO);
         realm = realmDAO.save(realm);
 
-        List<PropagationTaskTO> tasks = propagationManager.createTasks(realm, propByRes, null);
+        List<PropagationTask> tasks = propagationManager.createTasks(realm, propByRes, null);
         PropagationReporter propagationReporter = taskExecutor.execute(tasks, false);
 
         ProvisioningResult<RealmTO> result = new ProvisioningResult<>();
@@ -186,7 +161,7 @@ public class RealmLogic extends AbstractTransactionalLogic<RealmTO> {
         realm.getResourceKeys().forEach(resource -> {
             propByRes.add(ResourceOperation.DELETE, resource);
         });
-        List<PropagationTaskTO> tasks = propagationManager.createTasks(realm, propByRes, null);
+        List<PropagationTask> tasks = propagationManager.createTasks(realm, propByRes, null);
         PropagationReporter propagationReporter = taskExecutor.execute(tasks, false);
 
         ProvisioningResult<RealmTO> result = new ProvisioningResult<>();

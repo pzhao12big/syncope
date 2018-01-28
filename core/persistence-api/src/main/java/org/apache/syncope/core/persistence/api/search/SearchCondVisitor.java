@@ -18,9 +18,6 @@
  */
 package org.apache.syncope.core.persistence.api.search;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -47,7 +44,7 @@ import org.apache.syncope.core.persistence.api.dao.search.RelationshipCond;
 import org.apache.syncope.core.persistence.api.dao.search.RelationshipTypeCond;
 
 /**
- * Visits CXF's {@link SearchBean} and produces {@link SearchCond}.
+ * Converts CXF's <tt>SearchCondition</tt> into internal <tt>SearchCond</tt>.
  */
 public class SearchCondVisitor extends AbstractSearchConditionVisitor<SearchBean, SearchCond> {
 
@@ -76,14 +73,8 @@ public class SearchCondVisitor extends AbstractSearchConditionVisitor<SearchBean
         String name = getRealPropertyName(sc.getStatement().getProperty());
         Optional<SpecialAttr> specialAttrName = SpecialAttr.fromString(name);
 
-        String value = null;
-        try {
-            value = SearchUtils.toSqlWildcardString(
-                    URLDecoder.decode(sc.getStatement().getValue().toString(), StandardCharsets.UTF_8.name()), false).
-                    replaceAll("\\\\_", "_");
-        } catch (UnsupportedEncodingException e) {
-            throw new IllegalArgumentException("While decoding " + sc.getStatement().getValue(), e);
-        }
+        String value = SearchUtils.toSqlWildcardString(sc.getStatement().getValue().toString(), false).
+                replaceAll("\\\\_", "_");
         Optional<SpecialAttr> specialAttrValue = SpecialAttr.fromString(value);
 
         AttributeCond attributeCond = createAttributeCond(name);

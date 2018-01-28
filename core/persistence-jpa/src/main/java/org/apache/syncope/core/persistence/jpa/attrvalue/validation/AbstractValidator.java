@@ -31,10 +31,9 @@ public abstract class AbstractValidator implements Validator, Serializable {
 
     protected static final Logger LOG = LoggerFactory.getLogger(AbstractValidator.class);
 
-    protected PlainSchema schema;
+    protected final PlainSchema schema;
 
-    @Override
-    public void setSchema(final PlainSchema schema) {
+    public AbstractValidator(final PlainSchema schema) {
         this.schema = schema;
     }
 

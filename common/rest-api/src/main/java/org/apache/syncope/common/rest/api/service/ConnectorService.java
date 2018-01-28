@@ -18,8 +18,6 @@
  */
 package org.apache.syncope.common.rest.api.service;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.Authorization;
 import java.util.List;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
@@ -41,9 +39,6 @@ import org.apache.syncope.common.lib.to.ConnInstanceTO;
 /**
  * REST operations for connector bundles and instances.
  */
-@Api(tags = "Connectors", authorizations = {
-    @Authorization(value = "BasicAuthentication")
-    , @Authorization(value = "Bearer") })
 @Path("connectors")
 public interface ConnectorService extends JAXRSService {
 
@@ -128,40 +123,35 @@ public interface ConnectorService extends JAXRSService {
      * Updates the connector instance matching the provided key.
      *
      * @param connInstanceTO connector instance to be stored
-     * @return an empty response if operation was successful
      */
     @PUT
     @Path("{key}")
     @Consumes({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML })
-    Response update(@NotNull ConnInstanceTO connInstanceTO);
+    void update(@NotNull ConnInstanceTO connInstanceTO);
 
     /**
      * Deletes the connector instance matching the provided key.
      *
      * @param key connector instance key to be deleted
-     * @return an empty response if operation was successful
      */
     @DELETE
     @Path("{key}")
-    Response delete(@NotNull @PathParam("key") String key);
+    void delete(@NotNull @PathParam("key") String key);
 
     /**
      * Checks whether the connection to resource could be established.
      *
      * @param connInstanceTO connector instance to be used for connection check
-     * @return an empty response if operation was successful
      */
     @POST
     @Path("check")
     @Consumes({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML })
-    Response check(@NotNull ConnInstanceTO connInstanceTO);
+    void check(@NotNull ConnInstanceTO connInstanceTO);
 
     /**
      * Reload all connector bundles and instances.
-     *
-     * @return an empty response if operation was successful
      */
     @POST
     @Path("reload")
-    Response reload();
+    void reload();
 }

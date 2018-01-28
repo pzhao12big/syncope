@@ -19,30 +19,29 @@
 package org.apache.syncope.core.persistence.jpa.entity.task;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import javax.persistence.CascadeType;
+import javax.persistence.CollectionTable;
+import javax.persistence.Column;
 import javax.persistence.DiscriminatorValue;
+import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.FetchType;
 import javax.persistence.JoinColumn;
-import javax.persistence.JoinTable;
-import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
-import javax.persistence.OneToOne;
 import javax.validation.constraints.NotNull;
-import org.apache.syncope.common.lib.types.ImplementationType;
 import org.apache.syncope.common.lib.types.PullMode;
 import org.apache.syncope.core.persistence.api.entity.AnyType;
-import org.apache.syncope.core.persistence.api.entity.Implementation;
 import org.apache.syncope.core.persistence.api.entity.Realm;
 import org.apache.syncope.core.persistence.jpa.entity.JPARealm;
 import org.apache.syncope.core.persistence.api.entity.task.PullTask;
 import org.apache.syncope.core.persistence.api.entity.task.AnyTemplatePullTask;
-import org.apache.syncope.core.persistence.jpa.entity.JPAImplementation;
 
 @Entity
 @DiscriminatorValue("PullTask")
@@ -54,19 +53,17 @@ public class JPAPullTask extends AbstractProvisioningTask implements PullTask {
     @NotNull
     private PullMode pullMode;
 
-    @OneToOne
-    private JPAImplementation reconFilterBuilder;
+    private String reconciliationFilterBuilderClassName;
 
     @ManyToOne(fetch = FetchType.EAGER, optional = false)
     private JPARealm destinationRealm;
 
-    @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(name = "PullTaskAction",
+    @ElementCollection(fetch = FetchType.EAGER)
+    @Column(name = "actionClassName")
+    @CollectionTable(name = "PullTask_actionsClassNames",
             joinColumns =
-            @JoinColumn(name = "task_id"),
-            inverseJoinColumns =
-            @JoinColumn(name = "implementation_id"))
-    private List<JPAImplementation> actions = new ArrayList<>();
+            @JoinColumn(name = "pullTask_id", referencedColumnName = "id"))
+    private Set<String> actionsClassNames = new HashSet<>();
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER, mappedBy = "pullTask")
     private List<JPAAnyTemplatePullTask> templates = new ArrayList<>();
@@ -82,15 +79,13 @@ public class JPAPullTask extends AbstractProvisioningTask implements PullTask {
     }
 
     @Override
-    public Implementation getReconFilterBuilder() {
-        return reconFilterBuilder;
+    public String getReconciliationFilterBuilderClassName() {
+        return reconciliationFilterBuilderClassName;
     }
 
     @Override
-    public void setReconFilterBuilder(final Implementation reconFilterBuilder) {
-        checkType(reconFilterBuilder, JPAImplementation.class);
-        checkImplementationType(reconFilterBuilder, ImplementationType.RECON_FILTER_BUILDER);
-        this.reconFilterBuilder = (JPAImplementation) reconFilterBuilder;
+    public void setReconciliationFilterBuilderClassName(final String reconciliationFilterBuilderClassName) {
+        this.reconciliationFilterBuilderClassName = reconciliationFilterBuilderClassName;
     }
 
     @Override
@@ -105,15 +100,8 @@ public class JPAPullTask extends AbstractProvisioningTask implements PullTask {
     }
 
     @Override
-    public boolean add(final Implementation action) {
-        checkType(action, JPAImplementation.class);
-        checkImplementationType(action, ImplementationType.PULL_ACTIONS);
-        return actions.contains((JPAImplementation) action) || actions.add((JPAImplementation) action);
-    }
-
-    @Override
-    public List<? extends Implementation> getActions() {
-        return actions;
+    public Set<String> getActionsClassNames() {
+        return actionsClassNames;
     }
 
     @Override

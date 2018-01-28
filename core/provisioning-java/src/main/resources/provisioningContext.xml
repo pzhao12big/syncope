@@ -74,7 +74,7 @@ under the License.
     <property name="dataSource" ref="MasterDataSource"/>
     <property name="transactionManager" ref="MasterTransactionManager"/>
     <property name="jobFactory">
-      <bean class="org.apache.syncope.core.provisioning.java.job.AutowiringSpringBeanJobFactory"/>
+      <bean class="org.apache.syncope.core.provisioning.java.job.SpringBeanJobFactory"/>
     </property>
     <property name="quartzProperties">
       <props>
@@ -107,6 +107,7 @@ under the License.
   </bean>
 
   <bean class="org.apache.syncope.core.provisioning.java.propagation.PropagationManagerImpl"/>
+  <bean class="org.apache.syncope.core.provisioning.java.propagation.DefaultPropagationReporter" scope="prototype"/>
 
   <bean id="virAttrCache" class="${virAttrCache}" scope="singleton">
     <constructor-arg value="60"/>

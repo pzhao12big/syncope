@@ -18,19 +18,17 @@
  */
 package org.apache.syncope.fit.core;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import javax.ws.rs.core.Response;
 import org.apache.syncope.client.lib.SyncopeClient;
 import org.apache.syncope.common.lib.SyncopeConstants;
 import org.apache.syncope.common.lib.patch.AnyObjectPatch;
-import org.apache.syncope.common.lib.patch.AttrPatch;
 import org.apache.syncope.common.lib.patch.MembershipPatch;
-import org.apache.syncope.common.lib.patch.UserPatch;
 import org.apache.syncope.common.lib.to.AnyObjectTO;
 import org.apache.syncope.common.lib.to.AnyTypeTO;
 import org.apache.syncope.common.lib.to.PagedResult;
@@ -43,7 +41,7 @@ import org.apache.syncope.common.rest.api.beans.AnyQuery;
 import org.apache.syncope.common.rest.api.service.RoleService;
 import org.apache.syncope.fit.AbstractITCase;
 import org.apache.syncope.fit.ElasticsearchDetector;
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 
 public class SearchITCase extends AbstractITCase {
 
@@ -472,25 +470,5 @@ public class SearchITCase extends AbstractITCase {
                         orderBy(SyncopeClient.getOrderByClauseBuilder().asc("surname").desc("username").build()).
                         build());
         assertNotEquals(0, users.getTotalCount());
-    }
-
-    @Test
-    public void issueSYNCOPE1223() {
-        UserPatch patch = new UserPatch();
-        patch.setKey("vivaldi");
-        patch.getPlainAttrs().add(new AttrPatch.Builder().attrTO(attrTO("ctype", "ou=sample,o=isp")).build());
-        userService.update(patch);
-
-        try {
-            PagedResult<UserTO> users = userService.search(new AnyQuery.Builder().fiql(
-                    SyncopeClient.getUserSearchConditionBuilder().is("ctype").equalTo("ou=sample%252Co=isp").query()).
-                    build());
-            assertEquals(1, users.getTotalCount());
-            assertEquals("vivaldi", users.getResult().get(0).getUsername());
-        } finally {
-            patch.getPlainAttrs().clear();
-            patch.getPlainAttrs().add(new AttrPatch.Builder().attrTO(attrTO("ctype", "F")).build());
-            userService.update(patch);
-        }
     }
 }

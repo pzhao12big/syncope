@@ -31,7 +31,6 @@ import org.apache.syncope.common.lib.patch.StatusPatch;
 import org.apache.syncope.common.lib.patch.StringPatchItem;
 import org.apache.syncope.common.lib.patch.UserPatch;
 import org.apache.syncope.common.lib.to.PropagationStatus;
-import org.apache.syncope.common.lib.to.PropagationTaskTO;
 import org.apache.syncope.common.lib.to.UserTO;
 import org.apache.syncope.common.lib.types.AnyTypeKind;
 import org.apache.syncope.common.lib.types.PatchOperation;
@@ -42,6 +41,7 @@ import org.apache.syncope.core.provisioning.api.WorkflowResult;
 import org.apache.syncope.core.provisioning.api.PropagationByResource;
 import org.apache.syncope.common.lib.types.ResourceOperation;
 import org.apache.syncope.common.lib.types.StatusPatchType;
+import org.apache.syncope.core.persistence.api.entity.task.PropagationTask;
 import org.apache.syncope.core.provisioning.api.propagation.PropagationException;
 import org.apache.syncope.core.provisioning.api.propagation.PropagationManager;
 import org.apache.syncope.core.provisioning.api.propagation.PropagationReporter;
@@ -99,7 +99,7 @@ public class DefaultUserProvisioningManager implements UserProvisioningManager {
         WorkflowResult<Pair<String, Boolean>> created =
                 uwfAdapter.create(userTO, disablePwdPolicyCheck, enabled, storePassword);
 
-        List<PropagationTaskTO> tasks = propagationManager.getUserCreateTasks(
+        List<PropagationTask> tasks = propagationManager.getUserCreateTasks(
                 created.getResult().getLeft(),
                 userTO.getPassword(),
                 created.getResult().getRight(),
@@ -112,17 +112,17 @@ public class DefaultUserProvisioningManager implements UserProvisioningManager {
     }
 
     @Override
-    public Pair<UserPatch, List<PropagationStatus>> update(final UserPatch userPatch, final boolean nullPriorityAsync) {
+    public Pair<String, List<PropagationStatus>> update(final UserPatch userPatch, final boolean nullPriorityAsync) {
         WorkflowResult<Pair<UserPatch, Boolean>> updated = uwfAdapter.update(userPatch);
 
-        List<PropagationTaskTO> tasks = propagationManager.getUserUpdateTasks(updated);
+        List<PropagationTask> tasks = propagationManager.getUserUpdateTasks(updated);
         PropagationReporter propagationReporter = taskExecutor.execute(tasks, nullPriorityAsync);
 
-        return Pair.of(updated.getResult().getLeft(), propagationReporter.getStatuses());
+        return Pair.of(updated.getResult().getLeft().getKey(), propagationReporter.getStatuses());
     }
 
     @Override
-    public Pair<UserPatch, List<PropagationStatus>> update(
+    public Pair<String, List<PropagationStatus>> update(
             final UserPatch userPatch, final Set<String> excludedResources, final boolean nullPriorityAsync) {
 
         return update(userPatch, new ProvisioningReport(), null, excludedResources, nullPriorityAsync);
@@ -130,7 +130,7 @@ public class DefaultUserProvisioningManager implements UserProvisioningManager {
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     @Override
-    public Pair<UserPatch, List<PropagationStatus>> update(
+    public Pair<String, List<PropagationStatus>> update(
             final UserPatch userPatch,
             final ProvisioningReport result,
             final Boolean enabled,
@@ -173,11 +173,11 @@ public class DefaultUserProvisioningManager implements UserProvisioningManager {
             }
         }
 
-        List<PropagationTaskTO> tasks = propagationManager.getUserUpdateTasks(
+        List<PropagationTask> tasks = propagationManager.getUserUpdateTasks(
                 updated, updated.getResult().getLeft().getPassword() != null, excludedResources);
         PropagationReporter propagationReporter = taskExecutor.execute(tasks, nullPriorityAsync);
 
-        return Pair.of(updated.getResult().getLeft(), propagationReporter.getStatuses());
+        return Pair.of(updated.getResult().getLeft().getKey(), propagationReporter.getStatuses());
     }
 
     @Override
@@ -198,7 +198,7 @@ public class DefaultUserProvisioningManager implements UserProvisioningManager {
         // information could only be available after uwfAdapter.delete(), which
         // will also effectively remove user from db, thus making virtually
         // impossible by NotificationManager to fetch required user information
-        List<PropagationTaskTO> tasks = propagationManager.getDeleteTasks(
+        List<PropagationTask> tasks = propagationManager.getDeleteTasks(
                 AnyTypeKind.USER,
                 key,
                 propByRes,
@@ -263,7 +263,7 @@ public class DefaultUserProvisioningManager implements UserProvisioningManager {
 
         PropagationByResource propByRes = new PropagationByResource();
         propByRes.addAll(ResourceOperation.UPDATE, statusPatch.getResources());
-        List<PropagationTaskTO> tasks = propagationManager.getUpdateTasks(
+        List<PropagationTask> tasks = propagationManager.getUpdateTasks(
                 AnyTypeKind.USER,
                 statusPatch.getKey(),
                 false,
@@ -285,9 +285,10 @@ public class DefaultUserProvisioningManager implements UserProvisioningManager {
             UserPatch userPatch = new UserPatch();
             userPatch.setKey(updated.getLeft().getResult());
 
-            List<PropagationTaskTO> tasks = propagationManager.getUserUpdateTasks(new WorkflowResult<>(
-                    Pair.of(userPatch, Boolean.FALSE),
-                    updated.getLeft().getPropByRes(), updated.getLeft().getPerformedTasks()));
+            List<PropagationTask> tasks = propagationManager.getUserUpdateTasks(
+                    new WorkflowResult<>(
+                            Pair.of(userPatch, Boolean.FALSE),
+                            updated.getLeft().getPropByRes(), updated.getLeft().getPerformedTasks()));
             taskExecutor.execute(tasks, false);
         }
     }
@@ -320,7 +321,7 @@ public class DefaultUserProvisioningManager implements UserProvisioningManager {
         WorkflowResult<Pair<UserPatch, Boolean>> wfResult = new WorkflowResult<>(
                 ImmutablePair.of(userPatch, (Boolean) null), propByRes, "update");
 
-        List<PropagationTaskTO> tasks = propagationManager.getUserUpdateTasks(wfResult, changePwd, null);
+        List<PropagationTask> tasks = propagationManager.getUserUpdateTasks(wfResult, changePwd, null);
         PropagationReporter propagationReporter = taskExecutor.execute(tasks, nullPriorityAsync);
 
         return propagationReporter.getStatuses();
@@ -333,7 +334,7 @@ public class DefaultUserProvisioningManager implements UserProvisioningManager {
         PropagationByResource propByRes = new PropagationByResource();
         propByRes.set(ResourceOperation.DELETE, resources);
 
-        List<PropagationTaskTO> tasks = propagationManager.getDeleteTasks(
+        List<PropagationTask> tasks = propagationManager.getDeleteTasks(
                 AnyTypeKind.USER,
                 key,
                 propByRes,
@@ -354,7 +355,7 @@ public class DefaultUserProvisioningManager implements UserProvisioningManager {
     public void confirmPasswordReset(final String key, final String token, final String password) {
         WorkflowResult<Pair<UserPatch, Boolean>> updated = uwfAdapter.confirmPasswordReset(key, token, password);
 
-        List<PropagationTaskTO> tasks = propagationManager.getUserUpdateTasks(updated);
+        List<PropagationTask> tasks = propagationManager.getUserUpdateTasks(updated);
 
         taskExecutor.execute(tasks, false);
     }

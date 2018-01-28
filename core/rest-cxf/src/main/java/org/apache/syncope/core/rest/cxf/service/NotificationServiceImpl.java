@@ -39,7 +39,7 @@ public class NotificationServiceImpl extends AbstractServiceImpl implements Noti
     @Override
     public Response create(final NotificationTO notificationTO) {
         NotificationTO created = logic.create(notificationTO);
-        URI location = uriInfo.getAbsolutePathBuilder().path(created.getKey()).build();
+        URI location = uriInfo.getAbsolutePathBuilder().path(String.valueOf(created.getKey())).build();
         return Response.created(location).
                 header(RESTHeaders.RESOURCE_KEY, created.getKey()).
                 build();
@@ -56,15 +56,13 @@ public class NotificationServiceImpl extends AbstractServiceImpl implements Noti
     }
 
     @Override
-    public Response update(final NotificationTO notificationTO) {
+    public void update(final NotificationTO notificationTO) {
         logic.update(notificationTO);
-        return Response.noContent().build();
     }
 
     @Override
-    public Response delete(final String key) {
+    public void delete(final String key) {
         logic.delete(key);
-        return Response.noContent().build();
     }
 
     @Override
@@ -73,8 +71,7 @@ public class NotificationServiceImpl extends AbstractServiceImpl implements Noti
     }
 
     @Override
-    public Response actionJob(final JobAction action) {
+    public void actionJob(final JobAction action) {
         logic.actionJob(action);
-        return Response.noContent().build();
     }
 }

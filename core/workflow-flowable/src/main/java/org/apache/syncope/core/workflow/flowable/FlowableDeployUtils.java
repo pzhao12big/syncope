@@ -26,6 +26,7 @@ import java.io.InputStreamReader;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
+import org.apache.commons.io.IOUtils;
 import org.apache.syncope.core.workflow.api.WorkflowException;
 import org.flowable.bpmn.converter.BpmnXMLConverter;
 import org.flowable.bpmn.model.BpmnModel;
@@ -53,11 +54,13 @@ public final class FlowableDeployUtils {
     }
 
     public static void deployModel(final ProcessEngine engine, final ProcessDefinition procDef) {
+        InputStream bpmnStream = null;
+        InputStreamReader isr = null;
         XMLStreamReader xtr = null;
-        try (InputStream bpmnStream = engine.getRepositoryService().
-                getResourceAsStream(procDef.getDeploymentId(), procDef.getResourceName());
-                InputStreamReader isr = new InputStreamReader(bpmnStream)) {
-
+        try {
+            bpmnStream = engine.getRepositoryService().getResourceAsStream(
+                    procDef.getDeploymentId(), procDef.getResourceName());
+            isr = new InputStreamReader(bpmnStream);
             xtr = XMLInputFactory.newInstance().createXMLStreamReader(isr);
             BpmnModel bpmnModel = new BpmnXMLConverter().convertToBpmnModel(xtr);
 
@@ -83,6 +86,8 @@ public final class FlowableDeployUtils {
                     // ignore
                 }
             }
+            IOUtils.closeQuietly(isr);
+            IOUtils.closeQuietly(bpmnStream);
         }
     }
 

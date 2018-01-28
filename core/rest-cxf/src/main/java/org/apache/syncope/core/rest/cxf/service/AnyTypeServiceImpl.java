@@ -47,22 +47,20 @@ public class AnyTypeServiceImpl extends AbstractServiceImpl implements AnyTypeSe
     @Override
     public Response create(final AnyTypeTO anyTypeTO) {
         AnyTypeTO created = logic.create(anyTypeTO);
-        URI location = uriInfo.getAbsolutePathBuilder().path(created.getKey()).build();
+        URI location = uriInfo.getAbsolutePathBuilder().path(String.valueOf(created.getKey())).build();
         return Response.created(location).
                 header(RESTHeaders.RESOURCE_KEY, created.getKey()).
                 build();
     }
 
     @Override
-    public Response update(final AnyTypeTO anyTypeTO) {
+    public void update(final AnyTypeTO anyTypeTO) {
         logic.update(anyTypeTO);
-        return Response.noContent().build();
     }
 
     @Override
-    public Response delete(final String key) {
+    public void delete(final String key) {
         logic.delete(key);
-        return Response.noContent().build();
     }
 
 }

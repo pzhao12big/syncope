@@ -21,10 +21,7 @@ package org.apache.syncope.core.workflow.java;
 import java.io.OutputStream;
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
-import org.apache.syncope.common.lib.AnyOperations;
 import org.apache.syncope.common.lib.patch.GroupPatch;
-import org.apache.syncope.common.lib.to.AttrTO;
 import org.apache.syncope.common.lib.to.GroupTO;
 import org.apache.syncope.common.lib.to.WorkflowDefinitionTO;
 import org.apache.syncope.common.lib.to.WorkflowFormTO;
@@ -53,18 +50,12 @@ public class DefaultGroupWorkflowAdapter extends AbstractGroupWorkflowAdapter {
     }
 
     @Override
-    protected WorkflowResult<GroupPatch> doUpdate(final Group group, final GroupPatch groupPatch) {
-        GroupTO original = dataBinder.getGroupTO(group, true);
-
+    protected WorkflowResult<String> doUpdate(final Group group, final GroupPatch groupPatch) {
         PropagationByResource propByRes = dataBinder.update(group, groupPatch);
-        Set<AttrTO> virAttrs = groupPatch.getVirAttrs();
 
-        GroupTO updated = dataBinder.getGroupTO(groupDAO.save(group), true);
-        GroupPatch effectivePatch = AnyOperations.diff(updated, original, false);
-        effectivePatch.getVirAttrs().clear();
-        effectivePatch.getVirAttrs().addAll(virAttrs);
+        Group updated = groupDAO.save(group);
 
-        return new WorkflowResult<>(effectivePatch, propByRes, "update");
+        return new WorkflowResult<>(updated.getKey(), propByRes, "update");
     }
 
     @Override

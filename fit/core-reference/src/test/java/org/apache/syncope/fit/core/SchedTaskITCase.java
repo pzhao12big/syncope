@@ -18,12 +18,12 @@
  */
 package org.apache.syncope.fit.core;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.util.Date;
 import java.util.List;
@@ -37,8 +37,6 @@ import org.apache.syncope.common.lib.to.PushTaskTO;
 import org.apache.syncope.common.lib.to.SchedTaskTO;
 import org.apache.syncope.common.lib.to.PullTaskTO;
 import org.apache.syncope.common.lib.to.ExecTO;
-import org.apache.syncope.common.lib.to.ImplementationTO;
-import org.apache.syncope.common.lib.types.ImplementationType;
 import org.apache.syncope.common.lib.types.JobAction;
 import org.apache.syncope.common.lib.types.TaskType;
 import org.apache.syncope.common.rest.api.beans.ExecuteQuery;
@@ -46,14 +44,13 @@ import org.apache.syncope.common.rest.api.beans.ExecQuery;
 import org.apache.syncope.common.rest.api.beans.TaskQuery;
 import org.apache.syncope.common.rest.api.service.TaskService;
 import org.apache.syncope.fit.core.reference.TestSampleJobDelegate;
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 
 public class SchedTaskITCase extends AbstractTaskITCase {
 
     @Test
     public void getJobClasses() {
-        Set<String> jobClasses = syncopeService.platform().
-                getJavaImplInfo(ImplementationType.TASKJOB_DELEGATE).get().getClasses();
+        Set<String> jobClasses = syncopeService.platform().getTaskJobs();
         assertNotNull(jobClasses);
         assertFalse(jobClasses.isEmpty());
     }
@@ -66,7 +63,7 @@ public class SchedTaskITCase extends AbstractTaskITCase {
         tasks.getResult().stream().filter(
                 task -> !(task instanceof SchedTaskTO) || task instanceof PullTaskTO || task instanceof PushTaskTO).
                 forEachOrdered(item -> {
-                    fail("This should not happen");
+                    fail();
                 });
     }
 
@@ -89,13 +86,10 @@ public class SchedTaskITCase extends AbstractTaskITCase {
 
     @Test
     public void deferred() {
-        ImplementationTO taskJobDelegate = implementationService.read(TestSampleJobDelegate.class.getSimpleName());
-        assertNotNull(taskJobDelegate);
-
         SchedTaskTO task = new SchedTaskTO();
         task.setActive(true);
         task.setName("deferred");
-        task.setJobDelegate(taskJobDelegate.getKey());
+        task.setJobDelegateClassName(TestSampleJobDelegate.class.getName());
 
         Response response = taskService.create(task);
         task = getObject(response.getLocation(), TaskService.class, SchedTaskTO.class);
@@ -134,13 +128,10 @@ public class SchedTaskITCase extends AbstractTaskITCase {
 
     @Test
     public void issueSYNCOPE144() {
-        ImplementationTO taskJobDelegate = implementationService.read(TestSampleJobDelegate.class.getSimpleName());
-        assertNotNull(taskJobDelegate);
-
         SchedTaskTO task = new SchedTaskTO();
         task.setName("issueSYNCOPE144");
         task.setDescription("issueSYNCOPE144 Description");
-        task.setJobDelegate(taskJobDelegate.getKey());
+        task.setJobDelegateClassName(TestSampleJobDelegate.class.getName());
 
         Response response = taskService.create(task);
         task = getObject(response.getLocation(), TaskService.class, SchedTaskTO.class);
@@ -168,13 +159,10 @@ public class SchedTaskITCase extends AbstractTaskITCase {
         List<JobTO> jobs = taskService.listJobs();
         int old_size = jobs.size();
 
-        ImplementationTO taskJobDelegate = implementationService.read(TestSampleJobDelegate.class.getSimpleName());
-        assertNotNull(taskJobDelegate);
-
         SchedTaskTO task = new SchedTaskTO();
         task.setName("issueSYNCOPE660");
         task.setDescription("issueSYNCOPE660 Description");
-        task.setJobDelegate(taskJobDelegate.getKey());
+        task.setJobDelegateClassName(TestSampleJobDelegate.class.getName());
 
         Response response = taskService.create(task);
         task = getObject(response.getLocation(), TaskService.class, SchedTaskTO.class);

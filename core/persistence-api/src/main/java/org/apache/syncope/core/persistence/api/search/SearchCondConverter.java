@@ -18,11 +18,8 @@
  */
 package org.apache.syncope.core.persistence.api.search;
 
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.cxf.jaxrs.ext.search.SearchBean;
-import org.apache.cxf.jaxrs.ext.search.SearchCondition;
 import org.apache.syncope.common.lib.SyncopeClientException;
 import org.apache.syncope.common.lib.search.AbstractFiqlSearchConditionBuilder;
 import org.apache.syncope.common.lib.search.SyncopeFiqlParser;
@@ -35,28 +32,27 @@ import org.apache.syncope.core.persistence.api.dao.search.SearchCond;
 public final class SearchCondConverter {
 
     /**
-     * Parses a FIQL expression into Syncope's {@link SearchCond}, using {@link SyncopeFiqlParser}.
+     * Parses a FIQL expression into Syncope's <tt>SearchCond</tt>, using CXF's <tt>FiqlParser</tt>.
      *
-     * @param fiql FIQL string
+     * @param fiqlExpression FIQL string
      * @param realms optional realm to provide to {@link SearchCondVisitor}
      * @return {@link SearchCond} instance for given FIQL expression
+     * @see SyncopeFiqlParser
      */
-    public static SearchCond convert(final String fiql, final String... realms) {
-        SyncopeFiqlParser<SearchBean> parser = new SyncopeFiqlParser<>(
+    public static SearchCond convert(final String fiqlExpression, final String... realms) {
+        SyncopeFiqlParser<SearchBean> fiqlParser = new SyncopeFiqlParser<>(
                 SearchBean.class, AbstractFiqlSearchConditionBuilder.CONTEXTUAL_PROPERTIES);
 
         try {
-            SearchCondVisitor visitor = new SearchCondVisitor();
+            SearchCondVisitor searchCondVisitor = new SearchCondVisitor();
             if (realms != null && realms.length > 0) {
-                visitor.setRealm(realms[0]);
+                searchCondVisitor.setRealm(realms[0]);
             }
-            SearchCondition<SearchBean> sc = parser.parse(URLDecoder.decode(fiql, StandardCharsets.UTF_8.name()));
-            sc.accept(visitor);
-
-            return visitor.getQuery();
+            searchCondVisitor.visit(fiqlParser.parse(fiqlExpression));
+            return searchCondVisitor.getQuery();
         } catch (Exception e) {
             SyncopeClientException sce = SyncopeClientException.build(ClientExceptionType.InvalidSearchExpression);
-            sce.getElements().add(fiql);
+            sce.getElements().add(fiqlExpression);
             sce.getElements().add(ExceptionUtils.getRootCauseMessage(e));
             throw sce;
         }

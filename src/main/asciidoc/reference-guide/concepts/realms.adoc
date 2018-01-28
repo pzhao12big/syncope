@@ -36,8 +36,8 @@ smaller pools.
 
 This has consequences on <<memberships-relationships,memberships and relationships>>:
 
-* A User or an Any Object can be members of Groups in the same realm or in one of the parent realms.
-* A User or an Any object can be in a relation with Any Objects in the same realm or in one of parent realms.
+* A User or an Any Object can be members of Groups in the same realm or in one of the sub-realms.
+* A User or an Any object can be in a relation with Any Objects in the same realm or in one of the sub-realms.
 
 Moreover, this partition allows fine-grained control over policy enforcement and, alongside with
 <<entitlements,entitlements>> and <<roles,roles>>, helps to implement
@@ -74,7 +74,7 @@ with LDAP and Active Directory.
 ==== LogicActions
 
 When Users, Groups or Any Objects get created, updated or deleted in a realm, custom logic can be invoked by
-associating the given realm with one or more <<implementations,implementations>> of the
+associating the given realm with one or more implementations of the
 ifeval::["{snapshotOrRelease}" == "release"]
 https://github.com/apache/syncope/blob/syncope-{docVersion}/core/provisioning-api/src/main/java/org/apache/syncope/core/provisioning/api/LogicActions.java[LogicActions^]
 endif::[]

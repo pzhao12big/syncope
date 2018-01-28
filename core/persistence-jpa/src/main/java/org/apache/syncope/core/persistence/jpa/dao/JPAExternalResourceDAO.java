@@ -38,7 +38,6 @@ import org.apache.syncope.core.persistence.api.dao.TaskDAO;
 import org.apache.syncope.core.persistence.api.dao.UserDAO;
 import org.apache.syncope.core.persistence.api.dao.VirSchemaDAO;
 import org.apache.syncope.core.persistence.api.entity.AnyTypeClass;
-import org.apache.syncope.core.persistence.api.entity.Implementation;
 import org.apache.syncope.core.persistence.api.entity.policy.AccountPolicy;
 import org.apache.syncope.core.persistence.api.entity.resource.ExternalResource;
 import org.apache.syncope.core.persistence.api.entity.resource.MappingItem;
@@ -196,26 +195,6 @@ public class JPAExternalResourceDAO extends AbstractDAO<ExternalResource> implem
         return query.getResultList();
     }
 
-    @Override
-    public List<MappingItem> findByTransformer(final Implementation transformer) {
-        TypedQuery<MappingItem> query = entityManager().createQuery(
-                "SELECT e FROM " + JPAMappingItem.class.getSimpleName()
-                + " e WHERE :transformer MEMBER OF e.transformers", MappingItem.class);
-        query.setParameter("transformer", transformer);
-
-        return query.getResultList();
-    }
-
-    @Override
-    public List<ExternalResource> findByPropagationActions(final Implementation propagationActions) {
-        TypedQuery<ExternalResource> query = entityManager().createQuery(
-                "SELECT e FROM " + JPAExternalResource.class.getSimpleName() + " e "
-                + "WHERE :propagationActions MEMBER OF e.propagationActions", ExternalResource.class);
-        query.setParameter("propagationActions", propagationActions);
-
-        return query.getResultList();
-    }
-
     private StringBuilder getByPolicyQuery(final Class<? extends Policy> policyClass) {
         StringBuilder query = new StringBuilder("SELECT e FROM ").
                 append(JPAExternalResource.class.getSimpleName()).
@@ -314,15 +293,15 @@ public class JPAExternalResourceDAO extends AbstractDAO<ExternalResource> implem
         policyDAO().findByResource(resource).
                 forEach(policy -> policy.getResources().remove(resource));
 
-        resource.getProvisions().stream().
-                filter(provision -> provision.getMapping() != null).
-                peek(provision -> provision.getMapping().getItems().forEach(item -> item.setMapping(null))).
-                peek(provision -> {
-                    provision.getMapping().getItems().clear();
-                    provision.setMapping(null);
-                    provision.setResource(null);
-                }).
-                forEachOrdered(provision -> virSchemaDAO().findByProvision(provision).
+        resource.getProvisions().stream().map(provision -> {
+            provision.getMapping().getItems().forEach(item -> item.setMapping(null));
+            return provision;
+        }).map(provision -> {
+            provision.getMapping().getItems().clear();
+            provision.setMapping(null);
+            provision.setResource(null);
+            return provision;
+        }).forEachOrdered(provision -> virSchemaDAO().findByProvision(provision).
                 forEach(schema -> virSchemaDAO().delete(schema.getKey())));
 
         externalResourceHistoryConfDAO().deleteByEntity(resource);

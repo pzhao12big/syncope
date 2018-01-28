@@ -165,33 +165,15 @@ under the License.
       <artifactId>syncope-ext-saml2sp-client-console</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.syncope.ext.scimv2</groupId>
-      <artifactId>syncope-ext-scimv2-rest-cxf</artifactId>
-      <version>${project.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.syncope.ext.scimv2</groupId>
-      <artifactId>syncope-ext-scimv2-scim-rest-cxf</artifactId>
-      <version>${project.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.syncope.ext.scimv2</groupId>
-      <artifactId>syncope-ext-scimv2-client-console</artifactId>
-      <version>${project.version}</version>
-      <scope>test</scope>
-    </dependency>
+    </dependency>  
     <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-test</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter-engine</artifactId>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -815,12 +797,6 @@ under the License.
         </dependency>
 
         <dependency>
-          <groupId>org.reactivestreams</groupId>
-          <artifactId>reactive-streams</artifactId>
-          <version>1.0.1</version>
-        </dependency>
-
-        <dependency>
           <groupId>com.h2database</groupId>
           <artifactId>h2</artifactId>
         </dependency>
@@ -852,9 +828,9 @@ under the License.
             <inherited>true</inherited>
             <configuration>
               <container>
-                <containerId>wildfly11x</containerId>
+                <containerId>wildfly10x</containerId>
                 <zipUrlInstaller>
-                  <url>http://download.jboss.org/wildfly/11.0.0.Final/wildfly-11.0.0.Final.zip</url>
+                  <url>http://download.jboss.org/wildfly/10.1.0.Final/wildfly-10.1.0.Final.zip</url>
                   <downloadDir>${settings.localRepository}/org/codehaus/cargo/cargo-container-archives</downloadDir>
                   <extractDir>${project.build.directory}/cargo/extract</extractDir>
                 </zipUrlInstaller>
@@ -1071,17 +1047,6 @@ under the License.
         <dependency>
           <groupId>org.apache.syncope.ext.saml2sp</groupId>
           <artifactId>syncope-ext-saml2sp-persistence-jpa</artifactId>
-          <version>${project.version}</version>
-        </dependency>
-        
-        <dependency>
-          <groupId>org.apache.syncope.ext.scimv2</groupId>
-          <artifactId>syncope-ext-scimv2-rest-cxf</artifactId>
-          <version>${project.version}</version>
-        </dependency>
-        <dependency>
-          <groupId>org.apache.syncope.ext.scimv2</groupId>
-          <artifactId>syncope-ext-scimv2-scim-rest-cxf</artifactId>
           <version>${project.version}</version>
         </dependency>
         

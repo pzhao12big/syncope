@@ -22,10 +22,11 @@ import java.util.List;
 
 import org.apache.camel.Endpoint;
 import org.apache.camel.Exchange;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.syncope.common.lib.patch.UserPatch;
-import org.apache.syncope.common.lib.to.PropagationTaskTO;
 import org.apache.syncope.common.lib.types.AnyTypeKind;
+import org.apache.syncope.core.persistence.api.entity.task.PropagationTask;
 import org.apache.syncope.core.provisioning.api.WorkflowResult;
 
 public class SuspendProducer extends AbstractProducer {
@@ -46,9 +47,9 @@ public class SuspendProducer extends AbstractProducer {
                 UserPatch userPatch = new UserPatch();
                 userPatch.setKey(updated.getKey().getResult());
 
-                List<PropagationTaskTO> tasks = getPropagationManager().getUserUpdateTasks(
+                List<PropagationTask> tasks = getPropagationManager().getUserUpdateTasks(
                         new WorkflowResult<>(
-                                Pair.of(userPatch, Boolean.FALSE),
+                                new ImmutablePair<>(userPatch, Boolean.FALSE),
                                 updated.getKey().getPropByRes(), updated.getKey().getPerformedTasks()));
                 getPropagationTaskExecutor().execute(tasks, false);
             }

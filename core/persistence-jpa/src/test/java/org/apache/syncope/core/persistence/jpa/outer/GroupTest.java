@@ -18,12 +18,11 @@
  */
 package org.apache.syncope.core.persistence.jpa.outer;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -58,7 +57,7 @@ import org.apache.syncope.core.persistence.jpa.AbstractTest;
 import org.apache.syncope.core.persistence.jpa.dao.JPAGroupDAO;
 import org.apache.syncope.core.persistence.jpa.entity.anyobject.JPAADynGroupMembership;
 import org.apache.syncope.core.persistence.jpa.entity.user.JPAUDynGroupMembership;
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -92,32 +91,30 @@ public class GroupTest extends AbstractTest {
     @Autowired
     private AnyTypeClassDAO anyTypeClassDAO;
 
-    @Test
+    @Test(expected = InvalidEntityException.class)
     public void saveWithTwoOwners() {
-        assertThrows(InvalidEntityException.class, () -> {
-            Group root = groupDAO.findByName("root");
-            assertNotNull(root);
+        Group root = groupDAO.findByName("root");
+        assertNotNull("did not find expected group", root);
 
-            User user = userDAO.findByUsername("rossini");
-            assertNotNull(user);
+        User user = userDAO.findByUsername("rossini");
+        assertNotNull("did not find expected user", user);
 
-            Group group = entityFactory.newEntity(Group.class);
-            group.setRealm(realmDAO.getRoot());
-            group.setName("error");
-            group.setUserOwner(user);
-            group.setGroupOwner(root);
+        Group group = entityFactory.newEntity(Group.class);
+        group.setRealm(realmDAO.getRoot());
+        group.setName("error");
+        group.setUserOwner(user);
+        group.setGroupOwner(root);
 
-            groupDAO.save(group);
-        });
+        groupDAO.save(group);
     }
 
     @Test
     public void findByOwner() {
         Group group = groupDAO.find("ebf97068-aa4b-4a85-9f01-680e8c4cf227");
-        assertNotNull(group);
+        assertNotNull("did not find expected group", group);
 
         User user = userDAO.find("823074dc-d280-436d-a7dd-07399fae48ec");
-        assertNotNull(user);
+        assertNotNull("did not find expected user", user);
 
         assertEquals(user, group.getUserOwner());
 

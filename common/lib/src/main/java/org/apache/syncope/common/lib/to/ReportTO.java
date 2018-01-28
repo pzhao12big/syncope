@@ -27,6 +27,7 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
+import org.apache.syncope.common.lib.report.AbstractReportletConf;
 
 @XmlRootElement(name = "report")
 @XmlType
@@ -38,7 +39,7 @@ public class ReportTO extends AbstractStartEndBean implements EntityTO {
 
     private String name;
 
-    private final List<String> reportlets = new ArrayList<>();
+    private final List<AbstractReportletConf> reportletConfs = new ArrayList<>();
 
     private String cronExpression;
 
@@ -73,11 +74,11 @@ public class ReportTO extends AbstractStartEndBean implements EntityTO {
         this.name = name;
     }
 
-    @XmlElementWrapper(name = "reportlets")
-    @XmlElement(name = "reportlets")
-    @JsonProperty("reportlets")
-    public List<String> getReportlets() {
-        return reportlets;
+    @XmlElementWrapper(name = "reportletConfs")
+    @XmlElement(name = "reportletConf")
+    @JsonProperty("reportletConfs")
+    public List<AbstractReportletConf> getReportletConfs() {
+        return reportletConfs;
     }
 
     public String getCronExpression() {

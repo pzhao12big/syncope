@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
-import java.util.Optional;
 import javax.persistence.Basic;
 import javax.persistence.Cacheable;
 import javax.persistence.CascadeType;
@@ -59,7 +58,6 @@ import org.apache.syncope.core.spring.ApplicationContextProvider;
 import org.apache.syncope.core.persistence.api.dao.AnyTypeDAO;
 import org.apache.syncope.core.persistence.api.entity.AnyType;
 import org.apache.syncope.core.persistence.api.entity.AnyTypeClass;
-import org.apache.syncope.core.persistence.api.entity.RelationshipType;
 import org.apache.syncope.core.persistence.api.entity.Role;
 import org.apache.syncope.core.persistence.api.entity.anyobject.AnyObject;
 import org.apache.syncope.core.persistence.api.entity.resource.ExternalResource;
@@ -262,7 +260,6 @@ public class JPAUser
         try {
             this.password = ENCRYPTOR.encode(password, cipherAlgoritm);
             this.cipherAlgorithm = cipherAlgoritm;
-            setMustChangePassword(false);
         } catch (Exception e) {
             LOG.error("Could not encode password", e);
             this.password = null;
@@ -511,15 +508,6 @@ public class JPAUser
     public boolean add(final URelationship relationship) {
         checkType(relationship, JPAURelationship.class);
         return this.relationships.add((JPAURelationship) relationship);
-    }
-
-    @Override
-    public Optional<? extends URelationship> getRelationship(
-            final RelationshipType relationshipType, final String otherEndKey) {
-
-        return getRelationships().stream().filter(relationship -> relationshipType.equals(relationship.getType())
-                && otherEndKey != null && otherEndKey.equals(relationship.getRightEnd().getKey())).
-                findFirst();
     }
 
     @Override

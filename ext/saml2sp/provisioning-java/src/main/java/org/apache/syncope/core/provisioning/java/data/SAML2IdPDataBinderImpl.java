@@ -31,9 +31,7 @@ import org.apache.syncope.common.lib.types.ClientExceptionType;
 import org.apache.syncope.common.lib.types.MappingPurpose;
 import org.apache.syncope.common.lib.types.SchemaType;
 import org.apache.syncope.core.persistence.api.dao.AnyTypeDAO;
-import org.apache.syncope.core.persistence.api.dao.ImplementationDAO;
 import org.apache.syncope.core.persistence.api.dao.SAML2IdPDAO;
-import org.apache.syncope.core.persistence.api.entity.Implementation;
 import org.apache.syncope.core.persistence.api.entity.SAML2EntityFactory;
 import org.apache.syncope.core.persistence.api.entity.SAML2IdP;
 import org.apache.syncope.core.persistence.api.entity.SAML2IdPItem;
@@ -60,9 +58,6 @@ public class SAML2IdPDataBinderImpl implements SAML2IdPDataBinder {
 
     @Autowired
     private SAML2IdPDAO saml2IdPDAO;
-
-    @Autowired
-    private ImplementationDAO implementationDAO;
 
     @Autowired
     private SAML2EntityFactory entityFactory;
@@ -201,18 +196,8 @@ public class SAML2IdPDataBinderImpl implements SAML2IdPDataBinder {
         });
         populateItems(idpTO, idp, allowedSchemas);
 
-        idpTO.getActions().forEach(implementationKey -> {
-            Implementation implementation = implementationDAO.find(implementationKey);
-            if (implementation == null) {
-                LOG.debug("Invalid " + Implementation.class.getSimpleName() + "{}, ignoring...", implementationKey);
-            } else {
-                idp.add(implementation);
-            }
-        });
-        // remove all implementations not contained in the TO
-        idp.getActions().removeAll(idp.getActions().stream().
-                filter(implementation -> !idpTO.getActions().contains(implementation.getKey())).
-                collect(Collectors.toList()));
+        idp.getActionsClassNames().clear();
+        idp.getActionsClassNames().addAll(idpTO.getActionsClassNames());
 
         return saml2IdPDAO.save(idp);
     }
@@ -252,9 +237,7 @@ public class SAML2IdPDataBinderImpl implements SAML2IdPDataBinder {
 
         populateItems(idp, idpTO);
 
-        idp.getActions().forEach(action -> {
-            idpTO.getActions().add(action.getKey());
-        });
+        idpTO.getActionsClassNames().addAll(idp.getActionsClassNames());
 
         return idpTO;
     }

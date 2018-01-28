@@ -20,6 +20,7 @@ package org.apache.syncope.core.persistence.api.entity;
 
 import org.apache.syncope.common.lib.types.AttrSchemaType;
 import org.apache.syncope.common.lib.types.CipherAlgorithm;
+import org.apache.syncope.core.persistence.api.attrvalue.validation.Validator;
 
 public interface PlainSchema extends Schema {
 
@@ -35,7 +36,9 @@ public interface PlainSchema extends Schema {
 
     String getSecretKey();
 
-    Implementation getValidator();
+    Validator getValidator();
+
+    String getValidatorClass();
 
     void setCipherAlgorithm(CipherAlgorithm cipherAlgorithm);
 
@@ -49,7 +52,7 @@ public interface PlainSchema extends Schema {
 
     void setSecretKey(String secretKey);
 
-    void setValidator(Implementation validator);
+    void setValidatorClass(String validatorClass);
 
     void setType(AttrSchemaType type);
 

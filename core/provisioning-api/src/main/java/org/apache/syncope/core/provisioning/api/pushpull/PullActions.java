@@ -31,17 +31,6 @@ import org.quartz.JobExecutionException;
 public interface PullActions extends ProvisioningActions {
 
     /**
-     * Pre-process the pull information received by the underlying connector, before any internal activity occurs.
-     *
-     * @param profile profile of the pull being executed.
-     * @param delta retrieved pull information
-     * @return pull information, possibly altered.
-     */
-    default SyncDelta preprocess(ProvisioningProfile<?, ?> profile, SyncDelta delta) {
-        return delta;
-    }
-
-    /**
      * Action to be executed before to create a pulled entity locally.
      * The entity is created locally upon pull in case of the un-matching rule
      * {@link org.apache.syncope.common.lib.types.UnmatchingRule#PROVISION} (default un-matching rule) is applied.
@@ -49,12 +38,15 @@ public interface PullActions extends ProvisioningActions {
      * @param profile profile of the pull being executed.
      * @param delta retrieved pull information
      * @param entity entity
+     * @return pull information, possibly altered.
      * @throws JobExecutionException in case of generic failure
      */
-    default void beforeProvision(
+    default SyncDelta beforeProvision(
             ProvisioningProfile<?, ?> profile,
             SyncDelta delta,
             EntityTO entity) throws JobExecutionException {
+
+        return delta;
     }
 
     /**
@@ -65,12 +57,15 @@ public interface PullActions extends ProvisioningActions {
      * @param profile profile of the pull being executed.
      * @param delta retrieved pull information
      * @param entity entity
+     * @return pull information, possibly altered.
      * @throws JobExecutionException in case of generic failure
      */
-    default void beforeAssign(
+    default SyncDelta beforeAssign(
             ProvisioningProfile<?, ?> profile,
             SyncDelta delta,
             EntityTO entity) throws JobExecutionException {
+
+        return delta;
     }
 
     /**
@@ -81,12 +76,15 @@ public interface PullActions extends ProvisioningActions {
      * @param profile profile of the pull being executed.
      * @param delta retrieved pull information
      * @param entity entity
+     * @return pull information, possibly altered.
      * @throws JobExecutionException in case of generic failure
      */
-    default void beforeUnassign(
+    default SyncDelta beforeUnassign(
             ProvisioningProfile<?, ?> profile,
             SyncDelta delta,
             EntityTO entity) throws JobExecutionException {
+
+        return delta;
     }
 
     /**
@@ -97,12 +95,15 @@ public interface PullActions extends ProvisioningActions {
      * @param profile profile of the pull being executed.
      * @param delta retrieved pull information
      * @param entity entity
+     * @return pull information, possibly altered.
      * @throws JobExecutionException in case of generic failure
      */
-    default void beforeDeprovision(
+    default SyncDelta beforeDeprovision(
             ProvisioningProfile<?, ?> profile,
             SyncDelta delta,
             EntityTO entity) throws JobExecutionException {
+
+        return delta;
     }
 
     /**
@@ -113,12 +114,15 @@ public interface PullActions extends ProvisioningActions {
      * @param profile profile of the pull being executed.
      * @param delta retrieved pull information
      * @param entity entity
+     * @return pull information, possibly altered.
      * @throws JobExecutionException in case of generic failure
      */
-    default void beforeUnlink(
+    default SyncDelta beforeUnlink(
             ProvisioningProfile<?, ?> profile,
             SyncDelta delta,
             EntityTO entity) throws JobExecutionException {
+
+        return delta;
     }
 
     /**
@@ -129,12 +133,15 @@ public interface PullActions extends ProvisioningActions {
      * @param profile profile of the pull being executed.
      * @param delta retrieved pull information
      * @param entity entity
+     * @return pull information, possibly altered.
      * @throws JobExecutionException in case of generic failure
      */
-    default void beforeLink(
+    default SyncDelta beforeLink(
             ProvisioningProfile<?, ?> profile,
             SyncDelta delta,
             EntityTO entity) throws JobExecutionException {
+
+        return delta;
     }
 
     /**
@@ -145,15 +152,18 @@ public interface PullActions extends ProvisioningActions {
      * @param <P> any object modifications
      * @param profile profile of the pull being executed.
      * @param delta retrieved pull information
-     * @param entity entity
+     * @param entityTO entity
      * @param anyPatch modification
+     * @return pull information used for logging and to be passed to the 'after' method.
      * @throws JobExecutionException in case of generic failure.
      */
-    default <P extends AnyPatch> void beforeUpdate(
+    default <P extends AnyPatch> SyncDelta beforeUpdate(
             ProvisioningProfile<?, ?> profile,
             SyncDelta delta,
-            EntityTO entity,
+            EntityTO entityTO,
             P anyPatch) throws JobExecutionException {
+
+        return delta;
     }
 
     /**
@@ -162,12 +172,15 @@ public interface PullActions extends ProvisioningActions {
      * @param profile profile of the pull being executed.
      * @param delta retrieved pull information
      * @param entity entity
+     * @return pull information used for logging and to be passed to the 'after' method.
      * @throws JobExecutionException in case of generic failure
      */
-    default void beforeDelete(
+    default SyncDelta beforeDelete(
             ProvisioningProfile<?, ?> profile,
             SyncDelta delta,
             EntityTO entity) throws JobExecutionException {
+
+        return delta;
     }
 
     /**

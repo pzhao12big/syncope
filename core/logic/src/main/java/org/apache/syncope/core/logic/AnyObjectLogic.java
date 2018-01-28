@@ -99,6 +99,7 @@ public class AnyObjectLogic extends AbstractAnyLogic<AnyObjectTO, AnyObjectPatch
         return Pair.of(count, result);
     }
 
+    @Override
     public ProvisioningResult<AnyObjectTO> create(final AnyObjectTO anyObjectTO, final boolean nullPriorityAsync) {
         Pair<AnyObjectTO, List<LogicActions>> before = beforeCreate(anyObjectTO);
 
@@ -136,11 +137,10 @@ public class AnyObjectLogic extends AbstractAnyLogic<AnyObjectTO, AnyObjectPatch
                 realm);
         boolean authDynRealms = securityChecks(effectiveRealms, realm, before.getLeft().getKey());
 
-        Pair<AnyObjectPatch, List<PropagationStatus>> updated =
-                provisioningManager.update(anyObjectPatch, nullPriorityAsync);
+        Pair<String, List<PropagationStatus>> updated = provisioningManager.update(anyObjectPatch, nullPriorityAsync);
 
         return afterUpdate(
-                binder.getAnyObjectTO(updated.getLeft().getKey()),
+                binder.getAnyObjectTO(updated.getKey()),
                 updated.getRight(),
                 before.getRight(),
                 authDynRealms,

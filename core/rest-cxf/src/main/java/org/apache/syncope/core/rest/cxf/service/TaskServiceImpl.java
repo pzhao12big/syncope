@@ -19,10 +19,8 @@
 package org.apache.syncope.core.rest.cxf.service;
 
 import java.net.URI;
-import java.util.List;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.core.Response;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.syncope.common.lib.to.AbstractTaskTO;
 import org.apache.syncope.common.lib.to.BulkAction;
 import org.apache.syncope.common.lib.to.BulkActionResult;
@@ -56,32 +54,39 @@ public class TaskServiceImpl extends AbstractExecutableService implements TaskSe
             throw new BadRequestException();
         }
 
-        URI location = uriInfo.getAbsolutePathBuilder().path(createdTask.getKey()).build();
+        URI location = uriInfo.getAbsolutePathBuilder().path(String.valueOf(createdTask.getKey())).build();
         return Response.created(location).
                 header(RESTHeaders.RESOURCE_KEY, createdTask.getKey()).
                 build();
     }
 
     @Override
-    public Response delete(final String key) {
+    public void delete(final String key) {
         logic.delete(key);
-        return Response.noContent().build();
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public <T extends AbstractTaskTO> PagedResult<T> list(final TaskQuery query) {
-        Pair<Integer, List<T>> result = logic.list(
-                query.getType(),
-                query.getResource(),
-                query.getNotification(),
-                query.getAnyTypeKind(),
-                query.getEntityKey(),
+        return (PagedResult<T>) buildPagedResult(
+                logic.list(
+                        query.getType(),
+                        query.getResource(),
+                        query.getNotification(),
+                        query.getAnyTypeKind(),
+                        query.getEntityKey(),
+                        query.getPage(),
+                        query.getSize(),
+                        getOrderByClauses(query.getOrderBy()),
+                        query.getDetails()),
                 query.getPage(),
                 query.getSize(),
-                getOrderByClauses(query.getOrderBy()),
-                query.getDetails());
-        return buildPagedResult(result.getRight(), query.getPage(), query.getSize(), result.getLeft());
+                logic.count(
+                        query.getType(),
+                        query.getResource(),
+                        query.getNotification(),
+                        query.getAnyTypeKind(),
+                        query.getEntityKey()));
     }
 
     @Override
@@ -90,10 +95,9 @@ public class TaskServiceImpl extends AbstractExecutableService implements TaskSe
     }
 
     @Override
-    public Response update(final AbstractTaskTO taskTO) {
+    public void update(final AbstractTaskTO taskTO) {
         if (taskTO instanceof SchedTaskTO) {
             logic.updateSchedTask((SchedTaskTO) taskTO);
-            return Response.noContent().build();
         } else {
             throw new BadRequestException();
         }

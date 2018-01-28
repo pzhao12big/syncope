@@ -66,9 +66,8 @@ public class SAML2SPServiceImpl extends AbstractServiceImpl implements SAML2SPSe
     }
 
     @Override
-    public Response validateLogoutResponse(final SAML2ReceivedResponseTO response) {
+    public void validateLogoutResponse(final SAML2ReceivedResponseTO response) {
         logic.validateLogoutResponse(getJWTToken(), response);
-        return Response.noContent().build();
     }
 
     private String getJWTToken() {

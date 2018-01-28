@@ -18,11 +18,11 @@
  */
 package org.apache.syncope.fit.core;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.util.Set;
 import java.util.UUID;
@@ -42,7 +42,7 @@ import org.apache.syncope.common.lib.types.ClientExceptionType;
 import org.apache.syncope.common.lib.types.SchemaType;
 import org.apache.syncope.common.rest.api.beans.AnyQuery;
 import org.apache.syncope.fit.AbstractITCase;
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 
 public class AnyObjectITCase extends AbstractITCase {
 
@@ -83,7 +83,7 @@ public class AnyObjectITCase extends AbstractITCase {
 
         try {
             createAnyObject(anyObjectTO);
-            fail("This should not happen");
+            fail();
         } catch (SyncopeClientException e) {
             assertEquals(ClientExceptionType.InvalidMembership, e.getType());
         }
@@ -194,7 +194,7 @@ public class AnyObjectITCase extends AbstractITCase {
 
         try {
             anyObjectService.read(anyObjectTO.getKey(), SchemaType.PLAIN, "location");
-            fail("This should not happen");
+            fail();
         } catch (SyncopeClientException e) {
             assertEquals(ClientExceptionType.NotFound, e.getType());
         }
@@ -203,12 +203,12 @@ public class AnyObjectITCase extends AbstractITCase {
     @Test
     public void issueSYNCOPE756() {
         AnyObjectTO anyObjectTO = getSampleTO("issueSYNCOPE756");
-        anyObjectTO.getRelationships().add(new RelationshipTO.Builder().otherEnd(
+        anyObjectTO.getRelationships().add(new RelationshipTO.Builder().right(
                 AnyTypeKind.USER.name(), "1417acbe-cbf6-4277-9372-e75e04f97000").build());
 
         try {
             createAnyObject(anyObjectTO).getEntity();
-            fail("This should not happen");
+            fail();
         } catch (SyncopeClientException e) {
             assertEquals(ClientExceptionType.InvalidAnyType, e.getType());
         }

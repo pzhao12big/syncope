@@ -32,9 +32,7 @@ import org.apache.syncope.core.persistence.jpa.entity.JPADynRealm;
 import org.apache.syncope.core.provisioning.api.event.AnyCreatedUpdatedEvent;
 import org.apache.syncope.core.spring.ApplicationContextProvider;
 import org.apache.syncope.core.spring.security.AuthContextUtils;
-import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
@@ -49,8 +47,6 @@ public class JPADynRealmDAO extends AbstractDAO<DynRealm> implements DynRealmDAO
 
     private AnySearchDAO searchDAO;
 
-    private AnySearchDAO jpaAnySearchDAO;
-
     private AnySearchDAO searchDAO() {
         synchronized (this) {
             if (searchDAO == null) {
@@ -58,20 +54,6 @@ public class JPADynRealmDAO extends AbstractDAO<DynRealm> implements DynRealmDAO
             }
         }
         return searchDAO;
-    }
-
-    private AnySearchDAO jpaAnySearchDAO() {
-        synchronized (this) {
-            if (jpaAnySearchDAO == null) {
-                if (AopUtils.getTargetClass(searchDAO()).equals(JPAAnySearchDAO.class)) {
-                    jpaAnySearchDAO = searchDAO();
-                } else {
-                    jpaAnySearchDAO = (AnySearchDAO) ApplicationContextProvider.getBeanFactory().
-                            createBean(JPAAnySearchDAO.class, AbstractBeanDefinition.AUTOWIRE_BY_TYPE, true);
-                }
-            }
-        }
-        return jpaAnySearchDAO;
     }
 
     @Override
@@ -93,7 +75,7 @@ public class JPADynRealmDAO extends AbstractDAO<DynRealm> implements DynRealmDAO
         // refresh dynamic memberships
         clearDynMembers(merged);
 
-        merged.getDynMemberships().stream().map(memb -> jpaAnySearchDAO().search(
+        merged.getDynMemberships().stream().map(memb -> searchDAO().search(
                 SearchCondConverter.convert(memb.getFIQLCond()), memb.getAnyType().getKind())).
                 forEachOrdered(matching -> {
                     matching.forEach(any -> {
@@ -140,7 +122,7 @@ public class JPADynRealmDAO extends AbstractDAO<DynRealm> implements DynRealmDAO
                 delete.setParameter(1, dynRealm.getKey());
                 delete.setParameter(2, any.getKey());
                 delete.executeUpdate();
-                if (jpaAnySearchDAO().matches(any, SearchCondConverter.convert(memb.get().getFIQLCond()))) {
+                if (searchDAO().matches(any, SearchCondConverter.convert(memb.get().getFIQLCond()))) {
                     Query insert = entityManager().createNativeQuery("INSERT INTO " + DYNMEMB_TABLE + " VALUES(?, ?)");
                     insert.setParameter(1, any.getKey());
                     insert.setParameter(2, dynRealm.getKey());

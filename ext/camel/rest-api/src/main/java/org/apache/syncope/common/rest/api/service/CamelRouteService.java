@@ -18,8 +18,6 @@
  */
 package org.apache.syncope.common.rest.api.service;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.Authorization;
 import java.util.List;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
@@ -31,7 +29,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 import org.apache.syncope.common.lib.to.CamelMetrics;
 import org.apache.syncope.common.lib.to.CamelRouteTO;
 import org.apache.syncope.common.lib.types.AnyTypeKind;
@@ -39,9 +36,6 @@ import org.apache.syncope.common.lib.types.AnyTypeKind;
 /**
  * REST operations for Camel routes.
  */
-@Api(tags = "CamelRoutes", authorizations = {
-    @Authorization(value = "BasicAuthentication")
-    , @Authorization(value = "Bearer") })
 @Path("camelRoutes")
 public interface CamelRouteService extends JAXRSService {
 
@@ -70,21 +64,18 @@ public interface CamelRouteService extends JAXRSService {
      * Update the given route.
      *
      * @param route to be updated
-     * @return an empty response if operation was successful
      */
     @PUT
     @Path("{key}")
     @Consumes({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML })
-    Response update(@NotNull CamelRouteTO route);
+    void update(@NotNull CamelRouteTO route);
 
     /**
      * Restart the underlying Apache Camel context.
-     *
-     * @return an empty response if operation was successful
      */
     @POST
     @Path("restartContext")
-    Response restartContext();
+    void restartContext();
 
     /**
      * Provides Camel metrics.

@@ -68,6 +68,7 @@ import org.opensaml.saml.saml2.core.AuthnContext;
 import org.opensaml.saml.saml2.core.AuthnContextClassRef;
 import org.opensaml.saml.saml2.core.AuthnContextComparisonTypeEnumeration;
 import org.opensaml.saml.saml2.core.AuthnRequest;
+import org.opensaml.saml.saml2.core.AuthnStatement;
 import org.opensaml.saml.saml2.core.Issuer;
 import org.opensaml.saml.saml2.core.LogoutRequest;
 import org.opensaml.saml.saml2.core.LogoutResponse;
@@ -107,7 +108,6 @@ import org.apache.syncope.core.provisioning.api.serialization.POJOHelper;
 import org.apache.syncope.core.spring.security.AuthContextUtils;
 import org.apache.syncope.core.spring.security.AuthDataAccessor;
 import org.apache.syncope.core.spring.security.Encryptor;
-import org.opensaml.core.xml.schema.XSAny;
 import org.springframework.util.ResourceUtils;
 
 @Component
@@ -448,34 +448,32 @@ public class SAML2SPLogic extends AbstractSAML2Logic<AbstractBaseBean> {
         if (assertion.getConditions().getNotOnOrAfter() != null) {
             responseTO.setNotOnOrAfter(assertion.getConditions().getNotOnOrAfter().toDate());
         }
-        assertion.getAuthnStatements().forEach(authnStmt -> {
+        for (AuthnStatement authnStmt : assertion.getAuthnStatements()) {
             responseTO.setSessionIndex(authnStmt.getSessionIndex());
 
             responseTO.setAuthInstant(authnStmt.getAuthnInstant().toDate());
             if (authnStmt.getSessionNotOnOrAfter() != null) {
                 responseTO.setNotOnOrAfter(authnStmt.getSessionNotOnOrAfter().toDate());
             }
-        });
+        }
 
         for (AttributeStatement attrStmt : assertion.getAttributeStatements()) {
             for (Attribute attr : attrStmt.getAttributes()) {
                 if (!attr.getAttributeValues().isEmpty()) {
                     String attrName = attr.getFriendlyName() == null ? attr.getName() : attr.getFriendlyName();
-                    if (attrName.equals(idp.getConnObjectKeyItem().getExtAttrName())) {
-                        if (attr.getAttributeValues().get(0) instanceof XSString) {
-                            keyValue = ((XSString) attr.getAttributeValues().get(0)).getValue();
-                        } else if (attr.getAttributeValues().get(0) instanceof XSAny) {
-                            keyValue = ((XSAny) attr.getAttributeValues().get(0)).getTextContent();
-                        }
+                    if (attrName.equals(idp.getConnObjectKeyItem().getExtAttrName())
+                            && attr.getAttributeValues().get(0) instanceof XSString) {
+
+                        keyValue = ((XSString) attr.getAttributeValues().get(0)).getValue();
                     }
 
                     AttrTO attrTO = new AttrTO();
                     attrTO.setSchema(attrName);
-                    attr.getAttributeValues().stream().
-                            filter(value -> value.getDOM() != null).
-                            forEachOrdered(value -> {
-                                attrTO.getValues().add(value.getDOM().getTextContent());
-                            });
+                    for (XMLObject value : attr.getAttributeValues()) {
+                        if (value.getDOM() != null) {
+                            attrTO.getValues().add(value.getDOM().getTextContent());
+                        }
+                    }
                     responseTO.getAttrs().add(attrTO);
                 }
             }
@@ -483,7 +481,7 @@ public class SAML2SPLogic extends AbstractSAML2Logic<AbstractBaseBean> {
 
         final List<String> matchingUsers = keyValue == null
                 ? Collections.<String>emptyList()
-                : userManager.findMatchingUser(keyValue, idp.getKey());
+                : userManager.findMatchingUser(keyValue, idp.getConnObjectKeyItem());
         LOG.debug("Found {} matching users for {}", matchingUsers.size(), keyValue);
 
         String username;
@@ -685,4 +683,5 @@ public class SAML2SPLogic extends AbstractSAML2Logic<AbstractBaseBean> {
 
         throw new UnresolvedReferenceException();
     }
+
 }

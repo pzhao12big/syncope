@@ -22,6 +22,7 @@ import com.izforge.izpack.panels.process.AbstractUIProcessHandler;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
+import org.apache.commons.io.IOUtils;
 
 public abstract class BaseProcess {
 
@@ -30,10 +31,14 @@ public abstract class BaseProcess {
     protected String syncopeInstallDir;
 
     static {
-        try (InputStream input = BaseProcess.class.getResourceAsStream("/installer.properties")) {
+        InputStream input = null;
+        try {
+            input = BaseProcess.class.getResourceAsStream("/installer.properties");
             PROPERTIES.load(input);
         } catch (IOException e) {
             // ignore
+        } finally {
+            IOUtils.closeQuietly(input);
         }
     }
 

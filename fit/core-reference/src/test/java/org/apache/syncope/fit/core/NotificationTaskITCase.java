@@ -18,10 +18,10 @@
  */
 package org.apache.syncope.fit.core;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import javax.ws.rs.core.Response;
 import org.apache.commons.lang3.StringUtils;
@@ -31,21 +31,17 @@ import org.apache.syncope.common.lib.to.AttrTO;
 import org.apache.syncope.common.lib.to.NotificationTaskTO;
 import org.apache.syncope.common.lib.to.ExecTO;
 import org.apache.syncope.common.lib.to.GroupTO;
-import org.apache.syncope.common.lib.to.ImplementationTO;
 import org.apache.syncope.common.lib.to.NotificationTO;
 import org.apache.syncope.common.lib.to.PagedResult;
 import org.apache.syncope.common.lib.types.AnyTypeKind;
-import org.apache.syncope.common.lib.types.ImplementationEngine;
-import org.apache.syncope.common.lib.types.ImplementationType;
 import org.apache.syncope.common.lib.types.TaskType;
 import org.apache.syncope.common.lib.types.TraceLevel;
 import org.apache.syncope.common.rest.api.beans.ExecuteQuery;
 import org.apache.syncope.common.rest.api.beans.TaskQuery;
-import org.apache.syncope.common.rest.api.service.ImplementationService;
 import org.apache.syncope.common.rest.api.service.NotificationService;
 import org.apache.syncope.core.provisioning.java.job.notification.NotificationJob;
 import org.apache.syncope.fit.core.reference.TestNotificationRecipientsProvider;
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 
 public class NotificationTaskITCase extends AbstractNotificationTaskITCase {
 
@@ -68,9 +64,11 @@ public class NotificationTaskITCase extends AbstractNotificationTaskITCase {
         assertNotNull(taskTO);
         assertTrue(taskTO.isExecuted());
         assertNotNull(taskTO.getTextBody());
-        assertTrue(taskTO.getTextBody().contains("Your email address is " + created.getRight() + "."));
-        assertTrue(taskTO.getTextBody().contains("Your email address inside a link: "
-                + "http://localhost/?email=" + created.getRight().replaceAll("@", "%40")));
+        assertTrue("Notification mail text doesn't contain expected content.",
+                taskTO.getTextBody().contains("Your email address is " + created.getRight() + "."));
+        assertTrue("Notification mail text doesn't contain expected content.",
+                taskTO.getTextBody().contains("Your email address inside a link: "
+                        + "http://localhost/?email=" + created.getRight().replaceAll("@", "%40")));
     }
 
     @Test
@@ -223,15 +221,6 @@ public class NotificationTaskITCase extends AbstractNotificationTaskITCase {
     @Test
     public void issueSYNCOPE446() throws Exception {
         // 1. Create notification
-        ImplementationTO recipientsProvider = new ImplementationTO();
-        recipientsProvider.setKey(TestNotificationRecipientsProvider.class.getSimpleName());
-        recipientsProvider.setEngine(ImplementationEngine.JAVA);
-        recipientsProvider.setType(ImplementationType.RECIPIENTS_PROVIDER);
-        recipientsProvider.setBody(TestNotificationRecipientsProvider.class.getName());
-        Response response = implementationService.create(recipientsProvider);
-        recipientsProvider = getObject(response.getLocation(), ImplementationService.class, ImplementationTO.class);
-        assertNotNull(recipientsProvider);
-
         NotificationTO notification = new NotificationTO();
         notification.setTraceLevel(TraceLevel.ALL);
         notification.getEvents().add("[LOGIC]:[GroupLogic]:[]:[create]:[SUCCESS]");
@@ -245,7 +234,7 @@ public class NotificationTaskITCase extends AbstractNotificationTaskITCase {
         notification.setSelfAsRecipient(false);
         notification.setRecipientAttrName("email");
         notification.getStaticRecipients().add("notificationtest@syncope.apache.org");
-        notification.setRecipientsProvider(recipientsProvider.getKey());
+        notification.setRecipientsProviderClassName(TestNotificationRecipientsProvider.class.getName());
 
         String sender = "syncopetest-" + getUUIDString() + "@syncope.apache.org";
         notification.setSender(sender);
@@ -254,10 +243,10 @@ public class NotificationTaskITCase extends AbstractNotificationTaskITCase {
         notification.setTemplate("optin");
         notification.setActive(true);
 
-        response = notificationService.create(notification);
+        Response response = notificationService.create(notification);
         notification = getObject(response.getLocation(), NotificationService.class, NotificationTO.class);
         assertNotNull(notification);
-        assertEquals(recipientsProvider.getKey(), notification.getRecipientsProvider());
+        assertEquals(TestNotificationRecipientsProvider.class.getName(), notification.getRecipientsProviderClassName());
 
         // 2. create group
         GroupTO groupTO = new GroupTO();

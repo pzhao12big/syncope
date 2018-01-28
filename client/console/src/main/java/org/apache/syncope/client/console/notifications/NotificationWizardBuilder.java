@@ -18,6 +18,7 @@
  */
 package org.apache.syncope.client.console.notifications;
 
+import org.apache.syncope.client.console.events.EventCategoryPanel;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -25,15 +26,14 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.syncope.client.console.SyncopeConsoleSession;
 import org.apache.syncope.client.console.commons.Constants;
-import org.apache.syncope.client.console.events.EventCategoryPanel;
 import org.apache.syncope.client.console.panels.search.AbstractSearchPanel;
 import org.apache.syncope.client.console.panels.search.AnyObjectSearchPanel;
 import org.apache.syncope.client.console.panels.search.GroupSearchPanel;
 import org.apache.syncope.client.console.panels.search.SearchClause;
 import org.apache.syncope.client.console.panels.search.UserSearchPanel;
 import org.apache.syncope.client.console.rest.AnyTypeRestClient;
-import org.apache.syncope.client.console.rest.ImplementationRestClient;
 import org.apache.syncope.client.console.rest.LoggerRestClient;
 import org.apache.syncope.client.console.rest.NotificationRestClient;
 import org.apache.syncope.client.console.rest.SchemaRestClient;
@@ -49,7 +49,6 @@ import org.apache.syncope.common.lib.to.NotificationTO;
 import org.apache.syncope.common.lib.to.PlainSchemaTO;
 import org.apache.syncope.common.lib.to.VirSchemaTO;
 import org.apache.syncope.common.lib.types.AnyTypeKind;
-import org.apache.syncope.common.lib.types.ImplementationType;
 import org.apache.syncope.common.lib.types.SchemaType;
 import org.apache.syncope.common.lib.types.TraceLevel;
 import org.apache.wicket.PageReference;
@@ -78,8 +77,6 @@ public class NotificationWizardBuilder extends AjaxWizardBuilder<NotificationWra
 
     private final LoggerRestClient loggerRestClient = new LoggerRestClient();
 
-    private final ImplementationRestClient implRestClient = new ImplementationRestClient();
-
     /**
      * Construct.
      *
@@ -107,10 +104,10 @@ public class NotificationWizardBuilder extends AjaxWizardBuilder<NotificationWra
 
     @Override
     protected WizardModel buildModelSteps(final NotificationWrapper modelObject, final WizardModel wizardModel) {
-        wizardModel.add(new Details(modelObject));
-        wizardModel.add(new Recipients(modelObject));
-        wizardModel.add(new Events(modelObject));
-        wizardModel.add(new Abouts(modelObject));
+        wizardModel.add(new NotificationWizardBuilder.Details(modelObject));
+        wizardModel.add(new NotificationWizardBuilder.Recipients(modelObject));
+        wizardModel.add(new NotificationWizardBuilder.Events(modelObject));
+        wizardModel.add(new NotificationWizardBuilder.Abouts(modelObject));
         return wizardModel;
     }
 
@@ -332,8 +329,8 @@ public class NotificationWizardBuilder extends AjaxWizardBuilder<NotificationWra
 
             @Override
             protected List<String> load() {
-                return implRestClient.list(ImplementationType.RECIPIENTS_PROVIDER).stream().
-                        map(EntityTO::getKey).sorted().collect(Collectors.toList());
+                return new ArrayList<>(
+                        SyncopeConsoleSession.get().getPlatformInfo().getNotificationRecipientsProviders());
             }
         };
 
@@ -366,11 +363,11 @@ public class NotificationWizardBuilder extends AjaxWizardBuilder<NotificationWra
                     new PropertyModel<>(modelObject, "recipientClauses")).
                     required(false).build("recipients"));
 
-            AjaxDropDownChoicePanel<String> recipientsProvider = new AjaxDropDownChoicePanel<>(
-                    "recipientsProvider", "recipientsProvider",
-                    new PropertyModel<>(notificationTO, "recipientsProvider"), false);
-            recipientsProvider.setChoices(recipientProviders.getObject());
-            add(recipientsProvider);
+            AjaxDropDownChoicePanel<String> recipientsProviderClassName = new AjaxDropDownChoicePanel<>(
+                    "recipientsProviderClassName", "recipientsProviderClassName",
+                    new PropertyModel<>(notificationTO, "recipientsProviderClassName"), false);
+            recipientsProviderClassName.setChoices(recipientProviders.getObject());
+            add(recipientsProviderClassName);
 
             AjaxCheckBoxPanel selfAsRecipient = new AjaxCheckBoxPanel("selfAsRecipient",
                     getString("selfAsRecipient"), new PropertyModel<>(notificationTO, "selfAsRecipient"));

@@ -18,10 +18,9 @@
  */
 package org.apache.syncope.core.persistence.api.entity.task;
 
-import java.util.List;
+import java.util.Set;
 import org.apache.syncope.common.lib.types.MatchingRule;
 import org.apache.syncope.common.lib.types.UnmatchingRule;
-import org.apache.syncope.core.persistence.api.entity.Implementation;
 import org.apache.syncope.core.persistence.api.entity.resource.ExternalResource;
 
 public interface ProvisioningTask extends SchedTask {
@@ -30,9 +29,7 @@ public interface ProvisioningTask extends SchedTask {
 
     void setResource(ExternalResource resource);
 
-    boolean add(Implementation action);
-
-    List<? extends Implementation> getActions();
+    Set<String> getActionsClassNames();
 
     MatchingRule getMatchingRule();
 

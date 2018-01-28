@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -39,11 +40,9 @@ import org.apache.syncope.core.spring.security.DelegatedAdministrationException;
 import org.apache.syncope.core.persistence.api.dao.AnyObjectDAO;
 import org.apache.syncope.core.persistence.api.dao.GroupDAO;
 import org.apache.syncope.core.persistence.api.dao.UserDAO;
-import org.apache.syncope.core.persistence.api.entity.Any;
 import org.apache.syncope.core.persistence.api.entity.AnyType;
 import org.apache.syncope.core.persistence.api.entity.AnyUtils;
 import org.apache.syncope.core.persistence.api.entity.Realm;
-import org.apache.syncope.core.persistence.api.entity.Relationship;
 import org.apache.syncope.core.persistence.api.entity.anyobject.ARelationship;
 import org.apache.syncope.core.persistence.api.entity.anyobject.AnyObject;
 import org.apache.syncope.core.persistence.api.entity.group.Group;
@@ -124,12 +123,15 @@ public class JPAAnyObjectDAO extends AbstractAnyDAO<AnyObject> implements AnyObj
                 "SELECT e.realm, COUNT(e) FROM  " + JPAAnyObject.class.getSimpleName() + " e "
                 + "WHERE e.type=:type GROUP BY e.realm");
         query.setParameter("type", anyType);
-
         @SuppressWarnings("unchecked")
         List<Object[]> results = query.getResultList();
-        return results.stream().collect(Collectors.toMap(
-                result -> ((Realm) result[0]).getFullPath(),
-                result -> ((Number) result[1]).intValue()));
+
+        Map<String, Integer> countByRealm = new HashMap<>(results.size());
+        for (Object[] result : results) {
+            countByRealm.put(((Realm) result[0]).getFullPath(), ((Number) result[1]).intValue());
+        }
+
+        return Collections.unmodifiableMap(countByRealm);
     }
 
     @Override
@@ -168,26 +170,13 @@ public class JPAAnyObjectDAO extends AbstractAnyDAO<AnyObject> implements AnyObj
     }
 
     @Override
-    public List<Relationship<Any<?>, Any<?>>> findAllRelationships(final AnyObject anyObject) {
-        List<Relationship<Any<?>, Any<?>>> result = new ArrayList<>();
+    public List<ARelationship> findAllRelationships(final AnyObject anyObject) {
+        TypedQuery<ARelationship> query = entityManager().createQuery(
+                "SELECT e FROM " + JPAARelationship.class.getSimpleName()
+                + " e WHERE e.rightEnd=:anyObject OR e.leftEnd=:anyObject", ARelationship.class);
+        query.setParameter("anyObject", anyObject);
 
-        @SuppressWarnings("unchecked")
-        TypedQuery<Relationship<Any<?>, Any<?>>> aquery =
-                (TypedQuery<Relationship<Any<?>, Any<?>>>) entityManager().createQuery(
-                        "SELECT e FROM " + JPAARelationship.class.getSimpleName()
-                        + " e WHERE e.rightEnd=:anyObject OR e.leftEnd=:anyObject");
-        aquery.setParameter("anyObject", anyObject);
-        result.addAll(aquery.getResultList());
-
-        @SuppressWarnings("unchecked")
-        TypedQuery<Relationship<Any<?>, Any<?>>> uquery =
-                (TypedQuery<Relationship<Any<?>, Any<?>>>) entityManager().createQuery(
-                        "SELECT e FROM " + JPAURelationship.class.getSimpleName()
-                        + " e WHERE e.rightEnd=:anyObject");
-        uquery.setParameter("anyObject", anyObject);
-        result.addAll(uquery.getResultList());
-
-        return result;
+        return query.getResultList();
     }
 
     @Override

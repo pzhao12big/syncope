@@ -18,7 +18,7 @@
  */
 package org.apache.syncope.fit.core;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.Assert.assertNotNull;
 
 import com.icegreen.greenmail.util.GreenMail;
 import com.icegreen.greenmail.util.ServerSetup;
@@ -29,8 +29,9 @@ import javax.mail.Folder;
 import javax.mail.Message;
 import javax.mail.Session;
 import javax.mail.Store;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
+import org.apache.commons.io.IOUtils;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 
 public abstract class AbstractNotificationTaskITCase extends AbstractTaskITCase {
 
@@ -44,13 +45,17 @@ public abstract class AbstractNotificationTaskITCase extends AbstractTaskITCase 
 
     private static GreenMail greenMail;
 
-    @BeforeAll
+    @BeforeClass
     public static void startGreenMail() {
         Properties props = new Properties();
-        try (InputStream propStream = ExceptionMapperITCase.class.getResourceAsStream("/mail.properties")) {
+        InputStream propStream = null;
+        try {
+            propStream = ExceptionMapperITCase.class.getResourceAsStream("/mail.properties");
             props.load(propStream);
         } catch (Exception e) {
             LOG.error("Could not load /mail.properties", e);
+        } finally {
+            IOUtils.closeQuietly(propStream);
         }
 
         SMTP_HOST = props.getProperty("smtpHost");
@@ -65,7 +70,7 @@ public abstract class AbstractNotificationTaskITCase extends AbstractTaskITCase 
         greenMail.start();
     }
 
-    @AfterAll
+    @AfterClass
     public static void stopGreenMail() {
         if (greenMail != null) {
             greenMail.stop();
@@ -78,6 +83,7 @@ public abstract class AbstractNotificationTaskITCase extends AbstractTaskITCase 
 
         boolean found = false;
         Session session = Session.getDefaultInstance(System.getProperties());
+        session.setDebug(true);
         Store store = session.getStore("pop3");
         store.connect(POP3_HOST, POP3_PORT, mailAddress, mailAddress);
 

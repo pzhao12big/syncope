@@ -30,19 +30,16 @@ public class TestAccountRule implements AccountRule {
 
     private TestAccountRuleConf conf;
 
+    @Transactional(readOnly = true)
     @Override
-    public void setConf(final AccountRuleConf conf) {
+    public void enforce(final AccountRuleConf conf, final User user) {
         if (conf instanceof TestAccountRuleConf) {
             this.conf = TestAccountRuleConf.class.cast(conf);
         } else {
             throw new IllegalArgumentException(
                     AccountRuleConf.class.getName() + " expected, got " + conf.getClass().getName());
         }
-    }
 
-    @Transactional(readOnly = true)
-    @Override
-    public void enforce(final User user) {
         if (!user.getUsername().contains(this.conf.getMustContainSubstring())) {
             throw new AccountPolicyException("Username not containing " + this.conf.getMustContainSubstring());
         }

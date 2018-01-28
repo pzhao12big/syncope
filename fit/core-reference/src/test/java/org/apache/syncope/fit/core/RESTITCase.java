@@ -18,11 +18,11 @@
  */
 package org.apache.syncope.fit.core;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -37,7 +37,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.syncope.client.lib.BasicAuthenticationHandler;
@@ -59,7 +58,7 @@ import org.apache.syncope.common.rest.api.service.ConnectorService;
 import org.apache.syncope.common.rest.api.service.GroupService;
 import org.apache.syncope.common.rest.api.service.UserService;
 import org.apache.syncope.fit.AbstractITCase;
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 
 public class RESTITCase extends AbstractITCase {
 
@@ -73,15 +72,7 @@ public class RESTITCase extends AbstractITCase {
         // service with bad password: 401 unauthorized
         try {
             clientFactory.create("bellini", "passwor");
-            fail("This should not happen");
-        } catch (AccessControlException e) {
-            assertNotNull(e);
-        }
-
-        // service with invalid JWT string: 401 unauthorized
-        try {
-            clientFactory.create(RandomStringUtils.random(20, true, true)).self();
-            fail("This should not happen");
+            fail();
         } catch (AccessControlException e) {
             assertNotNull(e);
         }
@@ -90,7 +81,7 @@ public class RESTITCase extends AbstractITCase {
         SyncopeClient goodClient = clientFactory.create("bellini", "password");
         try {
             goodClient.getService(ConnectorService.class).list(null);
-            fail("This should not happen");
+            fail();
         } catch (ForbiddenException e) {
             assertNotNull(e);
         }
@@ -158,7 +149,7 @@ public class RESTITCase extends AbstractITCase {
         userPatch.setUsername(new StringReplacePatchItem.Builder().value(userTO.getUsername() + "YY").build());
         try {
             ifMatchService.update(userPatch);
-            fail("This should not happen");
+            fail();
         } catch (SyncopeClientException e) {
             assertEquals(ClientExceptionType.ConcurrentModification, e.getType());
         }

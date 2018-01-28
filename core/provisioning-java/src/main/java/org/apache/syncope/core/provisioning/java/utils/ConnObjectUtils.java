@@ -20,10 +20,10 @@ package org.apache.syncope.core.provisioning.java.utils;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.syncope.common.lib.AnyOperations;
 import org.apache.syncope.common.lib.patch.AnyPatch;
+import org.apache.syncope.common.lib.policy.PasswordRuleConf;
 import org.apache.syncope.common.lib.to.AnyObjectTO;
 import org.apache.syncope.common.lib.to.AnyTO;
 import org.apache.syncope.common.lib.to.AttrTO;
@@ -40,7 +40,6 @@ import org.apache.syncope.core.spring.security.PasswordGenerator;
 import org.apache.syncope.core.spring.security.SecureRandomUtils;
 import org.apache.syncope.core.persistence.api.dao.RealmDAO;
 import org.apache.syncope.core.persistence.api.entity.Realm;
-import org.apache.syncope.core.persistence.api.entity.policy.PasswordPolicy;
 import org.apache.syncope.core.persistence.api.entity.resource.OrgUnit;
 import org.apache.syncope.core.persistence.api.entity.resource.Provision;
 import org.apache.syncope.core.persistence.api.entity.task.PullTask;
@@ -50,7 +49,6 @@ import org.identityconnectors.common.Base64;
 import org.identityconnectors.common.security.GuardedByteArray;
 import org.identityconnectors.common.security.GuardedString;
 import org.identityconnectors.common.security.SecurityUtil;
-import org.identityconnectors.framework.common.objects.Attribute;
 import org.identityconnectors.framework.common.objects.ConnectorObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -106,49 +104,6 @@ public class ConnObjectUtils {
     }
 
     /**
-     * Builds {@link ConnObjectTO} out of {@link ConnectorObject}.
-     *
-     * @param connObject connector object.
-     * @return transfer object
-     */
-    public static ConnObjectTO getConnObjectTO(final ConnectorObject connObject) {
-        return connObject == null ? new ConnObjectTO() : getConnObjectTO(connObject.getAttributes());
-    }
-
-    /**
-     * Builds {@link ConnObjectTO} out of a collection of {@link Attribute} instances.
-     *
-     * @param attrs attributes
-     * @return transfer object
-     */
-    public static ConnObjectTO getConnObjectTO(final Set<Attribute> attrs) {
-        final ConnObjectTO connObjectTO = new ConnObjectTO();
-
-        if (attrs != null) {
-            attrs.stream().map(attr -> {
-                AttrTO attrTO = new AttrTO();
-                attrTO.setSchema(attr.getName());
-                if (attr.getValue() != null) {
-                    attr.getValue().stream().filter(value -> value != null).forEachOrdered(value -> {
-                        if (value instanceof GuardedString || value instanceof GuardedByteArray) {
-                            attrTO.getValues().add(getPassword(value));
-                        } else if (value instanceof byte[]) {
-                            attrTO.getValues().add(Base64.encode((byte[]) value));
-                        } else {
-                            attrTO.getValues().add(value.toString());
-                        }
-                    });
-                }
-                return attrTO;
-            }).forEach(attrTO -> {
-                connObjectTO.getAttrs().add(attrTO);
-            });
-        }
-
-        return connObjectTO;
-    }
-
-    /**
      * Build a UserTO / GroupTO / AnyObjectTO out of connector object attributes and schema mapping.
      *
      * @param obj connector object
@@ -167,34 +122,30 @@ public class ConnObjectUtils {
 
         T anyTO = getAnyTOFromConnObject(obj, pullTask, provision, anyUtils);
 
-        // (for users) if password was not set above, generate if resource is configured for that
-        if (anyTO instanceof UserTO
-                && StringUtils.isBlank(((UserTO) anyTO).getPassword())
-                && provision.getResource().isRandomPwdIfNotProvided()) {
-
+        // (for users) if password was not set above, generate
+        if (anyTO instanceof UserTO && StringUtils.isBlank(((UserTO) anyTO).getPassword())) {
             UserTO userTO = (UserTO) anyTO;
 
-            List<PasswordPolicy> passwordPolicies = new ArrayList<>();
+            List<PasswordRuleConf> ruleConfs = new ArrayList<>();
 
             Realm realm = realmDAO.findByFullPath(userTO.getRealm());
             if (realm != null) {
                 realmDAO.findAncestors(realm).stream().
-                        filter(ancestor -> ancestor.getPasswordPolicy() != null).
-                        forEach(ancestor -> {
-                            passwordPolicies.add(ancestor.getPasswordPolicy());
+                        filter(ancestor -> (ancestor.getPasswordPolicy() != null)).
+                        forEachOrdered(ancestor -> {
+                            ruleConfs.addAll(ancestor.getPasswordPolicy().getRuleConfs());
                         });
             }
 
-            userTO.getResources().stream().
-                    map(resource -> resourceDAO.find(resource)).
-                    filter(resource -> resource != null && resource.getPasswordPolicy() != null).
-                    forEach(resource -> {
-                        passwordPolicies.add(resource.getPasswordPolicy());
+            userTO.getResources().stream().map(resName -> resourceDAO.find(resName)).
+                    filter(resource -> (resource != null && resource.getPasswordPolicy() != null)).
+                    forEachOrdered(resource -> {
+                        ruleConfs.addAll(resource.getPasswordPolicy().getRuleConfs());
                     });
 
             String password;
             try {
-                password = passwordGenerator.generate(passwordPolicies);
+                password = passwordGenerator.generate(ruleConfs);
             } catch (InvalidPasswordRuleConf e) {
                 LOG.error("Could not generate policy-compliant random password for {}", userTO, e);
 
@@ -320,5 +271,38 @@ public class ConnObjectUtils {
         templateUtils.apply(anyTO, pullTask.getTemplate(provision.getAnyType()));
 
         return anyTO;
+    }
+
+    /**
+     * Get connector object TO from a connector object.
+     *
+     * @param connObject connector object.
+     * @return connector object TO.
+     */
+    public ConnObjectTO getConnObjectTO(final ConnectorObject connObject) {
+        final ConnObjectTO connObjectTO = new ConnObjectTO();
+
+        if (connObject != null) {
+            connObject.getAttributes().stream().map(attr -> {
+                AttrTO attrTO = new AttrTO();
+                attrTO.setSchema(attr.getName());
+                if (attr.getValue() != null) {
+                    attr.getValue().stream().filter(value -> value != null).forEachOrdered(value -> {
+                        if (value instanceof GuardedString || value instanceof GuardedByteArray) {
+                            attrTO.getValues().add(getPassword(value));
+                        } else if (value instanceof byte[]) {
+                            attrTO.getValues().add(Base64.encode((byte[]) value));
+                        } else {
+                            attrTO.getValues().add(value.toString());
+                        }
+                    });
+                }
+                return attrTO;
+            }).forEachOrdered((attrTO) -> {
+                connObjectTO.getAttrs().add(attrTO);
+            });
+        }
+
+        return connObjectTO;
     }
 }

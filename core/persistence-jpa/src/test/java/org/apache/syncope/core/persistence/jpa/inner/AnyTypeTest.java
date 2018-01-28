@@ -18,11 +18,10 @@
  */
 package org.apache.syncope.core.persistence.jpa.inner;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 import java.util.List;
 import org.apache.syncope.common.lib.types.AnyTypeKind;
@@ -31,7 +30,7 @@ import org.apache.syncope.core.persistence.api.dao.AnyTypeClassDAO;
 import org.apache.syncope.core.persistence.api.dao.AnyTypeDAO;
 import org.apache.syncope.core.persistence.api.entity.AnyType;
 import org.apache.syncope.core.persistence.jpa.AbstractTest;
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -83,24 +82,20 @@ public class AnyTypeTest extends AbstractTest {
         assertFalse(newType.getClasses().isEmpty());
     }
 
-    @Test
+    @Test(expected = InvalidEntityException.class)
     public void saveInvalidKind() {
-        assertThrows(InvalidEntityException.class, () -> {
-            AnyType newType = entityFactory.newEntity(AnyType.class);
-            newType.setKey("new type");
-            newType.setKind(AnyTypeKind.USER);
-            anyTypeDAO.save(newType);
-        });
+        AnyType newType = entityFactory.newEntity(AnyType.class);
+        newType.setKey("new type");
+        newType.setKind(AnyTypeKind.USER);
+        anyTypeDAO.save(newType);
     }
 
-    @Test
+    @Test(expected = InvalidEntityException.class)
     public void saveInvalidName() {
-        assertThrows(InvalidEntityException.class, () -> {
-            AnyType newType = entityFactory.newEntity(AnyType.class);
-            newType.setKey("group");
-            newType.setKind(AnyTypeKind.ANY_OBJECT);
-            anyTypeDAO.save(newType);
-        });
+        AnyType newType = entityFactory.newEntity(AnyType.class);
+        newType.setKey("group");
+        newType.setKind(AnyTypeKind.ANY_OBJECT);
+        anyTypeDAO.save(newType);
     }
 
     @Test
@@ -112,10 +107,8 @@ public class AnyTypeTest extends AbstractTest {
         assertNull(anyTypeDAO.find("PRINTER"));
     }
 
-    @Test
+    @Test(expected = IllegalArgumentException.class)
     public void deleteInvalid() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            anyTypeDAO.delete(anyTypeDAO.findUser().getKey());
-        });
+        anyTypeDAO.delete(anyTypeDAO.findUser().getKey());
     }
 }

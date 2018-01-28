@@ -58,87 +58,87 @@ public class InfoResultManager extends CommonsResultManager {
     }
 
     public void printAccountRules(final Collection<String> rules) {
-        rules.forEach(accountRule -> {
+        for (final String accountRule : rules) {
             genericMessage("Account rule: " + accountRule);
-        });
+        }
     }
 
     public void printConnidLocations(final Collection<String> locations) {
-        locations.forEach(location -> {
+        for (final String location : locations) {
             genericMessage("ConnId location: " + location);
-        });
+        }
     }
 
-    public void printReconFilterBuilders(final Collection<String> reconFilterBuilders) {
-        reconFilterBuilders.forEach(reconciliationFilterBuilder -> {
+    public void printReconciliationFilterBuilders(final Collection<String> reconciliationFilterBuilders) {
+        for (final String reconciliationFilterBuilder : reconciliationFilterBuilders) {
             genericMessage("Reconciliation filter builder: " + reconciliationFilterBuilder);
-        });
+        }
     }
 
     public void printLogicActions(final Collection<String> actions) {
-        actions.forEach(action -> {
+        for (final String action : actions) {
             genericMessage("Logic action: " + action);
-        });
+        }
     }
 
-    public void printItemTransformers(final Collection<String> transformers) {
-        transformers.forEach(tranformer -> {
+    public void printMappingItemTransformers(final Collection<String> transformers) {
+        for (final String tranformer : transformers) {
             genericMessage("Mapping item tranformer: " + tranformer);
-        });
+        }
     }
 
     public void printPasswordRules(final Collection<String> rules) {
-        rules.forEach(rule -> {
+        for (final String rule : rules) {
             genericMessage("Password rule: " + rule);
-        });
+        }
     }
 
     public void printCorrelationRules(final Collection<String> rules) {
-        rules.forEach(rule -> {
+        for (final String rule : rules) {
             genericMessage("Correlation rule: " + rule);
-        });
+        }
     }
 
     public void printPropagationActions(final Collection<String> actions) {
-        actions.forEach(action -> {
+        for (final String action : actions) {
             genericMessage("Propagation action: " + action);
-        });
+        }
     }
 
     public void printPushActions(final Collection<String> actions) {
-        actions.forEach(action -> {
+        for (final String action : actions) {
             genericMessage("Push action: " + action);
-        });
+        }
     }
 
     public void printPullActions(final Collection<String> actions) {
-        actions.forEach(action -> {
+        for (final String action : actions) {
             genericMessage("Sync action: " + action);
-        });
+        }
     }
 
     public void printCorrelationActions(final Collection<String> actions) {
-        actions.forEach(action -> {
+        for (final String action : actions) {
             genericMessage("Push correlation rule: " + action);
-        });
+        }
     }
 
     public void printReportletConfs(final Collection<String> reportletConfs) {
-        reportletConfs.forEach(reportletConf -> {
+        for (final String reportletConf : reportletConfs) {
             genericMessage("Reportlet conf: " + reportletConf);
-        });
+        }
     }
 
     public void printJobs(final Collection<String> jobs) {
-        jobs.forEach(job -> {
+        for (final String job : jobs) {
             genericMessage("Task job: " + job);
-        });
+        }
     }
 
     public void printValidators(final Collection<String> validators) {
-        validators.forEach(validator -> {
+        for (final String validator : validators) {
             genericMessage("Validator: " + validator);
-        });
+        }
     }
 
     public void printPasswordGenerator(final String passwordGenerator) {

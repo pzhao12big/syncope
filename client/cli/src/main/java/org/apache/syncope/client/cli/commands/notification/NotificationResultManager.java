@@ -26,9 +26,9 @@ public class NotificationResultManager extends CommonsResultManager {
 
     public void printNotifications(final List<NotificationTO> notificationTOs) {
         System.out.println("");
-        notificationTOs.forEach(notificationTO -> {
+        for (final NotificationTO notificationTO : notificationTOs) {
             printNotification(notificationTO);
-        });
+        }
     }
 
     public void printNotification(final NotificationTO notificationTO) {

@@ -19,16 +19,15 @@
 package org.apache.syncope.core.provisioning.java.data;
 
 import java.util.Collections;
-import java.util.stream.Collectors;
 import org.apache.syncope.common.lib.to.AnyTypeClassTO;
 import org.apache.syncope.core.persistence.api.dao.AnyTypeDAO;
 import org.apache.syncope.core.persistence.api.dao.DerSchemaDAO;
 import org.apache.syncope.core.persistence.api.dao.PlainSchemaDAO;
 import org.apache.syncope.core.persistence.api.dao.VirSchemaDAO;
+import org.apache.syncope.core.persistence.api.entity.AnyType;
 import org.apache.syncope.core.persistence.api.entity.EntityFactory;
 import org.apache.syncope.core.persistence.api.entity.AnyTypeClass;
 import org.apache.syncope.core.persistence.api.entity.DerSchema;
-import org.apache.syncope.core.persistence.api.entity.Entity;
 import org.apache.syncope.core.persistence.api.entity.PlainSchema;
 import org.apache.syncope.core.persistence.api.entity.VirSchema;
 import org.apache.syncope.core.provisioning.api.data.AnyTypeClassDataBinder;
@@ -70,12 +69,12 @@ public class AnyTypeClassDataBinderImpl implements AnyTypeClassDataBinder {
             anyTypeClass.setKey(anyTypeClassTO.getKey());
         }
 
-        plainSchemaDAO.findByAnyTypeClasses(Collections.singletonList(anyTypeClass)).forEach(schema -> {
+        for (PlainSchema schema : plainSchemaDAO.findByAnyTypeClasses(Collections.singletonList(anyTypeClass))) {
             schema.setAnyTypeClass(null);
-        });
+        }
 
         anyTypeClass.getPlainSchemas().clear();
-        anyTypeClassTO.getPlainSchemas().forEach(schemaName -> {
+        for (String schemaName : anyTypeClassTO.getPlainSchemas()) {
             PlainSchema schema = plainSchemaDAO.find(schemaName);
             if (schema == null || schema.getAnyTypeClass() != null) {
                 LOG.debug("Invalid or already in use" + PlainSchema.class.getSimpleName()
@@ -83,14 +82,14 @@ public class AnyTypeClassDataBinderImpl implements AnyTypeClassDataBinder {
             } else {
                 anyTypeClass.add(schema);
             }
-        });
+        }
 
-        derSchemaDAO.findByAnyTypeClasses(Collections.singletonList(anyTypeClass)).forEach((schema) -> {
+        for (DerSchema schema : derSchemaDAO.findByAnyTypeClasses(Collections.singletonList(anyTypeClass))) {
             schema.setAnyTypeClass(null);
-        });
+        }
 
         anyTypeClass.getDerSchemas().clear();
-        anyTypeClassTO.getDerSchemas().forEach(schemaName -> {
+        for (String schemaName : anyTypeClassTO.getDerSchemas()) {
             DerSchema schema = derSchemaDAO.find(schemaName);
             if (schema == null || schema.getAnyTypeClass() != null) {
                 LOG.debug("Invalid or already in use" + DerSchema.class.getSimpleName()
@@ -98,14 +97,14 @@ public class AnyTypeClassDataBinderImpl implements AnyTypeClassDataBinder {
             } else {
                 anyTypeClass.add(schema);
             }
-        });
+        }
 
-        virSchemaDAO.findByAnyTypeClasses(Collections.singletonList(anyTypeClass)).forEach(schema -> {
+        for (VirSchema schema : virSchemaDAO.findByAnyTypeClasses(Collections.singletonList(anyTypeClass))) {
             schema.setAnyTypeClass(null);
-        });
+        }
 
         anyTypeClass.getVirSchemas().clear();
-        anyTypeClassTO.getVirSchemas().forEach(schemaName -> {
+        for (String schemaName : anyTypeClassTO.getVirSchemas()) {
             VirSchema schema = virSchemaDAO.find(schemaName);
             if (schema == null || schema.getAnyTypeClass() != null) {
                 LOG.debug("Invalid or already in use" + VirSchema.class.getSimpleName()
@@ -113,7 +112,7 @@ public class AnyTypeClassDataBinderImpl implements AnyTypeClassDataBinder {
             } else {
                 anyTypeClass.add(schema);
             }
-        });
+        }
     }
 
     @Override
@@ -122,15 +121,19 @@ public class AnyTypeClassDataBinderImpl implements AnyTypeClassDataBinder {
 
         anyTypeClassTO.setKey(anyTypeClass.getKey());
 
-        anyTypeClassTO.getInUseByTypes().addAll(
-                anyTypeDAO.findByTypeClass(anyTypeClass).stream().map(Entity::getKey).collect(Collectors.toList()));
+        for (AnyType anyType : anyTypeDAO.findByTypeClass(anyTypeClass)) {
+            anyTypeClassTO.getInUseByTypes().add(anyType.getKey());
+        }
 
-        anyTypeClassTO.getPlainSchemas().addAll(
-                anyTypeClass.getPlainSchemas().stream().map(Entity::getKey).collect(Collectors.toList()));
-        anyTypeClassTO.getDerSchemas().addAll(
-                anyTypeClass.getDerSchemas().stream().map(Entity::getKey).collect(Collectors.toList()));
-        anyTypeClassTO.getVirSchemas().addAll(
-                anyTypeClass.getVirSchemas().stream().map(Entity::getKey).collect(Collectors.toList()));
+        for (PlainSchema schema : anyTypeClass.getPlainSchemas()) {
+            anyTypeClassTO.getPlainSchemas().add(schema.getKey());
+        }
+        for (DerSchema schema : anyTypeClass.getDerSchemas()) {
+            anyTypeClassTO.getDerSchemas().add(schema.getKey());
+        }
+        for (VirSchema schema : anyTypeClass.getVirSchemas()) {
+            anyTypeClassTO.getVirSchemas().add(schema.getKey());
+        }
 
         return anyTypeClassTO;
     }

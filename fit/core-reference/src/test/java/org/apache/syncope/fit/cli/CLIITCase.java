@@ -18,9 +18,9 @@
  */
 package org.apache.syncope.fit.cli;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.IOException;
@@ -43,8 +43,8 @@ import org.apache.syncope.client.cli.commands.report.ReportCommand;
 import org.apache.syncope.client.cli.commands.role.RoleCommand;
 import org.apache.syncope.client.cli.commands.user.UserCommand;
 import org.apache.syncope.fit.AbstractITCase;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 public class CLIITCase extends AbstractITCase {
 
@@ -52,11 +52,13 @@ public class CLIITCase extends AbstractITCase {
 
     private static ProcessBuilder PROCESS_BUILDER;
 
-    @BeforeAll
+    @BeforeClass
     public static void install() {
         Properties props = new Properties();
+        InputStream propStream = null;
         Process process = null;
-        try (InputStream propStream = CLIITCase.class.getResourceAsStream("/cli-test.properties")) {
+        try {
+            propStream = CLIITCase.class.getResourceAsStream("/cli-test.properties");
             props.load(propStream);
 
             File workDir = new File(props.getProperty("cli-work.dir"));
@@ -73,6 +75,7 @@ public class CLIITCase extends AbstractITCase {
         } catch (IOException | InterruptedException e) {
             fail(e.getMessage());
         } finally {
+            IOUtils.closeQuietly(propStream);
             if (process != null) {
                 process.destroy();
             }
@@ -293,9 +296,7 @@ public class CLIITCase extends AbstractITCase {
                     "connid"));
             process = PROCESS_BUILDER.start();
             final String result = IOUtils.toString(process.getInputStream(), StandardCharsets.UTF_8);
-            assertTrue(result.contains("\"level\" : \"INFO\","));
-            assertTrue(result.contains("\"loggerName\" :"
-                    + " \"org.apache.syncope.core.provisioning.api.ConnIdBundleManager\""));
+            assertTrue(result.contains("\"level\" : \"DEBUG\","));
         } catch (IOException e) {
             fail(e.getMessage());
         } finally {

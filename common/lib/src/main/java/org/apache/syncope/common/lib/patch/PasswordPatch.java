@@ -20,7 +20,6 @@ package org.apache.syncope.common.lib.patch;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import javax.xml.bind.annotation.XmlElement;
@@ -56,7 +55,9 @@ public class PasswordPatch extends StringReplacePatchItem {
         }
 
         public Builder resources(final String... resources) {
-            getInstance().getResources().addAll(Arrays.asList(resources));
+            for (String resource : resources) {
+                getInstance().getResources().add(resource);
+            }
             return this;
         }
 

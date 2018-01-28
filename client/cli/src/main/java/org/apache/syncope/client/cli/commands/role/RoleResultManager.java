@@ -28,9 +28,9 @@ public class RoleResultManager extends CommonsResultManager {
 
     public void printRoles(final List<RoleTO> roleTOs) {
         System.out.println("");
-        roleTOs.forEach(roleTO -> {
+        for (final RoleTO roleTO : roleTOs) {
             printRole(roleTO);
-        });
+        }
     }
 
     private void printRole(final RoleTO roleTO) {
@@ -42,17 +42,17 @@ public class RoleResultManager extends CommonsResultManager {
         System.out.println("    dynamic membership condition: " + roleTO.getDynMembershipCond());
         System.out.println("");
     }
-
+    
     private void printRealms(final List<String> realms) {
-        realms.forEach(realm -> {
+        for (final String realm : realms) {
             System.out.println("       - " + realm);
-        });
+        }
     }
 
     private void printEntitlements(final Set<String> entitlements) {
-        entitlements.forEach(entitlement -> {
+        for (final String entitlement : entitlements) {
             System.out.println("       - " + entitlement);
-        });
+        }
     }
 
     public void printDetails(final Map<String, String> details) {

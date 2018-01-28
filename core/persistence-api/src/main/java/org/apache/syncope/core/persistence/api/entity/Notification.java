@@ -40,9 +40,9 @@ public interface Notification extends Entity {
 
     void setRecipientsFIQL(String recipientsFIQL);
 
-    Implementation getRecipientsProvider();
+    String getRecipientsProviderClassName();
 
-    void setRecipientsProvider(Implementation recipientsProvider);
+    void setRecipientsProviderClassName(String recipientsProviderClassName);
 
     boolean add(AnyAbout about);
 

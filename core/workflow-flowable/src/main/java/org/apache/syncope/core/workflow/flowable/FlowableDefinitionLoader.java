@@ -56,10 +56,14 @@ public class FlowableDefinitionLoader implements SyncopeLoader {
     public void load() {
         byte[] wfDef = new byte[0];
 
-        try (InputStream wfIn = userWorkflowDef.getResource().getInputStream()) {
+        InputStream wfIn = null;
+        try {
+            wfIn = userWorkflowDef.getResource().getInputStream();
             wfDef = IOUtils.toByteArray(wfIn);
         } catch (IOException e) {
             LOG.error("While loading " + userWorkflowDef.getResource().getFilename(), e);
+        } finally {
+            IOUtils.closeQuietly(wfIn);
         }
 
         for (Map.Entry<String, ProcessEngine> entry : dpEngine.getEngines().entrySet()) {

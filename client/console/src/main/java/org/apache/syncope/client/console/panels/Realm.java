@@ -171,7 +171,8 @@ public abstract class Realm extends WizardMgtPanel<RealmTO> {
 
         for (final AnyTypeTO anyType : anyTypes) {
             tabs.add(new ITabComponent(
-                    new Model<>(anyType.getKey()), String.format("%s_SEARCH", anyType.getKey())) {
+                    new Model<>(anyType.getKey()),
+                    StandardEntitlement.ANYTYPE_READ, String.format("%s_SEARCH", anyType)) {
 
                 private static final long serialVersionUID = 1169585538404171118L;
 

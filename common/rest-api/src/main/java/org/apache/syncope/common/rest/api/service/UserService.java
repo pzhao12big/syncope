@@ -18,14 +18,10 @@
  */
 package org.apache.syncope.common.rest.api.service;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.Authorization;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DefaultValue;
-import javax.ws.rs.PATCH;
 import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
@@ -38,11 +34,8 @@ import org.apache.syncope.common.lib.to.UserTO;
 /**
  * REST operations for users.
  */
-@Api(tags = "Users", authorizations = {
-    @Authorization(value = "BasicAuthentication")
-    , @Authorization(value = "Bearer") })
 @Path("users")
-public interface UserService extends AnyService<UserTO> {
+public interface UserService extends AnyService<UserTO, UserPatch> {
 
     /**
      * Creates a new user.
@@ -58,32 +51,6 @@ public interface UserService extends AnyService<UserTO> {
     Response create(
             @NotNull UserTO userTO,
             @DefaultValue("true") @QueryParam("storePassword") boolean storePassword);
-
-    /**
-     * Updates user matching the provided key.
-     *
-     * @param userPatch modification to be applied to user matching the provided key
-     * @return Response object featuring the updated user enriched with propagation status information
-     * - ProvisioningResult as Entity
-     */
-    @PATCH
-    @Path("{key}")
-    @Produces({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML })
-    @Consumes({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML })
-    Response update(@NotNull UserPatch userPatch);
-
-    /**
-     * Updates user matching the provided key.
-     *
-     * @param userTO complete update
-     * @return Response object featuring the updated user enriched with propagation status information
-     * - ProvisioningResult as Entity
-     */
-    @PUT
-    @Path("{key}")
-    @Produces({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML })
-    @Consumes({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML })
-    Response update(@NotNull UserTO userTO);
 
     /**
      * Performs a status update on given user.

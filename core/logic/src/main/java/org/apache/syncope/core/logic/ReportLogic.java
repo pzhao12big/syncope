@@ -36,7 +36,6 @@ import org.apache.cocoon.sax.component.XMLGenerator;
 import org.apache.cocoon.sax.component.XMLSerializer;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.apache.syncope.common.lib.SyncopeClientException;
 import org.apache.syncope.common.lib.to.BulkActionResult;
@@ -209,9 +208,9 @@ public class ReportLogic extends AbstractExecutableLogic<ReportTO> {
             final ReportExecExportFormat format) {
 
         // streaming SAX handler from a compressed byte array stream
-        try (ByteArrayInputStream bais = new ByteArrayInputStream(reportExec.getExecResult());
-                ZipInputStream zis = new ZipInputStream(bais)) {
-
+        ByteArrayInputStream bais = new ByteArrayInputStream(reportExec.getExecResult());
+        ZipInputStream zis = new ZipInputStream(bais);
+        try {
             // a single ZipEntry in the ZipInputStream (see ReportJob)
             zis.getNextEntry();
 
@@ -272,6 +271,9 @@ public class ReportLogic extends AbstractExecutableLogic<ReportTO> {
             LOG.debug("Result of {} successfully exported as {}", reportExec, format);
         } catch (Exception e) {
             LOG.error("While exporting content", e);
+        } finally {
+            IOUtils.closeQuietly(zis);
+            IOUtils.closeQuietly(bais);
         }
     }
 
@@ -290,7 +292,13 @@ public class ReportLogic extends AbstractExecutableLogic<ReportTO> {
 
     @PreAuthorize("hasRole('" + StandardEntitlement.REPORT_READ + "')")
     @Override
-    public Pair<Integer, List<ExecTO>> listExecutions(
+    public int countExecutions(final String key) {
+        return reportExecDAO.count(key);
+    }
+
+    @PreAuthorize("hasRole('" + StandardEntitlement.REPORT_READ + "')")
+    @Override
+    public List<ExecTO> listExecutions(
             final String key, final int page, final int size, final List<OrderByClause> orderByClauses) {
 
         Report report = reportDAO.find(key);
@@ -298,12 +306,8 @@ public class ReportLogic extends AbstractExecutableLogic<ReportTO> {
             throw new NotFoundException("Report " + key);
         }
 
-        Integer count = reportExecDAO.count(key);
-
-        List<ExecTO> result = reportExecDAO.findAll(report, page, size, orderByClauses).stream().
+        return reportExecDAO.findAll(report, page, size, orderByClauses).stream().
                 map(reportExec -> binder.getExecTO(reportExec)).collect(Collectors.toList());
-
-        return Pair.of(count, result);
     }
 
     @PreAuthorize("hasRole('" + StandardEntitlement.REPORT_LIST + "')")

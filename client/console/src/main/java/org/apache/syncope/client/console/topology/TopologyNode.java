@@ -45,7 +45,7 @@ public class TopologyNode implements Serializable {
 
     private final String key;
 
-    private String displayName;
+    private final String displayName;
 
     private String connectionDisplayName;
 
@@ -71,10 +71,6 @@ public class TopologyNode implements Serializable {
 
     public String getDisplayName() {
         return displayName;
-    }
-
-    public void setDisplayName(final String displayName) {
-        this.displayName = displayName;
     }
 
     public String getConnectionDisplayName() {

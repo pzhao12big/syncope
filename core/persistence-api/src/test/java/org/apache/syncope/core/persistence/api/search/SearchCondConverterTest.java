@@ -18,7 +18,7 @@
  */
 package org.apache.syncope.core.persistence.api.search;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.Assert.assertEquals;
 
 import java.util.UUID;
 import org.apache.syncope.common.lib.search.AnyObjectFiqlSearchConditionBuilder;
@@ -37,7 +37,7 @@ import org.apache.syncope.core.persistence.api.dao.search.DynRealmCond;
 import org.apache.syncope.core.persistence.api.dao.search.MemberCond;
 import org.apache.syncope.core.persistence.api.dao.search.RelationshipCond;
 import org.apache.syncope.core.persistence.api.dao.search.RelationshipTypeCond;
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 
 public class SearchCondConverterTest {
 
@@ -303,17 +303,6 @@ public class SearchCondConverterTest {
                         SearchCond.getLeafCond(fullnameLeafCond3)));
 
         assertEquals(orCond, SearchCondConverter.convert(fiql));
-    }
-
-    @Test
-    public void issueSYNCOPE1223() {
-        String fiql = new UserFiqlSearchConditionBuilder().is("ctype").equalTo("ou=sample%252Co=isp").query();
-
-        AttributeCond cond = new AttributeCond(AttributeCond.Type.EQ);
-        cond.setSchema("ctype");
-        cond.setExpression("ou=sample,o=isp");
-
-        assertEquals(SearchCond.getLeafCond(cond), SearchCondConverter.convert(fiql));
     }
 
 }

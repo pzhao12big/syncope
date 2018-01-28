@@ -18,8 +18,6 @@
  */
 package org.apache.syncope.common.rest.api.service;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.Authorization;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.Consumes;
@@ -44,9 +42,6 @@ import org.apache.syncope.common.rest.api.beans.TaskQuery;
 /**
  * REST operations for tasks.
  */
-@Api(tags = "Tasks", authorizations = {
-    @Authorization(value = "BasicAuthentication")
-    , @Authorization(value = "Bearer") })
 @Path("tasks")
 public interface TaskService extends ExecutableService {
 
@@ -90,22 +85,20 @@ public interface TaskService extends ExecutableService {
      * Updates the task matching the provided key.
      *
      * @param taskTO updated task to be stored
-     * @return an empty response if operation was successful
      */
     @PUT
     @Path("{key}")
     @Consumes({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML })
-    Response update(@NotNull AbstractTaskTO taskTO);
+    void update(@NotNull AbstractTaskTO taskTO);
 
     /**
      * Deletes the task matching the provided key.
      *
      * @param key key of task to be deleted
-     * @return an empty response if operation was successful
      */
     @DELETE
     @Path("{key}")
-    Response delete(@NotNull @PathParam("key") String key);
+    void delete(@NotNull @PathParam("key") String key);
 
     /**
      * Executes the provided bulk action.

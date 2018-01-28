@@ -48,7 +48,7 @@ public abstract class AbstractPlainAttr<O extends Any<?>> extends AbstractGenera
     protected JPAPlainSchema schema;
 
     @Override
-    public JPAPlainSchema getSchema() {
+    public PlainSchema getSchema() {
         return schema;
     }
 
@@ -71,7 +71,7 @@ public abstract class AbstractPlainAttr<O extends Any<?>> extends AbstractGenera
         checkNonNullSchema();
 
         attrValue.setAttr(this);
-        getSchema().validator().validate(value, attrValue);
+        getSchema().getValidator().validate(value, attrValue);
 
         if (getSchema().isUniqueConstraint()) {
             setUniqueValue((PlainAttrUniqueValue) attrValue);

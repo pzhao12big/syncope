@@ -19,11 +19,8 @@
 package org.apache.syncope.core.persistence.api.attrvalue.validation;
 
 import org.apache.syncope.core.persistence.api.entity.PlainAttrValue;
-import org.apache.syncope.core.persistence.api.entity.PlainSchema;
 
 public interface Validator {
-
-    void setSchema(PlainSchema schema);
 
     void validate(String value, PlainAttrValue attrValue);
 }

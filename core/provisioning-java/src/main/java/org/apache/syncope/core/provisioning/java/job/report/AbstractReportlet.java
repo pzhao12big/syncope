@@ -31,18 +31,15 @@ public abstract class AbstractReportlet implements Reportlet {
 
     protected static final Logger LOG = LoggerFactory.getLogger(AbstractReportlet.class);
 
-    protected ReportletConf conf;
-
-    @Override
-    public void setConf(final ReportletConf conf) {
-        this.conf = conf;
-    }
-
     protected abstract void doExtract(ReportletConf conf, ContentHandler handler) throws SAXException;
 
     @Override
     @Transactional(readOnly = true)
-    public void extract(final ContentHandler handler) throws SAXException {
+    public void extract(final ReportletConf conf, final ContentHandler handler) throws SAXException {
+        if (conf == null) {
+            throw new ReportException(new IllegalArgumentException("No configuration provided"));
+        }
+
         AttributesImpl atts = new AttributesImpl();
         atts.addAttribute("", "", ReportXMLConst.ATTR_NAME, ReportXMLConst.XSD_STRING, conf.getName());
         atts.addAttribute("", "", ReportXMLConst.ATTR_CLASS, ReportXMLConst.XSD_STRING, getClass().getName());

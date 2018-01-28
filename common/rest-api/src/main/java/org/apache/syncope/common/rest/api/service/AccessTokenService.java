@@ -18,9 +18,6 @@
  */
 package org.apache.syncope.common.rest.api.service;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.Authorization;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -35,7 +32,6 @@ import org.apache.syncope.common.rest.api.beans.AccessTokenQuery;
 /**
  * REST operations for access tokens.
  */
-@Api(tags = "AccessTokens")
 @Path("accessTokens")
 public interface AccessTokenService extends JAXRSService {
 
@@ -45,8 +41,6 @@ public interface AccessTokenService extends JAXRSService {
      *
      * @return empty response bearing the X-Syncope-Token header value, in case of successful authentication
      */
-    @ApiOperation(value = "", authorizations = {
-        @Authorization(value = "BasicAuthentication") })
     @POST
     @Path("login")
     Response login();
@@ -57,22 +51,16 @@ public interface AccessTokenService extends JAXRSService {
      *
      * @return an empty response bearing the X-Syncope-Token header value, with extended lifetime
      */
-    @ApiOperation(value = "", authorizations = {
-        @Authorization(value = "Bearer") })
     @POST
     @Path("refresh")
     Response refresh();
 
     /**
      * Invalidates the access token of the requesting user.
-     *
-     * @return an empty response if operation was successful
      */
-    @ApiOperation(value = "", authorizations = {
-        @Authorization(value = "Bearer") })
     @POST
     @Path("logout")
-    Response logout();
+    void logout();
 
     /**
      * Returns a paged list of existing access tokens matching the given query.
@@ -80,9 +68,6 @@ public interface AccessTokenService extends JAXRSService {
      * @param query query conditions
      * @return paged list of existing access tokens matching the given query
      */
-    @ApiOperation(value = "", authorizations = {
-        @Authorization(value = "BasicAuthentication")
-        , @Authorization(value = "Bearer") })
     @GET
     PagedResult<AccessTokenTO> list(@BeanParam AccessTokenQuery query);
 
@@ -90,12 +75,8 @@ public interface AccessTokenService extends JAXRSService {
      * Invalidates the access token matching the provided key.
      *
      * @param key access token key
-     * @return an empty response if operation was successful
      */
-    @ApiOperation(value = "", authorizations = {
-        @Authorization(value = "BasicAuthentication")
-        , @Authorization(value = "Bearer") })
     @DELETE
     @Path("{key}")
-    Response delete(@PathParam("key") String key);
+    void delete(@PathParam("key") String key);
 }

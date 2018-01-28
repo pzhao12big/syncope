@@ -19,16 +19,14 @@
 package org.apache.syncope.client.console.wizards.resources;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.syncope.client.console.SyncopeConsoleSession;
 import org.apache.syncope.client.console.panels.TogglePanel;
-import org.apache.syncope.client.console.rest.ImplementationRestClient;
 import org.apache.syncope.client.console.wicket.markup.html.form.AjaxPalettePanel;
-import org.apache.syncope.common.lib.to.EntityTO;
 import org.apache.syncope.common.lib.to.ItemTO;
-import org.apache.syncope.common.lib.types.ImplementationType;
 import org.apache.wicket.PageReference;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.markup.html.form.AjaxSubmitLink;
@@ -42,8 +40,6 @@ import org.apache.wicket.model.util.ListModel;
 public class ItemTransformersTogglePanel extends TogglePanel<Serializable> {
 
     private static final long serialVersionUID = -3195479265440591519L;
-
-    private final ImplementationRestClient implRestClient = new ImplementationRestClient();
 
     private ItemTO item;
 
@@ -59,15 +55,12 @@ public class ItemTransformersTogglePanel extends TogglePanel<Serializable> {
                 // [!] this is required to disable changed with close button
                 return item == null
                         ? Collections.<String>emptyList()
-                        : item.getTransformers();
+                        : new ArrayList<>(item.getTransformerClassNames());
             }
         };
 
         Form<?> form = new Form<>("form");
         addInnerObject(form);
-
-        List<String> choices = implRestClient.list(ImplementationType.ITEM_TRANSFORMER).stream().
-                map(EntityTO::getKey).sorted().collect(Collectors.toList());
 
         form.add(new AjaxPalettePanel.Builder<String>().setAllowOrder(true).setRenderer(new IChoiceRenderer<String>() {
 
@@ -96,7 +89,7 @@ public class ItemTransformersTogglePanel extends TogglePanel<Serializable> {
         }).build(
                 "classes",
                 model,
-                new ListModel<>(choices)).
+                new ListModel<>(new ArrayList<>(SyncopeConsoleSession.get().getPlatformInfo().getItemTransformers()))).
                 hideLabel().setEnabled(true).setOutputMarkupId(true));
 
         form.add(new AjaxSubmitLink("submit", form) {
@@ -106,6 +99,11 @@ public class ItemTransformersTogglePanel extends TogglePanel<Serializable> {
             @Override
             public void onSubmit(final AjaxRequestTarget target, final Form<?> form) {
                 toggle(target, false);
+
+                // [!] this is required to disable changed with close button
+                item.getTransformerClassNames().clear();
+                item.getTransformerClassNames().addAll(model.getObject());
+
                 target.add(container);
             }
 

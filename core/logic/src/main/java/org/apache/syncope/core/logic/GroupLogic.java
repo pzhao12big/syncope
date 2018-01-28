@@ -42,20 +42,16 @@ import org.apache.syncope.common.lib.to.ProvisioningResult;
 import org.apache.syncope.common.lib.types.AnyTypeKind;
 import org.apache.syncope.common.lib.types.BulkMembersActionType;
 import org.apache.syncope.common.lib.types.ClientExceptionType;
-import org.apache.syncope.common.lib.types.ImplementationEngine;
-import org.apache.syncope.common.lib.types.ImplementationType;
 import org.apache.syncope.common.lib.types.JobType;
 import org.apache.syncope.common.lib.types.PatchOperation;
 import org.apache.syncope.common.lib.types.StandardEntitlement;
 import org.apache.syncope.core.persistence.api.dao.AnySearchDAO;
 import org.apache.syncope.core.persistence.api.dao.ConfDAO;
-import org.apache.syncope.core.persistence.api.dao.ImplementationDAO;
 import org.apache.syncope.core.persistence.api.dao.NotFoundException;
 import org.apache.syncope.core.persistence.api.dao.TaskDAO;
 import org.apache.syncope.core.persistence.api.dao.search.OrderByClause;
 import org.apache.syncope.core.persistence.api.dao.search.SearchCond;
 import org.apache.syncope.core.persistence.api.entity.EntityFactory;
-import org.apache.syncope.core.persistence.api.entity.Implementation;
 import org.apache.syncope.core.persistence.api.entity.group.Group;
 import org.apache.syncope.core.persistence.api.entity.task.SchedTask;
 import org.apache.syncope.core.provisioning.api.GroupProvisioningManager;
@@ -90,9 +86,6 @@ public class GroupLogic extends AbstractAnyLogic<GroupTO, GroupPatch> {
     protected AnySearchDAO searchDAO;
 
     @Autowired
-    protected ImplementationDAO implementationDAO;
-
-    @Autowired
     protected TaskDAO taskDAO;
 
     @Autowired
@@ -122,7 +115,7 @@ public class GroupLogic extends AbstractAnyLogic<GroupTO, GroupPatch> {
                 -> realm.startsWith(ownedRealm) || ownedRealm.equals(RealmUtils.getGroupOwnerRealm(realm, key)));
         if (!authorized) {
             authorized = groupDAO.findDynRealms(key).stream().
-                    anyMatch(dynRealm -> effectiveRealms.contains(dynRealm));
+                    filter(dynRealm -> effectiveRealms.contains(dynRealm)).findFirst().isPresent();
         }
         if (!authorized) {
             throw new DelegatedAdministrationException(realm, AnyTypeKind.GROUP.name(), key);
@@ -173,6 +166,7 @@ public class GroupLogic extends AbstractAnyLogic<GroupTO, GroupPatch> {
     }
 
     @PreAuthorize("hasRole('" + StandardEntitlement.GROUP_CREATE + "')")
+    @Override
     public ProvisioningResult<GroupTO> create(final GroupTO groupTO, final boolean nullPriorityAsync) {
         Pair<GroupTO, List<LogicActions>> before = beforeCreate(groupTO);
 
@@ -207,11 +201,10 @@ public class GroupLogic extends AbstractAnyLogic<GroupTO, GroupPatch> {
                 realm);
         boolean authDynRealms = securityChecks(effectiveRealms, realm, before.getLeft().getKey());
 
-        Pair<GroupPatch, List<PropagationStatus>> updated =
-                provisioningManager.update(groupPatch, nullPriorityAsync);
+        Pair<String, List<PropagationStatus>> updated = provisioningManager.update(groupPatch, nullPriorityAsync);
 
         return afterUpdate(
-                binder.getGroupTO(updated.getLeft().getKey()),
+                binder.getGroupTO(updated.getKey()),
                 updated.getRight(),
                 before.getRight(),
                 authDynRealms,
@@ -260,8 +253,6 @@ public class GroupLogic extends AbstractAnyLogic<GroupTO, GroupPatch> {
         patch.getResources().addAll(resources.stream().
                 map(resource -> new StringPatchItem.Builder().operation(PatchOperation.DELETE).value(resource).build()).
                 collect(Collectors.toList()));
-        patch.setUDynMembershipCond(group.getUDynMembershipCond());
-        patch.getADynMembershipConds().putAll(group.getADynMembershipConds());
 
         return binder.getGroupTO(provisioningManager.unlink(patch));
     }
@@ -302,8 +293,6 @@ public class GroupLogic extends AbstractAnyLogic<GroupTO, GroupPatch> {
         patch.getResources().addAll(resources.stream().map(resource
                 -> new StringPatchItem.Builder().operation(PatchOperation.DELETE).value(resource).build()).
                 collect(Collectors.toList()));
-        patch.getADynMembershipConds().putAll(group.getADynMembershipConds());
-        patch.setUDynMembershipCond(group.getUDynMembershipCond());
 
         return update(patch, nullPriorityAsync);
     }
@@ -386,22 +375,10 @@ public class GroupLogic extends AbstractAnyLogic<GroupTO, GroupPatch> {
             throw new NotFoundException("Group " + key);
         }
 
-        Implementation jobDelegate = implementationDAO.find(ImplementationType.TASKJOB_DELEGATE).stream().
-                filter(impl -> GroupMemberProvisionTaskJobDelegate.class.getName().equals(impl.getBody())).
-                findFirst().orElse(null);
-        if (jobDelegate == null) {
-            jobDelegate = entityFactory.newEntity(Implementation.class);
-            jobDelegate.setKey(GroupMemberProvisionTaskJobDelegate.class.getSimpleName());
-            jobDelegate.setEngine(ImplementationEngine.JAVA);
-            jobDelegate.setType(ImplementationType.TASKJOB_DELEGATE);
-            jobDelegate.setBody(GroupMemberProvisionTaskJobDelegate.class.getName());
-            jobDelegate = implementationDAO.save(jobDelegate);
-        }
-
         SchedTask task = entityFactory.newEntity(SchedTask.class);
         task.setName("Bulk member provision for group " + group.getName());
         task.setActive(true);
-        task.setJobDelegate(jobDelegate);
+        task.setJobDelegateClassName(GroupMemberProvisionTaskJobDelegate.class.getName());
         task = taskDAO.save(task);
 
         try {

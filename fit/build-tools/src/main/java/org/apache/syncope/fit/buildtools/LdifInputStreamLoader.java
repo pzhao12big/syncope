@@ -20,6 +20,7 @@ package org.apache.syncope.fit.buildtools;
 
 import java.io.InputStream;
 import java.util.List;
+import org.apache.commons.io.IOUtils;
 import org.apache.directory.api.ldap.model.entry.DefaultEntry;
 import org.apache.directory.api.ldap.model.entry.Entry;
 import org.apache.directory.api.ldap.model.entry.Modification;
@@ -119,7 +120,7 @@ public class LdifInputStreamLoader {
                     }
                 }
             } finally {
-                ldif.close();
+                IOUtils.closeQuietly(ldif);
             }
         } catch (Exception ioe) {
             LOG.error(I18n.err(I18n.ERR_174), ioe);

@@ -83,7 +83,7 @@ public class ResourceTO extends AbstractBaseBean implements EntityTO {
 
     private final Set<ConnectorCapability> capabilitiesOverride = EnumSet.noneOf(ConnectorCapability.class);
 
-    private final List<String> propagationActions = new ArrayList<>();
+    private final List<String> propagationActionsClassNames = new ArrayList<>();
 
     @Override
     public String getKey() {
@@ -236,10 +236,11 @@ public class ResourceTO extends AbstractBaseBean implements EntityTO {
         this.provisioningTraceLevel = provisioningTraceLevel;
     }
 
-    @XmlElementWrapper(name = "propagationActions")
-    @XmlElement(name = "propagationAction")
-    @JsonProperty("propagationActions")
-    public List<String> getPropagationActions() {
-        return propagationActions;
+    @XmlElementWrapper(name = "propagationActionsClassNames")
+    @XmlElement(name = "propagationActionsClassName")
+    @JsonProperty("propagationActionsClassNames")
+    public List<String> getPropagationActionsClassNames() {
+        return propagationActionsClassNames;
     }
+
 }

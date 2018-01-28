@@ -20,10 +20,8 @@ package org.apache.syncope.fit.core;
 
 import org.apache.syncope.fit.CamelDetector;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.fail;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 import java.util.List;
 import org.apache.syncope.common.lib.SyncopeConstants;
@@ -35,13 +33,15 @@ import org.apache.syncope.common.lib.types.AnyTypeKind;
 import org.apache.syncope.common.lib.types.AttrSchemaType;
 import org.apache.syncope.common.lib.types.SchemaType;
 import org.apache.syncope.fit.AbstractITCase;
-import org.junit.jupiter.api.Test;
+import org.junit.Assert;
+import org.junit.Assume;
+import org.junit.Test;
 
 public class CamelRouteITCase extends AbstractITCase {
 
     @Test
     public void userRoutes() {
-        assumeTrue(CamelDetector.isCamelEnabledForUsers(syncopeService));
+        Assume.assumeTrue(CamelDetector.isCamelEnabledForUsers(syncopeService));
 
         List<CamelRouteTO> userRoutes = camelRouteService.list(AnyTypeKind.USER);
         assertNotNull(userRoutes);
@@ -51,7 +51,7 @@ public class CamelRouteITCase extends AbstractITCase {
 
     @Test
     public void groupRoutes() {
-        assumeTrue(CamelDetector.isCamelEnabledForGroups(syncopeService));
+        Assume.assumeTrue(CamelDetector.isCamelEnabledForGroups(syncopeService));
 
         List<CamelRouteTO> groupRoutes = camelRouteService.list(AnyTypeKind.GROUP);
         assertNotNull(groupRoutes);
@@ -69,7 +69,7 @@ public class CamelRouteITCase extends AbstractITCase {
 
     @Test
     public void update() {
-        assumeTrue(CamelDetector.isCamelEnabledForUsers(syncopeService));
+        Assume.assumeTrue(CamelDetector.isCamelEnabledForUsers(syncopeService));
 
         CamelRouteTO oldRoute = camelRouteService.read("createUser");
         assertNotNull(oldRoute);
@@ -103,7 +103,7 @@ public class CamelRouteITCase extends AbstractITCase {
 
     @Test
     public void scriptingUpdate() {
-        assumeTrue(CamelDetector.isCamelEnabledForUsers(syncopeService));
+        Assume.assumeTrue(CamelDetector.isCamelEnabledForUsers(syncopeService));
 
         CamelRouteTO oldRoute = camelRouteService.read("createUser");
         // updating route content including new attribute management
@@ -169,7 +169,7 @@ public class CamelRouteITCase extends AbstractITCase {
 
     @Test
     public void issueSYNCOPE931() {
-        assumeTrue(CamelDetector.isCamelEnabledForUsers(syncopeService));
+        Assume.assumeTrue(CamelDetector.isCamelEnabledForUsers(syncopeService));
 
         CamelRouteTO oldRoute = camelRouteService.read("createUser");
         assertNotNull(oldRoute);
@@ -197,7 +197,7 @@ public class CamelRouteITCase extends AbstractITCase {
         // Try to update a route with an incorrect propagation type
         try {
             doUpdate("createUser", routeContent);
-            fail("Error expected on an incorrect propagation type");
+            Assert.fail("Error expected on an incorrect propagation type");
         } catch (Exception ex) {
             // Expected
         }

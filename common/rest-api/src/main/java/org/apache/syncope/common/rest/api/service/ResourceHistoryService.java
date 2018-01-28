@@ -18,8 +18,6 @@
  */
 package org.apache.syncope.common.rest.api.service;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.Authorization;
 import java.util.List;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.DELETE;
@@ -29,15 +27,11 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 import org.apache.syncope.common.lib.to.ResourceHistoryConfTO;
 
 /**
  * REST operations for resource configuration versioning.
  */
-@Api(tags = "ResourceHistory", authorizations = {
-    @Authorization(value = "BasicAuthentication")
-    , @Authorization(value = "Bearer") })
 @Path("resourcesHistory")
 public interface ResourceHistoryService extends JAXRSService {
 
@@ -56,19 +50,17 @@ public interface ResourceHistoryService extends JAXRSService {
      * Restores the resource configuration history matching the provided key.
      *
      * @param key resource configuration history key to be restored
-     * @return an empty response if operation was successful
      */
     @POST
     @Path("{key}")
-    Response restore(@NotNull @PathParam("key") String key);
+    void restore(@NotNull @PathParam("key") String key);
 
     /**
      * Deletes the resource configuration history matching the provided key.
      *
      * @param key resource configuration history key to be deleted
-     * @return an empty response if operation was successful
      */
     @DELETE
     @Path("{key}")
-    Response delete(@NotNull @PathParam("key") String key);
+    void delete(@NotNull @PathParam("key") String key);
 }

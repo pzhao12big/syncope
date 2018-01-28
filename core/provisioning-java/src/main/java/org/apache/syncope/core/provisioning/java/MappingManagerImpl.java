@@ -20,15 +20,12 @@ package org.apache.syncope.core.provisioning.java;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.reflect.FieldUtils;
-import org.apache.commons.lang3.time.DateFormatUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.syncope.common.lib.to.AnyObjectTO;
 import org.apache.syncope.common.lib.to.AnyTO;
@@ -51,6 +48,7 @@ import org.apache.syncope.core.persistence.api.entity.Any;
 import org.apache.syncope.core.persistence.api.entity.AnyUtils;
 import org.apache.syncope.core.persistence.api.entity.AnyUtilsFactory;
 import org.apache.syncope.core.persistence.api.entity.DerSchema;
+import org.apache.syncope.core.persistence.api.entity.EntityFactory;
 import org.apache.syncope.core.persistence.api.entity.GroupableRelatable;
 import org.apache.syncope.core.persistence.api.entity.Membership;
 import org.apache.syncope.core.persistence.api.entity.PlainAttr;
@@ -67,6 +65,7 @@ import org.apache.syncope.core.persistence.api.entity.resource.MappingItem;
 import org.apache.syncope.core.persistence.api.entity.resource.OrgUnit;
 import org.apache.syncope.core.persistence.api.entity.resource.OrgUnitItem;
 import org.apache.syncope.core.persistence.api.entity.resource.Provision;
+import org.apache.syncope.core.persistence.api.entity.user.UPlainAttrValue;
 import org.apache.syncope.core.persistence.api.entity.user.User;
 import org.apache.syncope.core.provisioning.api.DerAttrHandler;
 import org.apache.syncope.core.provisioning.api.IntAttrName;
@@ -132,6 +131,9 @@ public class MappingManagerImpl implements MappingManager {
     private PasswordGenerator passwordGenerator;
 
     @Autowired
+    private EntityFactory entityFactory;
+
+    @Autowired
     private AnyUtilsFactory anyUtilsFactory;
 
     @Autowired
@@ -175,9 +177,7 @@ public class MappingManagerImpl implements MappingManager {
                                 values.addAll(alreadyAdded.getValue());
                             }
 
-                            if (preparedAttr.getRight().getValue() != null) {
-                                values.addAll(preparedAttr.getRight().getValue());
-                            }
+                            values.addAll(preparedAttr.getRight().getValue());
 
                             attributes.add(AttributeBuilder.build(preparedAttr.getRight().getName(), values));
                         }
@@ -188,18 +188,18 @@ public class MappingManagerImpl implements MappingManager {
             }
         }
 
-        Optional<MappingItem> connObjectKeyItem = MappingUtils.getConnObjectKeyItem(provision);
-        if (connObjectKeyItem.isPresent()) {
-            Attribute connObjectKeyExtAttr = AttributeUtil.find(connObjectKeyItem.get().getExtAttrName(), attributes);
-            if (connObjectKeyExtAttr != null) {
-                attributes.remove(connObjectKeyExtAttr);
-                attributes.add(AttributeBuilder.build(connObjectKeyItem.get().getExtAttrName(), connObjectKey));
-            }
-            Name name = MappingUtils.evaluateNAME(any, provision, connObjectKey);
-            attributes.add(name);
-            if (connObjectKey != null && !connObjectKey.equals(name.getNameValue()) && connObjectKeyExtAttr == null) {
-                attributes.add(AttributeBuilder.build(connObjectKeyItem.get().getExtAttrName(), connObjectKey));
-            }
+        Attribute connObjectKeyExtAttr =
+                AttributeUtil.find(MappingUtils.getConnObjectKeyItem(provision).get().getExtAttrName(), attributes);
+        if (connObjectKeyExtAttr != null) {
+            attributes.remove(connObjectKeyExtAttr);
+            attributes.add(AttributeBuilder.build(
+                    MappingUtils.getConnObjectKeyItem(provision).get().getExtAttrName(), connObjectKey));
+        }
+        Name name = MappingUtils.evaluateNAME(any, provision, connObjectKey);
+        attributes.add(name);
+        if (connObjectKey != null && !connObjectKey.equals(name.getNameValue()) && connObjectKeyExtAttr == null) {
+            attributes.add(AttributeBuilder.build(
+                    MappingUtils.getConnObjectKeyItem(provision).get().getExtAttrName(), connObjectKey));
         }
 
         if (enable != null) {
@@ -359,7 +359,7 @@ public class MappingManagerImpl implements MappingManager {
                         }
                     } else if (provision.getResource().isRandomPwdIfNotProvided()) {
                         try {
-                            passwordAttrValue = passwordGenerator.generate(provision.getResource());
+                            passwordAttrValue = passwordGenerator.generate(user);
                         } catch (InvalidPasswordRuleConf e) {
                             LOG.error("Could not generate policy-compliant random password for {}", user, e);
                         }
@@ -403,7 +403,7 @@ public class MappingManagerImpl implements MappingManager {
 
             if (intAttrName.getEnclosingGroup() != null) {
                 Group group = groupDAO.findByName(intAttrName.getEnclosingGroup());
-                if (group == null || !groupableRelatable.getMembership(group.getKey()).isPresent()) {
+                if (group == null || groupableRelatable.getMembership(group.getKey()) == null) {
                     LOG.warn("No membership for {} in {}, ignoring",
                             intAttrName.getEnclosingGroup(), groupableRelatable);
                 } else {
@@ -440,13 +440,28 @@ public class MappingManagerImpl implements MappingManager {
                     values.add(attrValue);
                     break;
 
-                case "realm":
-                    attrValue.setStringValue(reference.getRealm().getFullPath());
-                    values.add(attrValue);
-                    break;
-
                 case "password":
                     // ignore
+                    break;
+
+                case "username":
+                    if (reference instanceof User) {
+                        attrValue = entityFactory.newEntity(UPlainAttrValue.class);
+                        attrValue.setStringValue(((User) reference).getUsername());
+                        values.add(attrValue);
+                    }
+                    break;
+
+                case "name":
+                    if (reference instanceof Group) {
+                        attrValue = entityFactory.newEntity(UPlainAttrValue.class);
+                        attrValue.setStringValue(((Group) reference).getName());
+                        values.add(attrValue);
+                    } else if (reference instanceof AnyObject) {
+                        attrValue = entityFactory.newEntity(UPlainAttrValue.class);
+                        attrValue.setStringValue(((AnyObject) reference).getName());
+                        values.add(attrValue);
+                    }
                     break;
 
                 case "userOwner":
@@ -469,44 +484,19 @@ public class MappingManagerImpl implements MappingManager {
                         }
 
                         if (StringUtils.isNotBlank(groupOwnerValue)) {
+                            attrValue = entityFactory.newEntity(UPlainAttrValue.class);
                             attrValue.setStringValue(groupOwnerValue);
                             values.add(attrValue);
                         }
                     }
                     break;
 
-                case "suspended":
-                    if (reference instanceof User) {
-                        attrValue.setBooleanValue(((User) reference).isSuspended());
-                        values.add(attrValue);
-                    }
-                    break;
-
-                case "mustChangePassword":
-                    if (reference instanceof User) {
-                        attrValue.setBooleanValue(((User) reference).isMustChangePassword());
-                        values.add(attrValue);
-                    }
-                    break;
-
                 default:
                     try {
-                        Object fieldValue = FieldUtils.readField(reference, intAttrName.getField(), true);
-                        if (fieldValue instanceof Date) {
-                            // needed because ConnId does not natively supports the Date type
-                            attrValue.setStringValue(DateFormatUtils.ISO_8601_EXTENDED_DATETIME_TIME_ZONE_FORMAT.
-                                    format((Date) fieldValue));
-                        } else if (Boolean.TYPE.isInstance(fieldValue)) {
-                            attrValue.setBooleanValue((Boolean) fieldValue);
-                        } else if (Double.TYPE.isInstance(fieldValue) || Float.TYPE.isInstance(fieldValue)) {
-                            attrValue.setDoubleValue((Double) fieldValue);
-                        } else if (Long.TYPE.isInstance(fieldValue) || Integer.TYPE.isInstance(fieldValue)) {
-                            attrValue.setLongValue((Long) fieldValue);
-                        } else {
-                            attrValue.setStringValue(fieldValue.toString());
-                        }
+                        attrValue.setStringValue(FieldUtils.readField(
+                                reference, intAttrName.getField(), true).toString());
                         values.add(attrValue);
-                    } catch (Exception e) {
+                    } catch (IllegalAccessException e) {
                         LOG.error("Could not read value of '{}' from {}", intAttrName.getField(), reference, e);
                     }
             }
@@ -655,12 +645,6 @@ public class MappingManagerImpl implements MappingManager {
                         ((AnyObjectTO) anyTO).setName(values.isEmpty() || values.get(0) == null
                                 ? null
                                 : values.get(0).toString());
-                    }
-                    break;
-
-                case "mustChangePassword":
-                    if (anyTO instanceof UserTO && !values.isEmpty() && values.get(0) != null) {
-                        ((UserTO) anyTO).setMustChangePassword(BooleanUtils.toBoolean(values.get(0).toString()));
                     }
                     break;
 

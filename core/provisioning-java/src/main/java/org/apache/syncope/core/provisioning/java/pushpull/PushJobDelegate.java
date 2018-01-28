@@ -45,10 +45,8 @@ import org.apache.syncope.core.provisioning.api.pushpull.AnyObjectPushResultHand
 import org.apache.syncope.core.provisioning.api.pushpull.GroupPushResultHandler;
 import org.apache.syncope.core.provisioning.api.pushpull.ProvisioningProfile;
 import org.apache.syncope.core.provisioning.api.pushpull.PushActions;
-import org.apache.syncope.core.provisioning.api.pushpull.RealmPushResultHandler;
 import org.apache.syncope.core.provisioning.api.pushpull.SyncopePushResultHandler;
 import org.apache.syncope.core.provisioning.api.pushpull.UserPushResultHandler;
-import org.apache.syncope.core.spring.ImplementationManager;
 import org.quartz.JobExecutionException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
@@ -59,37 +57,27 @@ public class PushJobDelegate extends AbstractProvisioningJobDelegate<PushTask> {
      * User DAO.
      */
     @Autowired
-    protected UserDAO userDAO;
+    private UserDAO userDAO;
 
     /**
      * Search DAO.
      */
     @Autowired
-    protected AnySearchDAO searchDAO;
+    private AnySearchDAO searchDAO;
 
     /**
      * Group DAO.
      */
     @Autowired
-    protected GroupDAO groupDAO;
+    private GroupDAO groupDAO;
 
     @Autowired
-    protected AnyObjectDAO anyObjectDAO;
+    private AnyObjectDAO anyObjectDAO;
 
     @Autowired
-    protected RealmDAO realmDAO;
+    private RealmDAO realmDAO;
 
-    protected ProvisioningProfile<PushTask, PushActions> profile;
-
-    protected RealmPushResultHandler rhandler;
-
-    protected AnyObjectPushResultHandler ahandler;
-
-    protected UserPushResultHandler uhandler;
-
-    protected GroupPushResultHandler ghandler;
-
-    protected AnyDAO<?> getAnyDAO(final AnyTypeKind anyTypeKind) {
+    private AnyDAO<?> getAnyDAO(final AnyTypeKind anyTypeKind) {
         AnyDAO<?> result;
         switch (anyTypeKind) {
             case USER:
@@ -108,7 +96,7 @@ public class PushJobDelegate extends AbstractProvisioningJobDelegate<PushTask> {
         return result;
     }
 
-    protected void doHandle(
+    private void doHandle(
             final List<? extends Any<?>> anys,
             final SyncopePushResultHandler handler,
             final ExternalResource resource)
@@ -124,38 +112,6 @@ public class PushJobDelegate extends AbstractProvisioningJobDelegate<PushTask> {
         }
     }
 
-    protected RealmPushResultHandler buildRealmHandler() {
-        RealmPushResultHandler handler = (RealmPushResultHandler) ApplicationContextProvider.getBeanFactory().
-                createBean(DefaultRealmPushResultHandler.class, AbstractBeanDefinition.AUTOWIRE_BY_NAME, false);
-        handler.setProfile(profile);
-
-        return handler;
-    }
-
-    protected AnyObjectPushResultHandler buildAnyObjectHandler() {
-        AnyObjectPushResultHandler handler = (AnyObjectPushResultHandler) ApplicationContextProvider.getBeanFactory().
-                createBean(DefaultAnyObjectPushResultHandler.class, AbstractBeanDefinition.AUTOWIRE_BY_NAME, false);
-        handler.setProfile(profile);
-
-        return handler;
-    }
-
-    protected UserPushResultHandler buildUserHandler() {
-        UserPushResultHandler handler = (UserPushResultHandler) ApplicationContextProvider.getBeanFactory().
-                createBean(DefaultUserPushResultHandler.class, AbstractBeanDefinition.AUTOWIRE_BY_NAME, false);
-        handler.setProfile(profile);
-
-        return handler;
-    }
-
-    protected GroupPushResultHandler buildGroupHandler() {
-        GroupPushResultHandler handler = (GroupPushResultHandler) ApplicationContextProvider.getBeanFactory().
-                createBean(DefaultGroupPushResultHandler.class, AbstractBeanDefinition.AUTOWIRE_BY_NAME, false);
-        handler.setProfile(profile);
-
-        return handler;
-    }
-
     @Override
     protected String doExecuteProvisioning(
             final PushTask pushTask,
@@ -165,15 +121,19 @@ public class PushJobDelegate extends AbstractProvisioningJobDelegate<PushTask> {
         LOG.debug("Executing push on {}", pushTask.getResource());
 
         List<PushActions> actions = new ArrayList<>();
-        pushTask.getActions().forEach(impl -> {
+        pushTask.getActionsClassNames().forEach(className -> {
             try {
-                actions.add(ImplementationManager.build(impl));
+                Class<?> actionsClass = Class.forName(className);
+
+                PushActions pushActions = (PushActions) ApplicationContextProvider.getBeanFactory().
+                        createBean(actionsClass, AbstractBeanDefinition.AUTOWIRE_BY_TYPE, true);
+                actions.add(pushActions);
             } catch (Exception e) {
-                LOG.warn("While building {}", impl, e);
+                LOG.info("Class '{}' not found", className, e);
             }
         });
 
-        profile = new ProvisioningProfile<>(connector, pushTask);
+        ProvisioningProfile<PushTask, PushActions> profile = new ProvisioningProfile<>(connector, pushTask);
         profile.getActions().addAll(actions);
         profile.setDryRun(dryRun);
         profile.setResAct(null);
@@ -184,9 +144,11 @@ public class PushJobDelegate extends AbstractProvisioningJobDelegate<PushTask> {
             }
         }
 
-        // First realms...
+        // First OrgUnits...
         if (pushTask.getResource().getOrgUnit() != null) {
-            rhandler = buildRealmHandler();
+            SyncopePushResultHandler rhandler = (SyncopePushResultHandler) ApplicationContextProvider.getBeanFactory().
+                    createBean(RealmPushResultHandlerImpl.class, AbstractBeanDefinition.AUTOWIRE_BY_NAME, false);
+            rhandler.setProfile(profile);
 
             for (Realm realm : realmDAO.findDescendants(profile.getTask().getSourceRealm())) {
                 // Never push the root realm
@@ -202,9 +164,19 @@ public class PushJobDelegate extends AbstractProvisioningJobDelegate<PushTask> {
         }
 
         // ...then provisions for any types
-        ahandler = buildAnyObjectHandler();
-        uhandler = buildUserHandler();
-        ghandler = buildGroupHandler();
+        AnyObjectPushResultHandler ahandler = (AnyObjectPushResultHandler) ApplicationContextProvider.getBeanFactory().
+                createBean(AnyObjectPushResultHandlerImpl.class, AbstractBeanDefinition.AUTOWIRE_BY_NAME, false);
+        ahandler.setProfile(profile);
+
+        UserPushResultHandler uhandler =
+                (UserPushResultHandler) ApplicationContextProvider.getBeanFactory().
+                        createBean(UserPushResultHandlerImpl.class, AbstractBeanDefinition.AUTOWIRE_BY_NAME, false);
+        uhandler.setProfile(profile);
+
+        GroupPushResultHandler ghandler =
+                (GroupPushResultHandler) ApplicationContextProvider.getBeanFactory().
+                        createBean(GroupPushResultHandlerImpl.class, AbstractBeanDefinition.AUTOWIRE_BY_NAME, false);
+        ghandler.setProfile(profile);
 
         for (Provision provision : pushTask.getResource().getProvisions()) {
             if (provision.getMapping() != null) {

@@ -73,11 +73,6 @@ under the License.
     </dependency>
 
     <dependency>
-      <groupId>org.codehaus.groovy</groupId>
-      <artifactId>groovy-all</artifactId>
-    </dependency>
-
-    <dependency>
       <groupId>org.apache.syncope.core</groupId>
       <artifactId>syncope-core-provisioning-api</artifactId>
       <version>${project.version}</version>
@@ -96,13 +91,8 @@ under the License.
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>org.springframework</groupId>
-      <artifactId>spring-test</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter-engine</artifactId>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -119,14 +109,14 @@ under the License.
         <directory>src/main/resources</directory>
         <filtering>true</filtering>
         <includes>
-          <include>**/security.properties</include>
+            <include>**/security.properties</include>
         </includes>
       </resource>
       <resource>
         <directory>src/main/resources</directory>
         <filtering>false</filtering>
         <excludes>
-          <exclude>**/security.properties</exclude>
+            <exclude>**/security.properties</exclude>
         </excludes>
       </resource>
     </resources>

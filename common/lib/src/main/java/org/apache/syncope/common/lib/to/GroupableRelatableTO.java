@@ -29,7 +29,7 @@ public interface GroupableRelatableTO {
 
     List<MembershipTO> getDynMemberships();
 
-    Optional<RelationshipTO> getRelationship(String type, String otherKey);
+    Optional<RelationshipTO> getRelationship(String type, String rightKey);
 
     List<RelationshipTO> getRelationships();
 }

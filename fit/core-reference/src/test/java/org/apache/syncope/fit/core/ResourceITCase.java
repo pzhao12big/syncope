@@ -18,14 +18,13 @@
  */
 package org.apache.syncope.fit.core;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -54,14 +53,13 @@ import org.apache.syncope.common.lib.types.ClientExceptionType;
 import org.apache.syncope.common.lib.types.ConnConfPropSchema;
 import org.apache.syncope.common.lib.types.ConnConfProperty;
 import org.apache.syncope.common.lib.types.EntityViolationType;
-import org.apache.syncope.common.lib.types.ImplementationType;
 import org.apache.syncope.common.lib.types.MappingPurpose;
 import org.apache.syncope.common.lib.types.TraceLevel;
 import org.apache.syncope.common.rest.api.beans.ConnObjectTOListQuery;
 import org.apache.syncope.common.rest.api.service.ResourceService;
 import org.identityconnectors.framework.common.objects.ObjectClass;
 import org.apache.syncope.fit.AbstractITCase;
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 
 public class ResourceITCase extends AbstractITCase {
 
@@ -103,8 +101,7 @@ public class ResourceITCase extends AbstractITCase {
 
     @Test
     public void getPropagationActionsClasses() {
-        Set<String> actions = syncopeService.platform().
-                getJavaImplInfo(ImplementationType.PROPAGATION_ACTIONS).get().getClasses();
+        Set<String> actions = syncopeService.platform().getPropagationActions();
         assertNotNull(actions);
         assertFalse(actions.isEmpty());
     }
@@ -265,35 +262,33 @@ public class ResourceITCase extends AbstractITCase {
         }
     }
 
-    @Test
+    @Test(expected = SyncopeClientException.class)
     public void createWithoutExtAttr() {
-        assertThrows(SyncopeClientException.class, () -> {
-            String resourceKey = RESOURCE_NAME_CREATE_WRONG;
-            ResourceTO resourceTO = new ResourceTO();
-            resourceTO.setKey(resourceKey);
-            resourceTO.setConnector("5ffbb4ac-a8c3-4b44-b699-11b398a1ba08");
+        String resourceKey = RESOURCE_NAME_CREATE_WRONG;
+        ResourceTO resourceTO = new ResourceTO();
+        resourceTO.setKey(resourceKey);
+        resourceTO.setConnector("5ffbb4ac-a8c3-4b44-b699-11b398a1ba08");
 
-            ProvisionTO provisionTO = new ProvisionTO();
-            provisionTO.setAnyType(AnyTypeKind.USER.name());
-            provisionTO.setObjectClass(ObjectClass.ACCOUNT_NAME);
-            resourceTO.getProvisions().add(provisionTO);
+        ProvisionTO provisionTO = new ProvisionTO();
+        provisionTO.setAnyType(AnyTypeKind.USER.name());
+        provisionTO.setObjectClass(ObjectClass.ACCOUNT_NAME);
+        resourceTO.getProvisions().add(provisionTO);
 
-            MappingTO mapping = new MappingTO();
-            provisionTO.setMapping(mapping);
+        MappingTO mapping = new MappingTO();
+        provisionTO.setMapping(mapping);
 
-            ItemTO item = new ItemTO();
-            item.setIntAttrName("key");
-            item.setExtAttrName("userId");
-            item.setConnObjectKey(true);
-            mapping.setConnObjectKeyItem(item);
+        ItemTO item = new ItemTO();
+        item.setIntAttrName("key");
+        item.setExtAttrName("userId");
+        item.setConnObjectKey(true);
+        mapping.setConnObjectKeyItem(item);
 
-            item = new ItemTO();
-            item.setIntAttrName("usernane");
-            // missing extAttrName ...
-            mapping.add(item);
+        item = new ItemTO();
+        item.setIntAttrName("usernane");
+        // missing extAttrName ...
+        mapping.add(item);
 
-            createResource(resourceTO);
-        });
+        createResource(resourceTO);
     }
 
     @Test
@@ -337,7 +332,7 @@ public class ResourceITCase extends AbstractITCase {
             resourceTO.setKey("resourcenotfound");
             resourceService.update(resourceTO);
 
-            fail("This should not happen");
+            fail();
         } catch (SyncopeClientException e) {
             assertEquals(Response.Status.NOT_FOUND, e.getType().getResponseStatus());
         }
@@ -395,7 +390,7 @@ public class ResourceITCase extends AbstractITCase {
     public void deleteWithException() {
         try {
             resourceService.delete("resourcenotfound");
-            fail("This should not happen");
+            fail();
         } catch (SyncopeClientException e) {
             assertEquals(Response.Status.NOT_FOUND, e.getType().getResponseStatus());
         }
@@ -449,7 +444,7 @@ public class ResourceITCase extends AbstractITCase {
 
         try {
             resourceService.read(resourceKey);
-            fail("This should not happen");
+            fail();
         } catch (SyncopeClientException e) {
             assertEquals(Response.Status.NOT_FOUND, e.getType().getResponseStatus());
         }
@@ -611,7 +606,7 @@ public class ResourceITCase extends AbstractITCase {
         // 1. attempt to read a resource for a connector with a different admin realm: fail
         try {
             prs.read(RESOURCE_NAME_WS1);
-            fail("This should not happen");
+            fail();
         } catch (SyncopeClientException e) {
             assertEquals(ClientExceptionType.DelegatedAdministration, e.getType());
         }
@@ -640,7 +635,7 @@ public class ResourceITCase extends AbstractITCase {
 
         try {
             createResource(actual);
-            fail("This should not happen");
+            fail();
         } catch (SyncopeClientException e) {
             assertEquals(Response.Status.CONFLICT, e.getType().getResponseStatus());
             assertEquals(ClientExceptionType.EntityExists, e.getType());
@@ -649,7 +644,7 @@ public class ResourceITCase extends AbstractITCase {
         actual.setKey(null);
         try {
             createResource(actual);
-            fail("This should not happen");
+            fail();
         } catch (SyncopeClientException e) {
             assertEquals(Response.Status.BAD_REQUEST, e.getType().getResponseStatus());
             assertEquals(ClientExceptionType.RequiredValuesMissing, e.getType());
@@ -712,7 +707,7 @@ public class ResourceITCase extends AbstractITCase {
         try {
             resourceService.create(
                     buildResourceTO("http://schemas.examples.org/security/authorization/organizationUnit"));
-            fail("This should not happen");
+            fail();
         } catch (SyncopeClientException e) {
             assertEquals(ClientExceptionType.InvalidExternalResource, e.getType());
             assertTrue(e.getElements().iterator().next().contains(EntityViolationType.InvalidKey.name()));
@@ -786,7 +781,7 @@ public class ResourceITCase extends AbstractITCase {
         // save the resource
         try {
             resourceService.create(resource);
-            fail("This should not happen");
+            fail();
         } catch (SyncopeClientException e) {
             assertEquals(ClientExceptionType.InvalidMapping, e.getType());
         }

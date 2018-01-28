@@ -37,11 +37,9 @@ import javax.persistence.Table;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
-import org.apache.syncope.common.lib.types.ImplementationType;
 import org.apache.syncope.common.lib.types.TraceLevel;
 import org.apache.syncope.core.persistence.api.entity.AnyAbout;
 import org.apache.syncope.core.persistence.api.entity.AnyType;
-import org.apache.syncope.core.persistence.api.entity.Implementation;
 import org.apache.syncope.core.persistence.api.entity.MailTemplate;
 import org.apache.syncope.core.persistence.api.entity.Notification;
 
@@ -75,8 +73,7 @@ public class JPANotification extends AbstractGeneratedKeyEntity implements Notif
     @NotNull
     private String recipientAttrName;
 
-    @ManyToOne
-    private JPAImplementation recipientsProvider;
+    private String recipientsProviderClassName;
 
     @NotNull
     @Basic
@@ -134,15 +131,13 @@ public class JPANotification extends AbstractGeneratedKeyEntity implements Notif
     }
 
     @Override
-    public Implementation getRecipientsProvider() {
-        return recipientsProvider;
+    public String getRecipientsProviderClassName() {
+        return recipientsProviderClassName;
     }
 
     @Override
-    public void setRecipientsProvider(final Implementation recipientsProvider) {
-        checkType(recipientsProvider, JPAImplementation.class);
-        checkImplementationType(recipientsProvider, ImplementationType.RECIPIENTS_PROVIDER);
-        this.recipientsProvider = (JPAImplementation) recipientsProvider;
+    public void setRecipientsProviderClassName(final String recipientsProviderClassName) {
+        this.recipientsProviderClassName = recipientsProviderClassName;
     }
 
     @Override

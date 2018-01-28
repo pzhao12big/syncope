@@ -18,8 +18,6 @@
  */
 package org.apache.syncope.common.rest.api.service;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.Authorization;
 import java.util.List;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
@@ -37,9 +35,6 @@ import org.apache.syncope.common.rest.api.RESTHeaders;
 /**
  * REST operations for workflow definition.
  */
-@Api(tags = "Workflow", authorizations = {
-    @Authorization(value = "BasicAuthentication")
-    , @Authorization(value = "Bearer") })
 @Path("workflows")
 public interface WorkflowService extends JAXRSService {
 
@@ -88,12 +83,11 @@ public interface WorkflowService extends JAXRSService {
      * @param anyType any object type
      * @param key workflow definition key
      * @param definition workflow definition for matching kind
-     * @return an empty response if operation was successful
      */
     @PUT
     @Path("{anyType}/{key}")
     @Consumes({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML })
-    Response set(
+    void set(
             @NotNull @PathParam("anyType") String anyType,
             @NotNull @PathParam("key") String key,
             @NotNull String definition);
@@ -103,11 +97,10 @@ public interface WorkflowService extends JAXRSService {
      *
      * @param anyType any object type
      * @param key workflow definition key
-     * @return an empty response if operation was successful
      */
     @DELETE
     @Path("{anyType}/{key}")
-    Response delete(
+    void delete(
             @NotNull @PathParam("anyType") String anyType,
             @NotNull @PathParam("key") String key);
 }

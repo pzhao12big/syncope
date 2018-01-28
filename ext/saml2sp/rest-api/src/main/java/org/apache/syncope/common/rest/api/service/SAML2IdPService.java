@@ -18,8 +18,6 @@
  */
 package org.apache.syncope.common.rest.api.service;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.Authorization;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Set;
@@ -39,9 +37,6 @@ import org.apache.syncope.common.lib.to.SAML2IdPTO;
 /**
  * REST operations for SAML 2.0 Identity Providers.
  */
-@Api(tags = "SAML2IdP", authorizations = {
-    @Authorization(value = "BasicAuthentication")
-    , @Authorization(value = "Bearer") })
 @Path("saml2sp/identityProviders")
 public interface SAML2IdPService extends JAXRSService {
 
@@ -89,20 +84,18 @@ public interface SAML2IdPService extends JAXRSService {
      * Updates the SAML 2.0 Identity Provider with matching entityID.
      *
      * @param saml2IdpTO idp configuration to be stored
-     * @return an empty response if operation was successful
      */
     @PUT
     @Path("{key}")
     @Consumes({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML })
-    Response update(@NotNull SAML2IdPTO saml2IdpTO);
+    void update(@NotNull SAML2IdPTO saml2IdpTO);
 
     /**
      * Deletes the SAML 2.0 Identity Provider with matching entityID.
      *
      * @param key SAML 2.0 Identity Provider's entityID
-     * @return an empty response if operation was successful
      */
     @DELETE
     @Path("{key}")
-    Response delete(@PathParam("key") String key);
+    void delete(@PathParam("key") String key);
 }

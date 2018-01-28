@@ -18,8 +18,6 @@
  */
 package org.apache.syncope.common.rest.api.service;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.Authorization;
 import java.util.List;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
@@ -37,9 +35,6 @@ import org.apache.syncope.common.lib.to.RelationshipTypeTO;
 /**
  * REST operations for relationship types.
  */
-@Api(tags = "RelationshipTypes", authorizations = {
-    @Authorization(value = "BasicAuthentication")
-    , @Authorization(value = "Bearer") })
 @Path("relationshipTypes")
 public interface RelationshipTypeService extends JAXRSService {
 
@@ -77,20 +72,18 @@ public interface RelationshipTypeService extends JAXRSService {
      * Updates the relationshipType matching the provided key.
      *
      * @param relationshipTypeTO relationshipType to be stored
-     * @return an empty response if operation was successful
      */
     @PUT
     @Path("{key}")
     @Consumes({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML })
-    Response update(@NotNull RelationshipTypeTO relationshipTypeTO);
+    void update(@NotNull RelationshipTypeTO relationshipTypeTO);
 
     /**
      * Deletes the relationshipType matching the provided key.
      *
      * @param key relationshipType key to be deleted
-     * @return an empty response if operation was successful
      */
     @DELETE
     @Path("{key}")
-    Response delete(@NotNull @PathParam("key") String key);
+    void delete(@NotNull @PathParam("key") String key);
 }

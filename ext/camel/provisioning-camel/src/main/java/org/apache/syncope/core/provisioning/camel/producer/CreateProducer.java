@@ -26,14 +26,15 @@ import java.util.Set;
 import org.apache.camel.Endpoint;
 import org.apache.camel.Exchange;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.syncope.common.lib.to.AnyObjectTO;
 import org.apache.syncope.common.lib.to.AnyTO;
 import org.apache.syncope.common.lib.to.AttrTO;
 import org.apache.syncope.common.lib.to.GroupTO;
-import org.apache.syncope.common.lib.to.PropagationTaskTO;
 import org.apache.syncope.common.lib.to.UserTO;
 import org.apache.syncope.common.lib.types.AnyTypeKind;
+import org.apache.syncope.core.persistence.api.entity.task.PropagationTask;
 import org.apache.syncope.core.provisioning.api.WorkflowResult;
 import org.apache.syncope.core.provisioning.api.propagation.PropagationReporter;
 
@@ -55,7 +56,7 @@ public class CreateProducer extends AbstractProducer {
                 WorkflowResult<Pair<String, Boolean>> created =
                         (WorkflowResult<Pair<String, Boolean>>) exchange.getIn().getBody();
 
-                List<PropagationTaskTO> tasks = getPropagationManager().getUserCreateTasks(
+                List<PropagationTask> tasks = getPropagationManager().getUserCreateTasks(
                         created.getResult().getKey(),
                         ((UserTO) actual).getPassword(),
                         created.getResult().getValue(),
@@ -66,7 +67,7 @@ public class CreateProducer extends AbstractProducer {
                         getPropagationTaskExecutor().execute(tasks, nullPriorityAsync);
 
                 exchange.getOut().setBody(
-                        Pair.of(created.getResult().getKey(), propagationReporter.getStatuses()));
+                        new ImmutablePair<>(created.getResult().getKey(), propagationReporter.getStatuses()));
             } else if (actual instanceof AnyTO) {
                 WorkflowResult<String> created = (WorkflowResult<String>) exchange.getIn().getBody();
 
@@ -77,7 +78,7 @@ public class CreateProducer extends AbstractProducer {
                         groupOwnerMap.put(created.getResult(), groupOwner.get().getValues().iterator().next());
                     }
 
-                    List<PropagationTaskTO> tasks = getPropagationManager().getCreateTasks(
+                    List<PropagationTask> tasks = getPropagationManager().getCreateTasks(
                             AnyTypeKind.GROUP,
                             created.getResult(),
                             created.getPropByRes(),
@@ -85,9 +86,9 @@ public class CreateProducer extends AbstractProducer {
                             excludedResources);
                     getPropagationTaskExecutor().execute(tasks, nullPriorityAsync);
 
-                    exchange.getOut().setBody(Pair.of(created.getResult(), null));
+                    exchange.getOut().setBody(new ImmutablePair<>(created.getResult(), null));
                 } else {
-                    List<PropagationTaskTO> tasks = getPropagationManager().getCreateTasks(
+                    List<PropagationTask> tasks = getPropagationManager().getCreateTasks(
                             actual instanceof AnyObjectTO ? AnyTypeKind.ANY_OBJECT : AnyTypeKind.GROUP,
                             created.getResult(),
                             created.getPropByRes(),
@@ -96,7 +97,8 @@ public class CreateProducer extends AbstractProducer {
                     PropagationReporter propagationReporter =
                             getPropagationTaskExecutor().execute(tasks, nullPriorityAsync);
 
-                    exchange.getOut().setBody(Pair.of(created.getResult(), propagationReporter.getStatuses()));
+                    exchange.getOut().setBody(new ImmutablePair<>(created.getResult(),
+                            propagationReporter.getStatuses()));
                 }
             }
         }

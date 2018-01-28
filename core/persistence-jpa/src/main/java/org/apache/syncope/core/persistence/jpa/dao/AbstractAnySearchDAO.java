@@ -153,7 +153,7 @@ public abstract class AbstractAnySearchDAO extends AbstractDAO<Any<?>> implement
                     && cond.getType() != AttributeCond.Type.ISNULL
                     && cond.getType() != AttributeCond.Type.ISNOTNULL) {
 
-                ((JPAPlainSchema) schema).validator().validate(cond.getExpression(), attrValue);
+                schema.getValidator().validate(cond.getExpression(), attrValue);
             }
         } catch (ValidationException e) {
             LOG.error("Could not validate expression '" + cond.getExpression() + "'", e);
@@ -225,7 +225,7 @@ public abstract class AbstractAnySearchDAO extends AbstractDAO<Any<?>> implement
                 && condClone.getType() != AttributeCond.Type.ISNOTNULL) {
 
             try {
-                ((JPAPlainSchema) schema).validator().validate(condClone.getExpression(), attrValue);
+                schema.getValidator().validate(condClone.getExpression(), attrValue);
             } catch (ValidationException e) {
                 LOG.error("Could not validate expression '" + condClone.getExpression() + "'", e);
                 throw new IllegalArgumentException();
@@ -354,9 +354,6 @@ public abstract class AbstractAnySearchDAO extends AbstractDAO<Any<?>> implement
 
     @Override
     public <T extends Any<?>> boolean matches(final T any, final SearchCond cond) {
-        AnyCond keycond = new AnyCond(AttributeCond.Type.EQ);
-        keycond.setSchema("key");
-        keycond.setExpression(any.getKey());
-        return !search(SearchCond.getAndCond(SearchCond.getLeafCond(keycond), cond), any.getType().getKind()).isEmpty();
+        return search(cond, any.getType().getKind()).contains(any);
     }
 }

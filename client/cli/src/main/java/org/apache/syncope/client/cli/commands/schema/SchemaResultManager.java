@@ -49,9 +49,9 @@ public class SchemaResultManager extends CommonsResultManager {
 
     private void printPlainSchemasDetailed(final List<? extends AbstractSchemaTO> schemaTOs) {
         System.out.println("");
-        schemaTOs.forEach(schemaTO -> {
+        for (final AbstractSchemaTO schemaTO : schemaTOs) {
             printPlanSchemaDetailed((PlainSchemaTO) schemaTO);
-        });
+        }
     }
 
     private void printPlanSchemaDetailed(final PlainSchemaTO schemaTO) {
@@ -61,7 +61,7 @@ public class SchemaResultManager extends CommonsResultManager {
         System.out.println("    conversion pattern: " + schemaTO.getConversionPattern());
         System.out.println("    mandatory condition: " + schemaTO.getMandatoryCondition());
         System.out.println("    mime type: " + schemaTO.getMimeType());
-        System.out.println("    validator class: " + schemaTO.getValidator());
+        System.out.println("    validator class: " + schemaTO.getValidatorClass());
         System.out.println("    cipher algorithm: " + (schemaTO.getCipherAlgorithm() == null
                 ? "" : schemaTO.getCipherAlgorithm().getAlgorithm()));
         System.out.println("");
@@ -70,34 +70,34 @@ public class SchemaResultManager extends CommonsResultManager {
     public void printPlainSchemas(final List<? extends AbstractSchemaTO> schemaTOs) {
         final Table.TableBuilder tableBuilder =
                 new Table.TableBuilder("plain schemas").header("schema key").header("type").header("mandatory");
-        schemaTOs.forEach(schemaTO -> {
+        for (final AbstractSchemaTO schemaTO : schemaTOs) {
             tableBuilder.rowValues(Arrays.asList(
                     ((PlainSchemaTO) schemaTO).getKey(),
                     ((PlainSchemaTO) schemaTO).getType().toString(),
                     ((PlainSchemaTO) schemaTO).getMandatoryCondition()));
-        });
+        }
         tableBuilder.build().print();
     }
 
     public void fromListDerived(final List<? extends AbstractSchemaTO> schemaTOs) {
         final Table.TableBuilder tableBuilder =
                 new Table.TableBuilder("derived schemas").header("schema key").header("expression");
-        schemaTOs.forEach(schemaTO -> {
+        for (final AbstractSchemaTO schemaTO : schemaTOs) {
             tableBuilder.rowValues(Arrays.asList(
                     ((DerSchemaTO) schemaTO).getKey(),
                     ((DerSchemaTO) schemaTO).getExpression()));
-        });
+        }
         tableBuilder.build().print();
     }
 
     public void fromListVirtual(final List<? extends AbstractSchemaTO> schemaTOs) {
         final Table.TableBuilder tableBuilder =
                 new Table.TableBuilder("virtual schemas").header("schema key").header("readonly");
-        schemaTOs.forEach(schemaTO -> {
+        for (final AbstractSchemaTO schemaTO : schemaTOs) {
             tableBuilder.rowValues(Arrays.asList(
                     ((VirSchemaTO) schemaTO).getKey(),
                     String.valueOf(((VirSchemaTO) schemaTO).isReadonly())));
-        });
+        }
         tableBuilder.build().print();
     }
 
