@@ -195,11 +195,10 @@ public class UserLogic extends AbstractAnyLogic<UserTO, UserPatch> {
                     securityChecks(effectiveRealms, before.getLeft().getRealm().getValue(), before.getLeft().getKey());
         }
 
-        Pair<UserPatch, List<PropagationStatus>> updated =
-                provisioningManager.update(before.getLeft(), nullPriorityAsync);
+        Pair<String, List<PropagationStatus>> updated = provisioningManager.update(before.getLeft(), nullPriorityAsync);
 
         return afterUpdate(
-                binder.returnUserTO(binder.getUserTO(updated.getLeft().getKey())),
+                binder.returnUserTO(binder.getUserTO(updated.getKey())),
                 updated.getRight(),
                 before.getRight(),
                 authDynRealms,

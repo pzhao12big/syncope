@@ -152,7 +152,7 @@ public interface PullActions extends ProvisioningActions {
      * @param <P> any object modifications
      * @param profile profile of the pull being executed.
      * @param delta retrieved pull information
-     * @param entity entity
+     * @param entityTO entity
      * @param anyPatch modification
      * @return pull information used for logging and to be passed to the 'after' method.
      * @throws JobExecutionException in case of generic failure.
@@ -160,7 +160,7 @@ public interface PullActions extends ProvisioningActions {
     default <P extends AnyPatch> SyncDelta beforeUpdate(
             ProvisioningProfile<?, ?> profile,
             SyncDelta delta,
-            EntityTO entity,
+            EntityTO entityTO,
             P anyPatch) throws JobExecutionException {
 
         return delta;

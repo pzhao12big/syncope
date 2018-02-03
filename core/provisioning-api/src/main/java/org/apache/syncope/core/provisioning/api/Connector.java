@@ -33,7 +33,6 @@ import org.identityconnectors.framework.common.objects.SyncToken;
 import org.identityconnectors.framework.common.objects.Uid;
 import org.identityconnectors.framework.common.objects.filter.Filter;
 import org.apache.syncope.core.provisioning.api.pushpull.ReconciliationFilterBuilder;
-import org.identityconnectors.framework.common.objects.SearchResult;
 
 /**
  * Entry point for making requests on underlying connector bundles.
@@ -154,9 +153,8 @@ public interface Connector {
      * @param filter search filter
      * @param handler class responsible for working with the objects returned from the search; may be null.
      * @param options ConnId's OperationOptions
-     * @return search result
      */
-    SearchResult search(
+    void search(
             ObjectClass objectClass,
             Filter filter,
             ResultsHandler handler,
@@ -174,9 +172,8 @@ public interface Connector {
      * @param orderBy the sort keys which should be used for ordering the {@link ConnectorObject} returned by
      * search request
      * @param options ConnId's OperationOptions
-     * @return search result
      */
-    SearchResult search(
+    void search(
             ObjectClass objectClass,
             Filter filter,
             ResultsHandler handler,

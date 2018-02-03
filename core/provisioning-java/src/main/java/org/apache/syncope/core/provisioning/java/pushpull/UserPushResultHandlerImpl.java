@@ -35,7 +35,7 @@ import org.apache.syncope.core.provisioning.api.propagation.PropagationReporter;
 import org.apache.syncope.core.provisioning.api.pushpull.ProvisioningReport;
 import org.apache.syncope.core.provisioning.api.pushpull.UserPushResultHandler;
 
-public class DefaultUserPushResultHandler extends AbstractPushResultHandler implements UserPushResultHandler {
+public class UserPushResultHandlerImpl extends AbstractPushResultHandler implements UserPushResultHandler {
 
     @Override
     protected AnyUtils getAnyUtils() {
@@ -91,9 +91,10 @@ public class DefaultUserPushResultHandler extends AbstractPushResultHandler impl
     }
 
     @Override
-    protected WorkflowResult<? extends AnyPatch> update(final AnyPatch patch) {
+    protected WorkflowResult<String> update(final AnyPatch patch) {
         WorkflowResult<Pair<UserPatch, Boolean>> update = uwfAdapter.update((UserPatch) patch);
-        return new WorkflowResult<>(update.getResult().getLeft(), update.getPropByRes(), update.getPerformedTasks());
+        return new WorkflowResult<>(
+                update.getResult().getLeft().getKey(), update.getPropByRes(), update.getPerformedTasks());
     }
 
 }

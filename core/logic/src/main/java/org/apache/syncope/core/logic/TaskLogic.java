@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.apache.syncope.common.lib.SyncopeClientException;
 import org.apache.syncope.common.lib.to.AbstractTaskTO;
@@ -145,8 +144,20 @@ public class TaskLogic extends AbstractExecutableLogic<AbstractTaskTO> {
     }
 
     @PreAuthorize("hasRole('" + StandardEntitlement.TASK_LIST + "')")
+    public int count(
+            final TaskType type,
+            final String resource,
+            final String notification,
+            final AnyTypeKind anyTypeKind,
+            final String anyTypeKey) {
+
+        return taskDAO.count(
+                type, resourceDAO.find(resource), notificationDAO.find(notification), anyTypeKind, anyTypeKey);
+    }
+
+    @PreAuthorize("hasRole('" + StandardEntitlement.TASK_LIST + "')")
     @SuppressWarnings("unchecked")
-    public <T extends AbstractTaskTO> Pair<Integer, List<T>> list(
+    public <T extends AbstractTaskTO> List<T> list(
             final TaskType type,
             final String resource,
             final String notification,
@@ -157,16 +168,11 @@ public class TaskLogic extends AbstractExecutableLogic<AbstractTaskTO> {
             final List<OrderByClause> orderByClauses,
             final boolean details) {
 
-        int count = taskDAO.count(
-                type, resourceDAO.find(resource), notificationDAO.find(notification), anyTypeKind, entityKey);
-
-        List<T> result = taskDAO.findAll(
+        return taskDAO.findAll(
                 type, resourceDAO.find(resource), notificationDAO.find(notification), anyTypeKind, entityKey,
                 page, size, orderByClauses).stream().
                 <T>map(task -> binder.getTaskTO(task, taskUtilsFactory.getInstance(type), details)).
                 collect(Collectors.toList());
-
-        return Pair.of(count, result);
     }
 
     @PreAuthorize("hasRole('" + StandardEntitlement.TASK_READ + "')")
@@ -271,7 +277,13 @@ public class TaskLogic extends AbstractExecutableLogic<AbstractTaskTO> {
 
     @PreAuthorize("hasRole('" + StandardEntitlement.TASK_READ + "')")
     @Override
-    public Pair<Integer, List<ExecTO>> listExecutions(
+    public int countExecutions(final String key) {
+        return taskExecDAO.count(key);
+    }
+
+    @PreAuthorize("hasRole('" + StandardEntitlement.TASK_READ + "')")
+    @Override
+    public List<ExecTO> listExecutions(
             final String key, final int page, final int size, final List<OrderByClause> orderByClauses) {
 
         Task task = taskDAO.find(key);
@@ -279,12 +291,8 @@ public class TaskLogic extends AbstractExecutableLogic<AbstractTaskTO> {
             throw new NotFoundException("Task " + key);
         }
 
-        Integer count = taskExecDAO.count(key);
-
-        List<ExecTO> result = taskExecDAO.findAll(task, page, size, orderByClauses).stream().
+        return taskExecDAO.findAll(task, page, size, orderByClauses).stream().
                 map(taskExec -> binder.getExecTO(taskExec)).collect(Collectors.toList());
-
-        return Pair.of(count, result);
     }
 
     @PreAuthorize("hasRole('" + StandardEntitlement.TASK_LIST + "')")

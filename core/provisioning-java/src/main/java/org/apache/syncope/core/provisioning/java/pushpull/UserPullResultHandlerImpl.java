@@ -38,7 +38,7 @@ import org.identityconnectors.framework.common.objects.SyncDelta;
 import org.apache.syncope.core.provisioning.api.pushpull.UserPullResultHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 
-public class DefaultUserPullResultHandler extends AbstractPullResultHandler implements UserPullResultHandler {
+public class UserPullResultHandlerImpl extends AbstractPullResultHandler implements UserPullResultHandler {
 
     @Autowired
     private UserProvisioningManager userProvisioningManager;
@@ -81,13 +81,14 @@ public class DefaultUserPullResultHandler extends AbstractPullResultHandler impl
     }
 
     @Override
-    protected WorkflowResult<? extends AnyPatch> update(final AnyPatch patch) {
+    protected WorkflowResult<String> update(final AnyPatch patch) {
         WorkflowResult<Pair<UserPatch, Boolean>> update = uwfAdapter.update((UserPatch) patch);
-        return new WorkflowResult<>(update.getResult().getLeft(), update.getPropByRes(), update.getPerformedTasks());
+        return new WorkflowResult<>(
+                update.getResult().getLeft().getKey(), update.getPropByRes(), update.getPerformedTasks());
     }
 
     @Override
-    protected AnyTO doCreate(final AnyTO anyTO, final SyncDelta delta) {
+    protected AnyTO doCreate(final AnyTO anyTO, final SyncDelta delta, final ProvisioningReport result) {
         UserTO userTO = UserTO.class.cast(anyTO);
 
         Boolean enabled = pullUtils.readEnabled(delta.getObject(), profile.getTask());
@@ -95,11 +96,14 @@ public class DefaultUserPullResultHandler extends AbstractPullResultHandler impl
                 userProvisioningManager.create(userTO, true, true, enabled,
                         Collections.singleton(profile.getTask().getResource().getKey()), true);
 
+        result.setKey(created.getKey());
+        result.setName(getName(anyTO));
+
         return getAnyTO(created.getKey());
     }
 
     @Override
-    protected AnyPatch doUpdate(
+    protected AnyTO doUpdate(
             final AnyTO before,
             final AnyPatch anyPatch,
             final SyncDelta delta,
@@ -108,14 +112,14 @@ public class DefaultUserPullResultHandler extends AbstractPullResultHandler impl
         UserPatch userPatch = UserPatch.class.cast(anyPatch);
         Boolean enabled = pullUtils.readEnabled(delta.getObject(), profile.getTask());
 
-        Pair<UserPatch, List<PropagationStatus>> updated = userProvisioningManager.update(
+        Map.Entry<String, List<PropagationStatus>> updated = userProvisioningManager.update(
                 userPatch,
                 result,
                 enabled,
                 Collections.singleton(profile.getTask().getResource().getKey()),
                 true);
 
-        return updated.getLeft();
+        return getAnyTO(updated.getKey());
     }
 
     @Override

@@ -35,6 +35,7 @@ import java.util.stream.Collectors;
 import javax.annotation.Resource;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.syncope.common.lib.SyncopeClientException;
 import org.apache.syncope.common.lib.patch.PasswordPatch;
@@ -278,7 +279,8 @@ public class FlowableUserWorkflowAdapter extends AbstractUserWorkflowAdapter {
 
         Set<String> tasks = getPerformedTasks(user);
 
-        return new WorkflowResult<>(Pair.of(user.getKey(), propagateEnable), propByRes, tasks);
+        return new WorkflowResult<>(
+                new ImmutablePair<>(user.getKey(), propagateEnable), propByRes, tasks);
     }
 
     protected Set<String> doExecuteTask(final User user, final String task, final Map<String, Object> moreVariables) {
@@ -347,7 +349,8 @@ public class FlowableUserWorkflowAdapter extends AbstractUserWorkflowAdapter {
         Boolean propagateEnable = engine.getRuntimeService().getVariable(
                 user.getWorkflowId(), PROPAGATE_ENABLE, Boolean.class);
 
-        return new WorkflowResult<>(Pair.of(updatedPatch, propagateEnable), propByRes, tasks);
+        return new WorkflowResult<>(
+                new ImmutablePair<>(updatedPatch, propagateEnable), propByRes, tasks);
     }
 
     @Override
@@ -416,7 +419,8 @@ public class FlowableUserWorkflowAdapter extends AbstractUserWorkflowAdapter {
         Boolean propagateEnable = engine.getRuntimeService().getVariable(
                 user.getWorkflowId(), PROPAGATE_ENABLE, Boolean.class);
 
-        return new WorkflowResult<>(Pair.of(updatedPatch, propagateEnable), propByRes, tasks);
+        return new WorkflowResult<>(
+                new ImmutablePair<>(updatedPatch, propagateEnable), propByRes, tasks);
     }
 
     @Override
@@ -698,7 +702,7 @@ public class FlowableUserWorkflowAdapter extends AbstractUserWorkflowAdapter {
             }
         }
 
-        return Pair.of(task, formData);
+        return new ImmutablePair<>(task, formData);
     }
 
     @Override

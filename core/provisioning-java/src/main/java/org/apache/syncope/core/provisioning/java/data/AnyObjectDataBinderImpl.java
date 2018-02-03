@@ -333,9 +333,7 @@ public class AnyObjectDataBinderImpl extends AbstractAnyDataBinder implements An
                     attr.setOwner(null);
                 });
 
-                if (membPatch.getOperation() == PatchOperation.DELETE) {
-                    toBeDeprovisioned.addAll(groupDAO.findAllResourceKeys(membership.get().getRightEnd().getKey()));
-                }
+                toBeDeprovisioned.addAll(groupDAO.findAllResourceKeys(membership.get().getRightEnd().getKey()));
             }
             if (membPatch.getOperation() == PatchOperation.ADD_REPLACE) {
                 Group group = groupDAO.find(membPatch.getGroup());

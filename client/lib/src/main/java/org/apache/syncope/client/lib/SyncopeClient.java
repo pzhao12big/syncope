@@ -30,6 +30,7 @@ import javax.ws.rs.core.EntityTag;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.cxf.jaxrs.client.Client;
 import org.apache.cxf.jaxrs.client.ClientConfiguration;
@@ -259,7 +260,7 @@ public class SyncopeClient {
         }
 
         try {
-            return Pair.of(
+            return new ImmutablePair<>(
                     (Map<String, Set<String>>) new ObjectMapper().readValue(
                             response.getHeaderString(RESTHeaders.OWNED_ENTITLEMENTS),
                             new TypeReference<HashMap<String, Set<String>>>() {

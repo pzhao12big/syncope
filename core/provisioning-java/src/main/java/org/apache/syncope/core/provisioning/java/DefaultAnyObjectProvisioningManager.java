@@ -87,7 +87,7 @@ public class DefaultAnyObjectProvisioningManager implements AnyObjectProvisionin
     }
 
     @Override
-    public Pair<AnyObjectPatch, List<PropagationStatus>> update(
+    public Pair<String, List<PropagationStatus>> update(
             final AnyObjectPatch anyObjectPatch, final boolean nullPriorityAsync) {
 
         return update(anyObjectPatch, Collections.<String>emptySet(), nullPriorityAsync);
@@ -95,14 +95,14 @@ public class DefaultAnyObjectProvisioningManager implements AnyObjectProvisionin
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     @Override
-    public Pair<AnyObjectPatch, List<PropagationStatus>> update(
+    public Pair<String, List<PropagationStatus>> update(
             final AnyObjectPatch anyObjectPatch, final Set<String> excludedResources, final boolean nullPriorityAsync) {
 
-        WorkflowResult<AnyObjectPatch> updated = awfAdapter.update(anyObjectPatch);
+        WorkflowResult<String> updated = awfAdapter.update(anyObjectPatch);
 
         List<PropagationTask> tasks = propagationManager.getUpdateTasks(
                 AnyTypeKind.ANY_OBJECT,
-                updated.getResult().getKey(),
+                updated.getResult(),
                 false,
                 null,
                 updated.getPropByRes(),
@@ -149,12 +149,12 @@ public class DefaultAnyObjectProvisioningManager implements AnyObjectProvisionin
 
     @Override
     public String unlink(final AnyObjectPatch anyObjectPatch) {
-        return awfAdapter.update(anyObjectPatch).getResult().getKey();
+        return awfAdapter.update(anyObjectPatch).getResult();
     }
 
     @Override
     public String link(final AnyObjectPatch anyObjectPatch) {
-        return awfAdapter.update(anyObjectPatch).getResult().getKey();
+        return awfAdapter.update(anyObjectPatch).getResult();
     }
 
     @Override

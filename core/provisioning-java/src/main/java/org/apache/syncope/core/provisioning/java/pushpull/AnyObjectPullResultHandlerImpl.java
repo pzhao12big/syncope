@@ -21,7 +21,6 @@ package org.apache.syncope.core.provisioning.java.pushpull;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.syncope.common.lib.patch.AnyObjectPatch;
 import org.apache.syncope.common.lib.patch.AnyPatch;
 import org.apache.syncope.common.lib.to.AnyTO;
@@ -38,7 +37,7 @@ import org.identityconnectors.framework.common.objects.SyncDelta;
 import org.apache.syncope.core.provisioning.api.pushpull.AnyObjectPullResultHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 
-public class DefaultAnyObjectPullResultHandler extends AbstractPullResultHandler implements AnyObjectPullResultHandler {
+public class AnyObjectPullResultHandlerImpl extends AbstractPullResultHandler implements AnyObjectPullResultHandler {
 
     @Autowired
     private AnyObjectProvisioningManager anyObjectProvisioningManager;
@@ -81,22 +80,25 @@ public class DefaultAnyObjectPullResultHandler extends AbstractPullResultHandler
     }
 
     @Override
-    protected WorkflowResult<? extends AnyPatch> update(final AnyPatch patch) {
+    protected WorkflowResult<String> update(final AnyPatch patch) {
         return awfAdapter.update((AnyObjectPatch) patch);
     }
 
     @Override
-    protected AnyTO doCreate(final AnyTO anyTO, final SyncDelta delta) {
+    protected AnyTO doCreate(final AnyTO anyTO, final SyncDelta delta, final ProvisioningReport result) {
         AnyObjectTO anyObjectTO = AnyObjectTO.class.cast(anyTO);
 
         Map.Entry<String, List<PropagationStatus>> created = anyObjectProvisioningManager.create(
                 anyObjectTO, Collections.singleton(profile.getTask().getResource().getKey()), true);
 
+        result.setKey(created.getKey());
+        result.setName(getName(anyTO));
+
         return getAnyTO(created.getKey());
     }
 
     @Override
-    protected AnyPatch doUpdate(
+    protected AnyTO doUpdate(
             final AnyTO before,
             final AnyPatch anyPatch,
             final SyncDelta delta,
@@ -104,9 +106,11 @@ public class DefaultAnyObjectPullResultHandler extends AbstractPullResultHandler
 
         AnyObjectPatch anyObjectPatch = AnyObjectPatch.class.cast(anyPatch);
 
-        Pair<AnyObjectPatch, List<PropagationStatus>> updated = anyObjectProvisioningManager.update(
+        Map.Entry<String, List<PropagationStatus>> updated = anyObjectProvisioningManager.update(
                 anyObjectPatch, Collections.singleton(profile.getTask().getResource().getKey()), true);
 
-        return anyPatch;
+        AnyObjectTO after = anyObjectDataBinder.getAnyObjectTO(updated.getKey());
+        result.setName(getName(after));
+        return after;
     }
 }

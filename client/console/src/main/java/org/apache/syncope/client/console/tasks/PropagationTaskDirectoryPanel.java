@@ -206,12 +206,7 @@ public abstract class PropagationTaskDirectoryPanel
         private static final long serialVersionUID = 4725679400450513556L;
 
         public PropagationTasksProvider(final int paginatorRows) {
-            super(paginatorRows, TaskType.PROPAGATION);
-        }
-
-        @Override
-        public long size() {
-            return restClient.count(resource, TaskType.PROPAGATION);
+            super(paginatorRows, TaskType.PROPAGATION, restClient);
         }
 
         @Override

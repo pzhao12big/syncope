@@ -309,15 +309,10 @@ public abstract class SchedTaskDirectoryPanel<T extends SchedTaskTO>
 
         private final Class<T> reference;
 
-        public SchedTasksProvider(final Class<T> reference, final TaskType taskType, final int paginatorRows) {
-            super(paginatorRows, taskType);
+        public SchedTasksProvider(final Class<T> reference, final TaskType id, final int paginatorRows) {
+            super(paginatorRows, id, restClient);
             setSort("name", SortOrder.ASCENDING);
             this.reference = reference;
-        }
-
-        @Override
-        public long size() {
-            return restClient.count(taskType);
         }
 
         @Override

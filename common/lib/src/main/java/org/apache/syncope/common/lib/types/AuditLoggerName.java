@@ -23,6 +23,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.text.ParseException;
 import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.syncope.common.lib.AbstractBaseBean;
 import org.apache.syncope.common.lib.log.EventCategoryTO;
@@ -161,7 +162,7 @@ public class AuditLoggerName extends AbstractBaseBean {
             }
         }
 
-        return Pair.of(eventCategoryTO, condition);
+        return new ImmutablePair<>(eventCategoryTO, condition);
     }
 
     /**

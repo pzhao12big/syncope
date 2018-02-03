@@ -22,7 +22,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.syncope.common.lib.patch.AnyPatch;
 import org.apache.syncope.common.lib.patch.AttrPatch;
 import org.apache.syncope.common.lib.patch.GroupPatch;
@@ -41,7 +40,7 @@ import org.identityconnectors.framework.common.objects.SyncDelta;
 import org.apache.syncope.core.provisioning.api.pushpull.GroupPullResultHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 
-public class DefaultGroupPullResultHandler extends AbstractPullResultHandler implements GroupPullResultHandler {
+public class GroupPullResultHandlerImpl extends AbstractPullResultHandler implements GroupPullResultHandler {
 
     @Autowired
     private GroupProvisioningManager groupProvisioningManager;
@@ -91,12 +90,12 @@ public class DefaultGroupPullResultHandler extends AbstractPullResultHandler imp
     }
 
     @Override
-    protected WorkflowResult<? extends AnyPatch> update(final AnyPatch patch) {
+    protected WorkflowResult<String> update(final AnyPatch patch) {
         return gwfAdapter.update((GroupPatch) patch);
     }
 
     @Override
-    protected AnyTO doCreate(final AnyTO anyTO, final SyncDelta delta) {
+    protected AnyTO doCreate(final AnyTO anyTO, final SyncDelta delta, final ProvisioningReport result) {
         GroupTO groupTO = GroupTO.class.cast(anyTO);
 
         Map.Entry<String, List<PropagationStatus>> created = groupProvisioningManager.create(
@@ -105,11 +104,14 @@ public class DefaultGroupPullResultHandler extends AbstractPullResultHandler imp
                 Collections.singleton(profile.getTask().getResource().getKey()),
                 true);
 
+        result.setKey(created.getKey());
+        result.setName(getName(anyTO));
+
         return getAnyTO(created.getKey());
     }
 
     @Override
-    protected AnyPatch doUpdate(
+    protected AnyTO doUpdate(
             final AnyTO before,
             final AnyPatch anyPatch,
             final SyncDelta delta,
@@ -117,7 +119,7 @@ public class DefaultGroupPullResultHandler extends AbstractPullResultHandler imp
 
         GroupPatch groupPatch = GroupPatch.class.cast(anyPatch);
 
-        Pair<GroupPatch, List<PropagationStatus>> updated = groupProvisioningManager.update(
+        Map.Entry<String, List<PropagationStatus>> updated = groupProvisioningManager.update(
                 groupPatch, Collections.singleton(profile.getTask().getResource().getKey()), true);
 
         String groupOwner = null;
@@ -129,10 +131,14 @@ public class DefaultGroupPullResultHandler extends AbstractPullResultHandler imp
             }
         }
         if (groupOwner != null) {
-            groupOwnerMap.put(updated.getLeft().getKey(), groupOwner);
+            groupOwnerMap.put(updated.getKey(), groupOwner);
         }
 
-        return anyPatch;
+        GroupTO after = groupDataBinder.getGroupTO(updated.getKey());
+
+        result.setName(getName(after));
+
+        return after;
     }
 
 }

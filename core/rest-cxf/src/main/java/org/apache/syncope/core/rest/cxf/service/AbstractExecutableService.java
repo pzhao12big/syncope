@@ -19,7 +19,6 @@
 package org.apache.syncope.core.rest.cxf.service;
 
 import java.util.List;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.syncope.common.lib.to.BulkActionResult;
 import org.apache.syncope.common.lib.to.ExecTO;
 import org.apache.syncope.common.lib.to.JobTO;
@@ -37,12 +36,15 @@ public abstract class AbstractExecutableService extends AbstractServiceImpl impl
 
     @Override
     public PagedResult<ExecTO> listExecutions(final ExecQuery query) {
-        Pair<Integer, List<ExecTO>> result = getExecutableLogic().listExecutions(
-                query.getKey(),
+        return buildPagedResult(
+                getExecutableLogic().listExecutions(
+                        query.getKey(),
+                        query.getPage(),
+                        query.getSize(),
+                        getOrderByClauses(query.getOrderBy())),
                 query.getPage(),
                 query.getSize(),
-                getOrderByClauses(query.getOrderBy()));
-        return buildPagedResult(result.getRight(), query.getPage(), query.getSize(), result.getLeft());
+                getExecutableLogic().countExecutions(query.getKey()));
     }
 
     @Override

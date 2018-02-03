@@ -201,11 +201,10 @@ public class GroupLogic extends AbstractAnyLogic<GroupTO, GroupPatch> {
                 realm);
         boolean authDynRealms = securityChecks(effectiveRealms, realm, before.getLeft().getKey());
 
-        Pair<GroupPatch, List<PropagationStatus>> updated =
-                provisioningManager.update(groupPatch, nullPriorityAsync);
+        Pair<String, List<PropagationStatus>> updated = provisioningManager.update(groupPatch, nullPriorityAsync);
 
         return afterUpdate(
-                binder.getGroupTO(updated.getLeft().getKey()),
+                binder.getGroupTO(updated.getKey()),
                 updated.getRight(),
                 before.getRight(),
                 authDynRealms,

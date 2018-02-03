@@ -23,6 +23,7 @@ import java.util.Set;
 
 import org.apache.camel.Endpoint;
 import org.apache.camel.Exchange;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.syncope.common.lib.patch.AnyObjectPatch;
 import org.apache.syncope.common.lib.patch.AnyPatch;
@@ -60,15 +61,14 @@ public class UpdateProducer extends AbstractProducer {
                 PropagationReporter propagationReporter =
                         getPropagationTaskExecutor().execute(tasks, nullPriorityAsync);
 
-                exchange.getOut().setBody(Pair.of(
-                        updated.getResult().getLeft(), propagationReporter.getStatuses()));
+                exchange.getOut().setBody(new ImmutablePair<>(
+                        updated.getResult().getKey().getKey(), propagationReporter.getStatuses()));
             } else if (actual instanceof AnyPatch) {
-                WorkflowResult<? extends AnyPatch> updated =
-                        (WorkflowResult<? extends AnyPatch>) exchange.getIn().getBody();
+                WorkflowResult<String> updated = (WorkflowResult<String>) exchange.getIn().getBody();
 
                 List<PropagationTask> tasks = getPropagationManager().getUpdateTasks(
                         actual instanceof AnyObjectPatch ? AnyTypeKind.ANY_OBJECT : AnyTypeKind.GROUP,
-                        updated.getResult().getKey(),
+                        updated.getResult(),
                         false,
                         null,
                         updated.getPropByRes(),
@@ -77,7 +77,7 @@ public class UpdateProducer extends AbstractProducer {
                 PropagationReporter propagationReporter =
                         getPropagationTaskExecutor().execute(tasks, nullPriorityAsync);
 
-                exchange.getOut().setBody(Pair.of(updated.getResult(), propagationReporter.getStatuses()));
+                exchange.getOut().setBody(new ImmutablePair<>(updated.getResult(), propagationReporter.getStatuses()));
             }
         }
     }

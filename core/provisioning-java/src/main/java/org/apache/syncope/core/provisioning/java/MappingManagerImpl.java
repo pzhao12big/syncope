@@ -359,7 +359,7 @@ public class MappingManagerImpl implements MappingManager {
                         }
                     } else if (provision.getResource().isRandomPwdIfNotProvided()) {
                         try {
-                            passwordAttrValue = passwordGenerator.generate(provision.getResource());
+                            passwordAttrValue = passwordGenerator.generate(user);
                         } catch (InvalidPasswordRuleConf e) {
                             LOG.error("Could not generate policy-compliant random password for {}", user, e);
                         }

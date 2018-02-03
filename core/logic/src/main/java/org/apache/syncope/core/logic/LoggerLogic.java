@@ -351,36 +351,37 @@ public class LoggerLogic extends AbstractTransactionalLogic<LoggerTO> {
             for (AnyTypeKind anyTypeKind : AnyTypeKind.values()) {
                 resourceDAO.findAll().forEach(resource -> {
                     EventCategoryTO propEventCategoryTO = new EventCategoryTO(EventCategoryType.PROPAGATION);
-                    EventCategoryTO pullEventCategoryTO = new EventCategoryTO(EventCategoryType.PULL);
+                    EventCategoryTO syncEventCategoryTO = new EventCategoryTO(EventCategoryType.PULL);
                     EventCategoryTO pushEventCategoryTO = new EventCategoryTO(EventCategoryType.PUSH);
 
                     propEventCategoryTO.setCategory(anyTypeKind.name().toLowerCase());
                     propEventCategoryTO.setSubcategory(resource.getKey());
 
-                    pullEventCategoryTO.setCategory(anyTypeKind.name().toLowerCase());
+                    syncEventCategoryTO.setCategory(anyTypeKind.name().toLowerCase());
                     pushEventCategoryTO.setCategory(anyTypeKind.name().toLowerCase());
-                    pullEventCategoryTO.setSubcategory(resource.getKey());
+                    syncEventCategoryTO.setSubcategory(resource.getKey());
                     pushEventCategoryTO.setSubcategory(resource.getKey());
 
                     for (ResourceOperation resourceOperation : ResourceOperation.values()) {
                         propEventCategoryTO.getEvents().add(resourceOperation.name().toLowerCase());
+                        syncEventCategoryTO.getEvents().add(resourceOperation.name().toLowerCase());
+                        pushEventCategoryTO.getEvents().add(resourceOperation.name().toLowerCase());
                     }
-                    pullEventCategoryTO.getEvents().add(ResourceOperation.DELETE.name().toLowerCase());
 
                     for (UnmatchingRule unmatching : UnmatchingRule.values()) {
                         String event = UnmatchingRule.toEventName(unmatching);
-                        pullEventCategoryTO.getEvents().add(event);
+                        syncEventCategoryTO.getEvents().add(event);
                         pushEventCategoryTO.getEvents().add(event);
                     }
 
                     for (MatchingRule matching : MatchingRule.values()) {
                         String event = MatchingRule.toEventName(matching);
-                        pullEventCategoryTO.getEvents().add(event);
+                        syncEventCategoryTO.getEvents().add(event);
                         pushEventCategoryTO.getEvents().add(event);
                     }
 
                     events.add(propEventCategoryTO);
-                    events.add(pullEventCategoryTO);
+                    events.add(syncEventCategoryTO);
                     events.add(pushEventCategoryTO);
                 });
             }

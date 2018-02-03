@@ -20,6 +20,7 @@ package org.apache.syncope.common.lib.to;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -28,7 +29,8 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
-import org.apache.commons.lang3.builder.ToStringExclude;
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 import org.apache.syncope.common.lib.types.AnyTypeKind;
 
 @XmlRootElement(name = "user")
@@ -37,7 +39,6 @@ public class UserTO extends AnyTO implements GroupableRelatableTO {
 
     private static final long serialVersionUID = 7791304495192615740L;
 
-    @ToStringExclude
     private String password;
 
     private final List<String> roles = new ArrayList<>();
@@ -229,5 +230,16 @@ public class UserTO extends AnyTO implements GroupableRelatableTO {
     @Override
     public List<MembershipTO> getDynMemberships() {
         return dynMemberships;
+    }
+
+    @Override
+    public String toString() {
+        return new ReflectionToStringBuilder(this, ToStringStyle.MULTI_LINE_STYLE) {
+
+            @Override
+            protected boolean accept(final Field f) {
+                return super.accept(f) && !f.getName().equals("password");
+            }
+        }.toString();
     }
 }

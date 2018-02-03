@@ -110,9 +110,7 @@ public class TaskDataBinderImpl implements TaskDataBinder {
             PushTask pushTask = (PushTask) task;
             final PushTaskTO pushTaskTO = (PushTaskTO) taskTO;
 
-            pushTask.setJobDelegateClassName(pushTaskTO.getJobDelegateClassName() == null
-                    ? PushJobDelegate.class.getName()
-                    : pushTaskTO.getJobDelegateClassName());
+            pushTask.setJobDelegateClassName(PushJobDelegate.class.getName());
 
             pushTask.setSourceRealm(realmDAO.findByFullPath(pushTaskTO.getSourceRealm()));
 
@@ -150,9 +148,7 @@ public class TaskDataBinderImpl implements TaskDataBinder {
 
             pullTask.setDestinationRealm(realmDAO.findByFullPath(pullTaskTO.getDestinationRealm()));
 
-            pullTask.setJobDelegateClassName(pullTaskTO.getJobDelegateClassName() == null
-                    ? PullJobDelegate.class.getName()
-                    : pullTaskTO.getJobDelegateClassName());
+            pullTask.setJobDelegateClassName(PullJobDelegate.class.getName());
 
             pullTask.setMatchingRule(pullTaskTO.getMatchingRule() == null
                     ? MatchingRule.UPDATE : pullTaskTO.getMatchingRule());
